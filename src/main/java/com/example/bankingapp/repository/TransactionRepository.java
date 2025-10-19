@@ -10,6 +10,9 @@ import com.example.bankingapp.model.Transaction;
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
-    // Find the top 10 most recent transactions for a given account, ordered by time
     List<Transaction> findTop10ByAccountIdOrderByTimestampDesc(Long accountId);
+    
+    // --- ADD THIS NEW METHOD ---
+    List<Transaction> findAllByAccountId(Long accountId);
+    // -------------------------
 }

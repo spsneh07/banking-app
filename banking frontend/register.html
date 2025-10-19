@@ -1,45 +1,88 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register Account</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Register - Big Bull Bank</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="style.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'bank-primary': '#3b82f6',
+                        'bank-secondary': '#1f2937',
+                        'bank-dark': '#111827',
+                        'bank-text': '#e5e7eb',
+                        'bank-text-muted': '#9ca3af',
+                    }
+                }
+            }
+        }
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
 </head>
-<body class="form-body">
-    <div class="form-container">
-        <div class="card shadow-lg">
-            <div class="card-body p-5">
-                <h1 class="h3 mb-4 fw-normal text-center">Create Your Account</h1>
-                <form id="registerForm">
-                    <div class="form-floating mb-3">
-                        <input type="text" class="form-control" id="fullName" placeholder="Full Name" required>
-                        <label for="fullName">Full Name</label>
+<body class="flex items-center justify-center min-h-screen font-sans dark:bg-bank-dark">
+    <div class="w-full max-w-md p-8">
+        <div class="bg-white dark:bg-bank-secondary bg-opacity-70 dark:bg-opacity-70 backdrop-blur-lg shadow-2xl rounded-2xl p-8 border border-gray-200 dark:border-gray-700">
+            <h1 class="text-3xl font-bold text-center text-gray-900 dark:text-white mb-6">Create Your Account</h1>
+
+            <form id="registerForm" class="space-y-4">
+                <div id="errorMessage" class="hidden p-4 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-800 dark:bg-opacity-50 rounded-lg"></div>
+                <div id="successMessage" class="hidden p-4 text-sm text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-800 dark:bg-opacity-50 rounded-lg"></div>
+
+                <div>
+                    <label for="fullName" class="block text-sm font-medium text-gray-700 dark:text-bank-text-muted">Full Name</label>
+                    <div class="mt-2 input-icon-group">
+                        <div class="input-icon"><i class="bi bi-person-badge-fill"></i></div>
+                        <input id="fullName" type="text" required class="input-with-icon w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-bank-primary">
                     </div>
-                    <div class="form-floating mb-3">
-                        <input type="text" class="form-control" id="username" placeholder="Username" required>
-                        <label for="username">Username</label>
+                </div>
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700 dark:text-bank-text-muted">Username</label>
+                    <div class="mt-2 input-icon-group">
+                        <div class="input-icon"><i class="bi bi-person-fill"></i></div>
+                        <input id="username" type="text" required class="input-with-icon w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-bank-primary">
                     </div>
-                    <div class="form-floating mb-3">
-                        <input type="email" class="form-control" id="email" placeholder="name@example.com" required>
-                        <label for="email">Email address</label>
+                </div>
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 dark:text-bank-text-muted">Email address</label>
+                    <div class="mt-2 input-icon-group">
+                        <div class="input-icon"><i class="bi bi-envelope-fill"></i></div>
+                        <input id="email" type="email" required class="input-with-icon w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-bank-primary">
                     </div>
-                    <div class="form-floating mb-3">
-                        <input type="password" class="form-control" id="password" placeholder="Password" required>
-                        <label for="password">Password</label>
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 dark:text-bank-text-muted">Password</label>
+                    <div class="mt-2 input-icon-group">
+                        <div class="input-icon"><i class="bi bi-lock-fill"></i></div>
+                        <input id="password" type="password" required minlength="6" class="input-with-icon w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-bank-primary">
                     </div>
-                    <div id="errorMessage" class="alert alert-danger d-none" role="alert"></div>
-                    <div id="successMessage" class="alert alert-success d-none" role="alert"></div>
-                    <button class="w-100 btn btn-lg btn-primary" type="submit">Register</button>
-                    <p class="mt-4 text-center">
-                        Already have an account? <a href="login.html">Login here</a>
-                    </p>
-                </form>
-            </div>
+                </div>
+
+                <div>
+                    <button type="submit" class="flex w-full justify-center rounded-md bg-bank-primary py-2 px-4 text-sm font-semibold text-white shadow-sm hover:bg-opacity-80 transition duration-200">
+                        Register
+                    </button>
+                </div>
+            </form>
+
+            <p class="mt-8 text-center text-sm text-gray-600 dark:text-bank-text-muted">
+                Already have an account?
+                <a href="login.html" class="font-semibold text-bank-primary hover:text-opacity-80">Login here</a>
+            </p>
         </div>
     </div>
     <script src="app.js"></script>
 </body>
 </html>
-
