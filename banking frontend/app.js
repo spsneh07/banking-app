@@ -44,7 +44,7 @@ function setupDashboard() {
     document.getElementById('transferAccountNumber')?.addEventListener('input', resetTransferForm);
 
     // Fetch initial data when the dashboard loads
-    fetchUserDetails(); // <<< Fetches user details including account number
+    fetchUserDetails();
     fetchBalance();
     fetchTransactions();
 }
@@ -78,11 +78,7 @@ async function fetchUserDetails() {
         const response = await fetchSecure(`${ACCOUNT_API_URL}/me`);
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const user = await response.json();
-        if (user.accountNumber) {
-            accountNumberDisplay.textContent = user.accountNumber;
-        } else {
-            accountNumberDisplay.textContent = "N/A";
-        }
+        accountNumberDisplay.textContent = user.accountNumber || "N/A";
     } catch (error) {
         console.error('Error fetching user details:', error);
         accountNumberDisplay.textContent = "Error";
@@ -113,18 +109,15 @@ async function fetchTransactions() {
     const tableBody = document.getElementById('transactionsTableBody');
     if (!tableBody) return;
     tableBody.innerHTML = '<tr><td colspan="4" class="text-center">Loading...</td></tr>';
-
     try {
         const response = await fetchSecure(`${ACCOUNT_API_URL}/transactions`);
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const transactions = await response.json();
-
         tableBody.innerHTML = '';
         if (transactions.length === 0) {
             tableBody.innerHTML = '<tr><td colspan="4" class="text-center">No recent transactions found.</td></tr>';
             return;
         }
-
         transactions.forEach(tx => {
             const isCredit = tx.amount >= 0;
             const amountClass = isCredit ? 'text-success' : 'text-danger';
@@ -135,7 +128,6 @@ async function fetchTransactions() {
             else if (tx.type === 'TRANSFER' && isCredit) typeBadgeClass = 'bg-info';
             else if (tx.type === 'TRANSFER' && !isCredit) typeBadgeClass = 'bg-danger';
             else if (tx.type === 'PAYMENT') typeBadgeClass = 'bg-warning text-dark';
-
             const row = `
                 <tr>
                     <td>${tx.timestamp}</td>
@@ -161,15 +153,12 @@ async function handleDepositSubmit(event) {
     const amount = parseFloat(document.getElementById('depositAmount').value);
     const errorDiv = document.getElementById('depositError');
     const submitButton = document.getElementById('submitDeposit');
-    
     hideModalError(errorDiv);
     if (isNaN(amount) || amount <= 0) {
         showModalError(errorDiv, "Please enter a valid, positive amount.");
         return;
     }
-    
     toggleSpinner(submitButton, true);
-
     try {
         const response = await fetchSecure(`${ACCOUNT_API_URL}/deposit`, {
             method: 'POST',
@@ -177,7 +166,6 @@ async function handleDepositSubmit(event) {
         });
         const responseText = await response.text();
         if (!response.ok) throw new Error(responseText);
-        
         refreshDashboardData();
         bootstrap.Modal.getInstance(form.closest('.modal')).hide();
         form.reset();
@@ -195,21 +183,16 @@ async function handleVerifyRecipient() {
     const accountNumber = document.getElementById('transferAccountNumber').value;
     const errorDiv = document.getElementById('transferError');
     const verifyBtn = document.getElementById('verifyRecipientBtn');
-    
     hideModalError(errorDiv);
     if (!accountNumber) {
         showModalError(errorDiv, "Please enter an account number.");
         return;
     }
-
     toggleSpinner(verifyBtn, true);
-    
     try {
         const response = await fetchSecure(`${ACCOUNT_API_URL}/verify-recipient?accountNumber=${accountNumber}`);
         const recipientName = await response.text();
         if (!response.ok) throw new Error(recipientName);
-
-        // Success! Enable the rest of the form
         document.getElementById('verifiedRecipientName').textContent = recipientName;
         document.getElementById('recipientVerifiedInfo').classList.remove('d-none');
         document.getElementById('transferDetails').disabled = false;
@@ -218,7 +201,6 @@ async function handleVerifyRecipient() {
         verifyBtn.classList.remove('btn-outline-secondary');
         verifyBtn.classList.add('btn-success');
         verifyBtn.disabled = true;
-
     } catch (error) {
         showModalError(errorDiv, error.message);
     } finally {
@@ -252,16 +234,12 @@ async function handleTransferSubmit(event) {
     const password = document.getElementById('transferPassword').value;
     const errorDiv = document.getElementById('transferError');
     const submitButton = document.getElementById('submitTransfer');
-
     hideModalError(errorDiv);
-    // Basic validation (most should be covered by disabled fields)
     if (!recipientAccountNumber || isNaN(amount) || amount <= 0 || !password) {
         showModalError(errorDiv, "Please complete all fields.");
         return;
     }
-
     toggleSpinner(submitButton, true);
-
     try {
         const response = await fetchSecure(`${ACCOUNT_API_URL}/transfer`, {
             method: 'POST',
@@ -269,12 +247,10 @@ async function handleTransferSubmit(event) {
         });
         const responseText = await response.text();
         if (!response.ok) throw new Error(responseText);
-        
         refreshDashboardData();
         bootstrap.Modal.getInstance(form.closest('.modal')).hide();
         form.reset();
-        resetTransferForm(); // Reset for next time
-
+        resetTransferForm();
     } catch (error) {
         showModalError(errorDiv, error.message);
     } finally {
@@ -293,7 +269,6 @@ async function handlePayBillSubmit(event) {
     const password = document.getElementById('payBillPassword').value;
     const errorDiv = document.getElementById('payBillError');
     const submitButton = document.getElementById('submitPayBill');
-
     hideModalError(errorDiv);
     if (!billerName) {
         showModalError(errorDiv, "Please enter a biller name."); return;
@@ -304,9 +279,7 @@ async function handlePayBillSubmit(event) {
     if (!password) {
         showModalError(errorDiv, "Please enter your password to confirm."); return;
     }
-
     toggleSpinner(submitButton, true);
-
     try {
         const response = await fetchSecure(`${ACCOUNT_API_URL}/paybill`, {
             method: 'POST',
@@ -314,7 +287,6 @@ async function handlePayBillSubmit(event) {
         });
         const responseText = await response.text();
         if (!response.ok) throw new Error(responseText);
-        
         refreshDashboardData();
         bootstrap.Modal.getInstance(form.closest('.modal')).hide();
         form.reset();
@@ -387,7 +359,7 @@ async function handleLogin(event) {
 
 async function handleRegister(event) {
     event.preventDefault();
-    const fullName = document.getElementById('fullName').value; // Get full name
+    const fullName = document.getElementById('fullName').value;
     const username = document.getElementById('username').value;
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
@@ -399,10 +371,13 @@ async function handleRegister(event) {
         const response = await fetch(`${AUTH_API_URL}/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fullName, username, email, password }), // Send full name
+            body: JSON.stringify({ fullName, username, email, password }),
         });
         const responseText = await response.text();
         if (response.ok) {
+            // --- THIS IS THE FIX ---
+            successMessage.textContent = responseText; // Set the message from the server
+            // -----------------------
             successMessage.classList.remove('d-none');
             event.target.reset();
         } else {
@@ -418,6 +393,7 @@ async function handleRegister(event) {
 
 function checkAuth() {
     if (!localStorage.getItem('authToken')) {
+        console.log("No auth token found, redirecting to login.");
         window.location.href = 'login.html';
     } else {
         const username = localStorage.getItem('username');
@@ -431,5 +407,7 @@ function checkAuth() {
 function handleLogout() {
     localStorage.removeItem('authToken');
     localStorage.removeItem('username');
+    console.log("User logged out, redirecting to login.");
     window.location.href = 'login.html';
 }
+
