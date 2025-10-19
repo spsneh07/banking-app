@@ -1,0 +1,59 @@
+# Build Target
+target/
+
+# Maven Wrapper
+!/.mvn/wrapper/maven-wrapper.jar
+
+# Log files
+*.log
+
+# IDE specific files
+.project
+.classpath
+.settings/
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# Other
+HELP.md
+```
+*(I've slightly cleaned it up to remove the STS/NetBeans parts you aren't using and kept the essentials for Maven, IntelliJ, and VS Code, but your original file is perfectly fine too.)*
+
+### Step 2: Push to GitHub
+
+Now that you have the correct `.gitignore` file, open your VS Code terminal and make sure you are in the correct backend project folder: `PS D:\bankingapp\bankingapp>`.
+
+Run these commands one by one to push your code:
+
+1.  **Initialize Git (if you haven't already):**
+    ```powershell
+    git init
+    ```
+
+2.  **Add all your files to be tracked (Git will automatically ignore the files listed in `.gitignore`):**
+    ```powershell
+    git add .
+    ```
+
+3.  **Make your first commit:**
+    ```powershell
+    git commit -m "Initial commit: Completed banking application backend"
+    ```
+
+4.  **Rename the branch to `main`:**
+    ```powershell
+    git branch -M main
+    ```
+
+5.  **Connect to your GitHub repository (copy the URL from your GitHub page):**
+    ```powershell
+    git remote add origin https://github.com/YOUR_USERNAME/banking-app-backend.git
+    ```
+
+6.  **Push your code to GitHub:**
+    ```powershell
+    git push -u origin main
+    

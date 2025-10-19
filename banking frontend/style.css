@@ -1,0 +1,64 @@
+/* Global styling */
+body {
+    background-color: black; /* Set background to black */
+    color: #dee2e6; /* Light text color for contrast */
+}
+
+/* --- Login/Register Page Styling (Flexbox) --- */
+.form-body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background-color: black; /* Set background to black */
+}
+
+.form-container {
+    width: 100%;
+    max-width: 450px;
+    padding: 15px;
+}
+
+/* --- Dashboard Page Styling (CSS Grid) --- */
+.dashboard-container {
+    padding-top: 70px;
+    display: grid;
+    grid-template-areas:
+        "header"
+        "main";
+    grid-template-rows: auto 1fr;
+    min-height: 100vh;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+.dashboard-header {
+    grid-area: header;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #495057; /* Darker border for dark theme */
+    margin-bottom: 1.5rem;
+}
+
+.dashboard-main {
+    grid-area: main;
+}
+
+/* Card styling */
+.card {
+    border: none;
+    border-radius: 0.75rem;
+}
+
+.card-title {
+    font-weight: 600;
+}
+
+/* Ensure links in paragraphs are visible */
+p a {
+    color: #6ea8fe;
+}
+p a:hover {
+    color: #a7c7fd;
+}
