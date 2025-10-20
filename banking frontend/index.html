@@ -12,20 +12,11 @@
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        'bank-primary': '#3b82f6', // Bright Blue
-                        'bank-secondary': '#1f2937', // Medium Gray-Blue
-                        'bank-dark': '#111827',     // Dark Navy
-                        'bank-text': '#e5e7eb',     // Light Gray
-                        'bank-text-muted': '#9ca3af', // Muted Gray
-                    }
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: { 'bank-primary': '#3b82f6', 'bank-secondary': '#1f2937', 'bank-dark': '#0d1117', 'bank-text': '#e5e7eb', 'bank-text-muted': '#9ca3af' }
                 }
             }
         }
-        // This script runs immediately to prevent a "flash" of light mode
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
         } else {
@@ -35,15 +26,21 @@
 </head>
 <body class="font-sans dark:bg-bank-dark dark:text-bank-text">
     <div class="flex flex-col items-center justify-center min-h-screen p-6">
-        <h1 class="text-6xl font-extrabold text-gray-900 dark:text-white mb-4">
+        
+        <!-- --- FONT SIZES ARE NOW BALANCED --- -->
+        <h1 class="text-5xl font-extrabold text-gray-900 dark:text-white mb-4">
             Unified Banking System
         </h1>
-        <p class="text-xl text-gray-600 dark:text-bank-text-muted mb-12">
+        <p class="text-2xl text-gray-600 dark:text-bank-text-muted mb-12">
             All Your Banks. One Secure Portal.
         </p>
         
-        <div class="bg-white dark:bg-bank-secondary bg-opacity-70 dark:bg-opacity-70 backdrop-blur-lg shadow-2xl rounded-2xl p-10 border border-gray-200 dark:border-gray-700 max-w-sm w-full">
-            <h2 class="text-2xl font-semibold text-center text-gray-900 dark:text-white mb-6">Welcome</h2>
+        <div class="pro-card w-full max-w-sm p-10">
+            <h2 class="text-3xl font-semibold text-center text-gray-900 dark:text-white mb-8">
+                Welcome
+            </h2>
+            <!-- --------------------------------- -->
+            
             <div class="space-y-4">
                 <a href="login.html" class="flex w-full justify-center rounded-md bg-bank-primary py-3 px-4 text-lg font-semibold text-white shadow-sm hover:bg-opacity-80 transition duration-200">
                     Login

@@ -663,4 +663,3 @@ function refreshDashboardData() {
     fetchTransactions(true); // Update table
     fetchTransactions(false); // Update chart
 }
-
