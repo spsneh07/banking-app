@@ -20,9 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.bankingapp.dto.JwtResponse;
 import com.example.bankingapp.dto.LoginRequest;
 import com.example.bankingapp.dto.RegisterRequest;
-import com.example.bankingapp.model.Account;
 import com.example.bankingapp.model.User;
-import com.example.bankingapp.repository.AccountRepository;
 import com.example.bankingapp.repository.UserRepository;
 import com.example.bankingapp.security.JwtTokenProvider;
 
@@ -35,26 +33,14 @@ public class AuthController {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private JwtTokenProvider tokenProvider;
-    
-    @Autowired
-    private AccountRepository accountRepository;
+    @Autowired private AuthenticationManager authenticationManager;
+    @Autowired private UserRepository userRepository;
+    @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private JwtTokenProvider tokenProvider;
 
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
-
         logger.info("Login attempt for user: {}", loginRequest.getUsername());
-
         Authentication authentication;
         try {
             authentication = authenticationManager.authenticate(
@@ -67,49 +53,36 @@ public class AuthController {
         } catch (AuthenticationException e) {
             logger.error("Authentication failed for user: {}. Reason: {}", loginRequest.getUsername(), e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
-        } catch (Exception e) {
-             logger.error("An unexpected error occurred during login for user: {}", loginRequest.getUsername(), e);
-             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An internal error occurred");
         }
-
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = tokenProvider.generateToken(authentication);
-
         logger.info("JWT generated successfully for user: {}", loginRequest.getUsername());
-
         return ResponseEntity.ok(new JwtResponse(jwt));
     }
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
-
         if (userRepository.existsByUsername(registerRequest.getUsername())) {
-             logger.warn("Registration failed: Username {} already taken", registerRequest.getUsername());
             return new ResponseEntity<>("Username is already taken!", HttpStatus.BAD_REQUEST);
         }
-
         if (userRepository.existsByEmail(registerRequest.getEmail())) {
-             logger.warn("Registration failed: Email {} already in use", registerRequest.getEmail());
             return new ResponseEntity<>("Email is already in use!", HttpStatus.BAD_REQUEST);
         }
 
+        // --- THIS IS THE CORRECT LOGIC FOR THE PORTAL ---
         // 1. Create the user with their full name
         User user = new User(
-            registerRequest.getFullName(), // <<< THIS IS THE FIX
+            registerRequest.getFullName(),
             registerRequest.getUsername(),
             registerRequest.getEmail(),
             passwordEncoder.encode(registerRequest.getPassword())
         );
         userRepository.save(user);
 
-        // 2. Create an account for the new user
-        Account newAccount = new Account();
-        newAccount.setUser(user);
-        accountRepository.save(newAccount);
-        logger.info("Created new account for user: {}", user.getUsername());
+        // 2. DO NOT create a bank account here. The user adds banks from the portal.
+        // --------------------------------------------------
 
-        logger.info("User registered successfully: {}", registerRequest.getUsername());
-
-        return new ResponseEntity<>("User registered successfully", HttpStatus.OK);
+        logger.info("Portal user registered successfully: {}", registerRequest.getUsername());
+        return new ResponseEntity<>("User registered successfully. Please proceed to set your PIN.", HttpStatus.OK);
     }
 }

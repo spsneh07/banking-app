@@ -1,13 +1,14 @@
 <!DOCTYPE html>
-<html lang="en"> <head>
+<html lang="en">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Big Bull Bank</title>
+    <title>Login - Unified Banking System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="style.css">
     <script>
-        // --- NEW: Add custom font and color palette to Tailwind ---
+        // --- Add custom font and color palette to Tailwind ---
         tailwind.config = {
             darkMode: 'class',
             theme: {
@@ -36,7 +37,7 @@
 <body class="flex items-center justify-center min-h-screen font-sans dark:bg-bank-dark">
     <div class="w-full max-w-md p-8">
         <div class="bg-white dark:bg-bank-secondary bg-opacity-70 dark:bg-opacity-70 backdrop-blur-lg shadow-2xl rounded-2xl p-8 border border-gray-200 dark:border-gray-700">
-            <h1 class="text-3xl font-bold text-center text-gray-900 dark:text-white mb-6">Welcome to Big Bull Bank</h1>
+            <h1 class="text-3xl font-bold text-center text-gray-900 dark:text-white mb-6">Unified Banking System Login</h1>
             
             <form id="loginForm" class="space-y-6">
                 <div id="errorMessage" class="hidden p-4 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-800 dark:bg-opacity-50 rounded-lg"></div>
@@ -72,8 +73,12 @@
                 Don't have an account?
                 <a href="register.html" class="font-semibold text-bank-primary hover:text-opacity-80">Register here</a>
             </p>
+            <p class="mt-4 text-center text-sm text-gray-600 dark:text-bank-text-muted">
+                <a href="index.html" class="font-semibold text-bank-primary hover:text-opacity-80">← Back to Home</a>
+            </p>
         </div>
     </div>
     <script src="app.js"></script>
 </body>
 </html>
+

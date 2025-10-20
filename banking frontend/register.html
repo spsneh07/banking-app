@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - Big Bull Bank</title>
+    <title>Register - Big Bull Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="style.css">
@@ -12,16 +12,8 @@
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        'bank-primary': '#3b82f6',
-                        'bank-secondary': '#1f2937',
-                        'bank-dark': '#111827',
-                        'bank-text': '#e5e7eb',
-                        'bank-text-muted': '#9ca3af',
-                    }
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: { 'bank-primary': '#3b82f6', 'bank-secondary': '#1f2937', 'bank-dark': '#111827', 'bank-text': '#e5e7eb', 'bank-text-muted': '#9ca3af' }
                 }
             }
         }
@@ -35,7 +27,7 @@
 <body class="flex items-center justify-center min-h-screen font-sans dark:bg-bank-dark">
     <div class="w-full max-w-md p-8">
         <div class="bg-white dark:bg-bank-secondary bg-opacity-70 dark:bg-opacity-70 backdrop-blur-lg shadow-2xl rounded-2xl p-8 border border-gray-200 dark:border-gray-700">
-            <h1 class="text-3xl font-bold text-center text-gray-900 dark:text-white mb-6">Create Your Account</h1>
+            <h1 class="text-3xl font-bold text-center text-gray-900 dark:text-white mb-6">Create Your Portal Account</h1>
 
             <form id="registerForm" class="space-y-4">
                 <div id="errorMessage" class="hidden p-4 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-800 dark:bg-opacity-50 rounded-lg"></div>
@@ -80,6 +72,9 @@
             <p class="mt-8 text-center text-sm text-gray-600 dark:text-bank-text-muted">
                 Already have an account?
                 <a href="login.html" class="font-semibold text-bank-primary hover:text-opacity-80">Login here</a>
+            </p>
+            <p class="mt-4 text-center text-sm text-gray-600 dark:text-bank-text-muted">
+                <a href="index.html" class="font-semibold text-bank-primary hover:text-opacity-80">← Back to Home</a>
             </p>
         </div>
     </div>

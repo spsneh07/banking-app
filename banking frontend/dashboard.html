@@ -3,46 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Big Bull Bank</title>
-    <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Tailwind CSS CDN -->
+    <title>Portal Dashboard - Unified Banking System</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    
-    <!-- ===== UPDATED: Custom Styles for Larger, Professional Tabs ===== -->
-    <style type="text/tailwindcss">
-        @layer components {
-            .nav-tab-btn {
-                @apply inline-block px-8 py-4 border-b-2 border-transparent rounded-t-lg 
-                       text-xl font-semibold text-gray-500 dark:text-gray-400 
-                       hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-400 dark:hover:border-gray-500 
-                       transition-colors duration-200;
-            }
-            .nav-tab-btn.active {
-                @apply text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-500;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    colors: {
-                        'bank-primary': '#3b82f6', // Bright Blue
-                        'bank-primary-hover': '#2563eb', // Darker Blue
-                        'bank-secondary': '#1f2937', // Medium Gray-Blue
-                        'bank-dark': '#111827',     // Dark Navy
-                        'bank-text': '#e5e7eb',     // Light Gray
-                        'bank-text-muted': '#9ca3af', // Muted Gray
-                        'bank-success': '#22c55e',  // Green
-                        'bank-danger': '#ef4444',   // Red
-                        'bank-warning': '#f59e0b',  // Yellow
-                        'bank-info': '#38bdf8',     // Light Blue
-                    }
+                    colors: { 'bank-primary': '#3b82f6', 'bank-secondary': '#1f2937', 'bank-dark': '#111827', 'bank-text': '#e5e7eb', 'bank-text-muted': '#9ca3af' }
                 }
             }
         }
@@ -53,19 +24,19 @@
         }
     </script>
 </head>
-<body class="font-sans text-gray-900 dark:text-bank-text dark:bg-bank-dark">
+<body class="font-sans dark:bg-bank-dark dark:text-bank-text">
     <!-- Navbar -->
-    <nav class="bg-white dark:bg-gray-900 bg-opacity-80 dark:bg-opacity-70 backdrop-blur-lg shadow-lg fixed w-full z-20 top-0 start-0 border-b border-gray-200 dark:border-gray-700">
+    <nav class="bg-white dark:bg-bank-secondary bg-opacity-80 dark:bg-opacity-70 backdrop-blur-lg shadow-lg fixed w-full z-20 top-0 start-0 border-b border-gray-200 dark:border-gray-700">
         <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
-            <a href="#" class="flex items-center space-x-3">
-                <span class="text-2xl font-bold text-gray-900 dark:text-white">Big Bull Bank</span>
+            <a href="dashboard.html" class="flex items-center space-x-3">
+                <span class="text-2xl font-bold text-gray-900 dark:text-white">Unified Banking System</span>
             </a>
             <div class="flex items-center space-x-4">
                 <button id="theme-toggle" type="button" class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-sm p-2.5">
                     <i id="theme-toggle-dark-icon" class="bi bi-moon-stars-fill w-5 h-5 hidden"></i>
                     <i id="theme-toggle-light-icon" class="bi bi-sun-fill w-5 h-5 hidden"></i>
                 </button>
-                <button id="logoutButton" type="button" class="text-white bg-bank-primary hover:bg-bank-primary-hover font-medium rounded-lg text-sm px-4 py-2 text-center transition duration-200">
+                <button id="logoutButton" type="button" class="text-white bg-bank-primary hover:bg-opacity-80 font-medium rounded-lg text-sm px-4 py-2 text-center">
                     Logout
                 </button>
             </div>
@@ -76,105 +47,35 @@
     <div class="max-w-screen-xl mx-auto pt-24 px-4 pb-16">
         <header class="mb-8">
             <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Welcome, <span id="username-display">User</span>!</h1>
-            <p class="text-lg text-gray-500 dark:text-bank-text-muted mt-2">
-                Your Account Number: <strong id="userAccountNumber" class="text-gray-700 dark:text-gray-300">Loading...</strong>
-            </p>
+            <p class="text-lg text-gray-500 dark:text-bank-text-muted mt-2">Manage your connected bank accounts.</p>
         </header>
 
-        <!-- Tab Navigation (No class changes needed here, they use the new style) -->
-        <div class="mb-4 border-b border-gray-200 dark:border-gray-700">
-            <ul class="flex flex-wrap -mb-px text-center" id="main-tabs">
-                <li class="me-2"><button class="nav-tab-btn active" id="overview-tab" type="button">Overview</button></li>
-                <li class="me-2"><button class="nav-tab-btn" id="transactions-tab" type="button">Transactions</button></li>
-                <li class="me-2"><button class="nav-tab-btn" id="profile-tab" type="button">Profile & Settings</button></li>
-            </ul>
-        </div>
-
-        <!-- Tab Content -->
-        <div>
-            <!-- Overview Pane -->
-            <div id="overview-pane" class="nav-tab-content">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="lg:col-span-2 bg-white dark:bg-bank-secondary bg-opacity-70 dark:bg-opacity-70 backdrop-blur-lg shadow-2xl rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
-                        <h5 class="text-lg font-semibold text-gray-500 dark:text-bank-text-muted">Current Balance</h5>
-                        <p class="text-5xl font-extrabold text-gray-900 dark:text-white mt-2" id="accountBalanceDisplay">$ --.--</p>
-                    </div>
-                    <div class="bg-white dark:bg-bank-secondary bg-opacity-70 dark:bg-opacity-70 backdrop-blur-lg shadow-2xl rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
-                        <h5 class="text-lg font-semibold text-gray-500 dark:text-bank-text-muted">Quick Actions</h5>
-                        <div class="flex flex-col sm:flex-row lg:flex-col gap-3 mt-4">
-                            <button id="depositBtn" class="flex-1 text-white bg-bank-success hover:bg-opacity-80 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Deposit</button>
-                            <button id="transferBtn" class="flex-1 text-white bg-bank-primary hover:bg-opacity-80 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Transfer</button>
-                            <button id="payBillBtn" class="flex-1 text-white bg-indigo-600 hover:bg-opacity-80 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Pay Bills</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-6 bg-white dark:bg-bank-secondary bg-opacity-70 dark:bg-opacity-70 backdrop-blur-lg shadow-2xl rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
-                    <h5 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Transaction Summary</h5>
-                    <div class="max-w-sm mx-auto">
-                        <canvas id="transactionChart"></canvas>
+        <main>
+            <!-- Your Linked Accounts -->
+            <div class="mb-10">
+                <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Your Banks</h2>
+                <div id="userAccountList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Accounts will be dynamically added here by app.js -->
+                    <div id="accountsLoadingSpinner" class="col-span-full text-center text-gray-500 dark:text-gray-400">
+                        <svg class="animate-spin h-8 w-8 text-bank-primary mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p class="mt-2">Loading your accounts...</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Transactions Pane -->
-            <div id="transactions-pane" class="nav-tab-content hidden">
-                <div class="bg-white dark:bg-bank-secondary bg-opacity-70 dark:bg-opacity-70 backdrop-blur-lg shadow-2xl rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
-                    <h5 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Recent Transactions</h5>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left text-gray-600 dark:text-bank-text">
-                            <thead class="text-xs text-gray-700 dark:text-bank-text-muted uppercase bg-gray-50 dark:bg-gray-700">
-                                <tr><th scope="col" class="px-6 py-3">Date</th><th scope="col" class="px-6 py-3">Description</th><th scope="col" class="px-6 py-3">Type</th><th scope="col" class="px-6 py-3">Amount</th></tr>
-                            </thead>
-                            <tbody id="transactionsTableBody"></tbody>
-                        </table>
-                    </div>
+            <!-- Add New Bank -->
+            <div>
+                <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Available Banks</h2>
+                <div id="availableBankList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- All available banks will be added here by app.js -->
                 </div>
             </div>
-
-            <!-- Profile Pane -->
-            <div id="profile-pane" class="nav-tab-content hidden">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-white dark:bg-bank-secondary bg-opacity-70 dark:bg-opacity-70 backdrop-blur-lg shadow-2xl rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
-                        <h5 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Update Profile Details</h5>
-                        <form id="updateProfileForm" class="space-y-4">
-                            <div id="profileUpdateError" class="hidden p-4 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-800 dark:bg-opacity-50 rounded-lg"></div>
-                            <div>
-                                <label for="profileFullName" class="block text-sm font-medium text-gray-700 dark:text-bank-text-muted">Full Name</label>
-                                <input type="text" id="profileFullName" class="mt-2 w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-bank-primary" required>
-                            </div>
-                            <div>
-                                <label for="profileEmail" class="block text-sm font-medium text-gray-700 dark:text-bank-text-muted">Email Address</label>
-                                <input type="email" id="profileEmail" class="mt-2 w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-bank-primary" required>
-                            </div>
-                            <button id="submitProfileUpdate" type="submit" class="w-full text-white bg-bank-primary hover:bg-bank-primary-hover font-medium rounded-lg text-sm px-5 py-2.5 text-center">Save Changes</button>
-                        </form>
-                    </div>
-                    <div class="bg-white dark:bg-bank-secondary bg-opacity-70 dark:bg-opacity-70 backdrop-blur-lg shadow-2xl rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
-                        <h5 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Change Password</h5>
-                        <form id="changePasswordForm" class="space-y-4">
-                            <div id="passwordChangeError" class="hidden p-4 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-800 dark:bg-opacity-50 rounded-lg"></div>
-                            <div>
-                                <label for="currentPassword" class="block text-sm font-medium text-gray-700 dark:text-bank-text-muted">Current Password</label>
-                                <input type="password" id="currentPassword" class="mt-2 w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-bank-primary" required>
-                            </div>
-                            <div>
-                                <label for="newPassword" class="block text-sm font-medium text-gray-700 dark:text-bank-text-muted">New Password</label>
-                                <input type="password" id="newPassword" class="mt-2 w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-bank-primary" required minlength="6">
-                            </div>
-                            <button id="submitPasswordChange" type="submit" class="w-full text-white bg-yellow-600 hover:bg-yellow-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Change Password</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
+        </main>
     </div>
-
-    <!-- Modals -->
-    <div id="modalBackdrop" class="fixed inset-0 bg-black bg-opacity-75 z-40 hidden"></div>
-    <div id="depositModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden"><div class="bg-white dark:bg-bank-secondary rounded-2xl shadow-2xl w-full max-w-md border border-gray-200 dark:border-gray-700"><form id="depositForm"><div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700"><h3 class="text-xl font-semibold text-gray-900 dark:text-white">Make a Deposit</h3><button type="button" class="modal-close-btn text-gray-400 hover:text-white">&times;</button></div><div class="p-6 space-y-4"><div id="depositError" class="hidden p-4 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-800 dark:bg-opacity-50 rounded-lg"></div><p class="text-gray-600 dark:text-gray-300">Enter the amount you wish to deposit.</p><div><label for="depositAmount" class="block text-sm font-medium text-gray-700 dark:text-bank-text-muted">Amount ($)</label><input type="number" id="depositAmount" class="mt-2 w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white" min="0.01" step="0.01" required></div></div><div class="flex items-center justify-end p-4 space-x-3 border-t border-gray-200 dark:border-gray-700 rounded-b"><button type="button" class="modal-close-btn text-gray-700 dark:text-gray-400 bg-transparent hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-sm px-4 py-2">Close</button><button id="submitDeposit" type="submit" class="text-white bg-bank-success hover:bg-opacity-80 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Deposit</button></div></form></div></div>
-    <div id="transferModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden"><div class="bg-white dark:bg-bank-secondary rounded-2xl shadow-2xl w-full max-w-md border border-gray-200 dark:border-gray-700"><form id="transferForm"><div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700"><h3 class="text-xl font-semibold text-gray-900 dark:text-white">Make a Transfer</h3><button type="button" class="modal-close-btn text-gray-400 hover:text-white">&times;</button></div><div class="p-6 space-y-4"><div id="transferError" class="hidden p-4 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-800 dark:bg-opacity-50 rounded-lg"></div><label for="transferAccountNumber" class="block text-sm font-medium text-gray-700 dark:text-bank-text-muted">Recipient's Account Number</label><div class="flex mt-2"><input type="text" id="transferAccountNumber" class="rounded-none rounded-s-lg w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white" required><button type="button" id="verifyRecipientBtn" class="px-4 py-2 text-sm font-medium text-gray-900 dark:text-white bg-gray-200 dark:bg-gray-600 rounded-e-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-300 dark:hover:bg-gray-700">Verify</button></div><div id="recipientVerifiedInfo" class="hidden p-3 text-sm text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-800 dark:bg-opacity-50 rounded-lg">Recipient: <strong id="verifiedRecipientName"></strong></div><fieldset id="transferDetails" disabled class="space-y-4"><div><label for="transferAmount" class="block text-sm font-medium text-gray-700 dark:text-bank-text-muted">Amount ($)</label><input type="number" id="transferAmount" class="mt-2 w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white" min="0.01" step="0.01" required></div><hr class="border-gray-200 dark:border-gray-600"><p class="text-sm text-gray-500 dark:text-bank-text-muted">For your security, please confirm your password.</p><div><label for="transferPassword" class="block text-sm font-medium text-gray-700 dark:text-bank-text-muted">Your Password</label><input type="password" id="transferPassword" class="mt-2 w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white" required></div></fieldset></div><div class="flex items-center justify-end p-4 space-x-3 border-t border-gray-200 dark:border-gray-700 rounded-b"><button type="button" class="modal-close-btn text-gray-700 dark:text-gray-400 bg-transparent hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-sm px-4 py-2">Close</button><button id="submitTransfer" type="submit" class="text-white bg-bank-primary hover:bg-bank-primary-hover font-medium rounded-lg text-sm px-5 py-2.5 text-center" disabled>Send Transfer</button></div></form></div></div>
-    <div id="payBillModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden"><div class="bg-white dark:bg-bank-secondary rounded-2xl shadow-2xl w-full max-w-md border border-gray-200 dark:border-gray-700"><form id="payBillForm"><div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700"><h3 class="text-xl font-semibold text-gray-900 dark:text-white">Pay a Bill</h3><button type="button" class="modal-close-btn text-gray-400 hover:text-white">&times;</button></div><div class="p-6 space-y-4"><div id="payBillError" class="hidden p-4 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-800 dark:bg-opacity-50 rounded-lg"></div><div><label for="payBillBiller" class="block text-sm font-medium text-gray-700 dark:text-bank-text-muted">Biller Name</label><input type="text" id="payBillBiller" class="mt-2 w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white" placeholder="e.g., Power Company" required></div><div><label for="payBillAmount" class="block text-sm font-medium text-gray-700 dark:text-bank-text-muted">Amount ($)</label><input type="number" id="payBillAmount" class="mt-2 w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white" min="0.01" step="0.01" required></div><hr class="border-gray-200 dark:border-gray-600"><p class="text-sm text-gray-500 dark:text-bank-text-muted">For your security, please confirm your password.</p><div><label for="payBillPassword" class="block text-sm font-medium text-gray-700 dark:text-bank-text-muted">Your Password</label><input type="password" id="payBillPassword" class="mt-2 w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white" required></div></div><div class="flex items-center justify-end p-4 space-x-3 border-t border-gray-200 dark:border-gray-700 rounded-b"><button type="button" class="modal-close-btn text-gray-700 dark:text-gray-400 bg-transparent hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-sm px-4 py-2">Close</button><button id="submitPayBill" type="submit" class="text-white bg-indigo-600 hover:bg-indigo-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Pay Bill</button></div></form></div></div>
-
+    
     <!-- Toast Container -->
     <div id="toastContainer" class="fixed top-20 right-5 z-50 space-y-3"></div>
 
