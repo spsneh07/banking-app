@@ -160,4 +160,3 @@ This project is released under the **MIT License** — feel free to fork, modify
 ---
 
 **Developed with ❤️ using Java + Tailwind CSS**
-
