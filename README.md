@@ -1,51 +1,127 @@
-# Full-Stack Banking Application
+# 💳 Unified Banking System - Full-Stack Bank Aggregator Portal
 
-This is a complete full-stack banking application prototype, built with a modern technology stack. It simulates core banking operations like user authentication, account management, and financial transactions within a secure, API-centric architecture.
-
-This project was developed as a practical exploration of enterprise-level application development principles, showcasing a clear separation of concerns between the backend API and the frontend user interface.
-
-## Core Features
-
-- **Secure User Authentication:** JWT-based stateless authentication and registration with password encryption (BCrypt).
-- **Account Management:** Every registered user is automatically assigned a unique, randomly generated account number and a balance of zero.
-- **Professional UI Workflow:**
-    - A clean, responsive, **dark-themed UI** built with Bootstrap 5.
-    - All actions (Deposit, Transfer, Pay Bills) are handled through **Bootstrap Modals**, replacing browser `alert` and `prompt` boxes.
-    - Forms include loading spinners and display specific error messages from the backend.
-- **Transaction Verification:** High-value operations (Transfers, Bill Pay) require the user to **re-enter their password** for enhanced security.
-- **Recipient Verification:** Before a transfer, the user must click "Verify" on the recipient's account number. The backend confirms the recipient's full name, which is then displayed in the UI to prevent accidental transfers.
-- **Financial Transactions:**
-    - **Deposit:** Users can deposit funds into their own account.
-    - **Transfer:** Securely transfer funds to another user's verified account.
-    - **Bill Pay:** Simulate paying bills to a named biller, authorized by password.
-- **Recent Transactions:** The user dashboard fetches and displays a real-time list of the 10 most recent transactions.
-
-## Technology Stack
-
-### Backend (Spring Boot Project)
-- **Framework:** Spring Boot 3
-- **Security:** Spring Security 6 (JWT for stateless authentication)
-- **Database:** Spring Data JPA (Hibernate) with MySQL
-- **Language:** Java 17
-- **Build Tool:** Maven
-
-### Frontend (`/frontend` folder)
-- **Core:** HTML5, CSS3, JavaScript (ES6+ Async/Await)
-- **Framework:** Bootstrap 5.3 (for components, modals, and dark theme)
-- **Architecture:** Communicates with the backend via REST API calls (`fetch`).
-
-## How to Run
-
-### Prerequisites
-1.  **Java JDK 17+**
-2.  **Apache Maven**
-3.  **MySQL Database Server** (like MySQL Workbench)
-4.  **Git** (for cloning)
+A sophisticated full-stack banking portal that simulates a **real-world multi-bank aggregation platform**. This project demonstrates a **secure, modern, and scalable banking system** built with **Spring Boot (Java)** and a professional **Tailwind CSS + Vanilla JS frontend** — ideal for showcasing academic or professional skills.
 
 ---
 
-### Step 1: Clone the Repository
-Clone this repository to your local machine:
-```sh
+## ✨ Features Overview
+
+### 🎯 **Architecture & User Experience**
+
+- ✅ **Multi-Bank Aggregation:** Users register once and can link/manage accounts from multiple simulated banks (ICICI, HDFC, etc.).
+- 🎨 **Modern UI/UX:** Custom-designed with **Tailwind CSS**, **glassmorphism**, **navy/blue gradients**, and **Inter font** for professional aesthetics.
+- 🌗 **Dark / Light Mode:** Theme toggle with preference saved in `localStorage`.
+- 📊 **Smart Dashboard:** Displays **income vs expense visual charts** using Chart.js.
+- 🚀 **Smooth Page Flow:** Landing page → dashboard → individual bank account pages.
+
+---
+
+### 🔐 **Security & Authentication**
+
+| Feature | Description |
+|---------|-------------|
+| **JWT Authentication** | Stateless Spring Security + JSON Web Tokens |
+| **Encrypted PIN Setup** | 4-digit PIN created post-registration and stored securely |
+| **Password Re-Verification** | Required for high-risk actions like fund transfer and bill payment |
+| **Recipient Verification** | Validates account number and displays recipient name before transfer |
+
+---
+
+### 🏦 **Core Banking Functionalities**
+
+- 💸 **Deposit, Transfer & Bill Payment** workflows with validations.
+- 🔁 **Real-Time Transactions Feed** on dashboard and account pages.
+- 📁 **Profile & Settings:** Update name, email, and securely change password.
+- ✅ **Bank Account Linking & Management.**
+
+---
+
+## 📂 Project Structure
+/
+├── frontend/             // All UI files (HTML, CSS, JS)
+│   ├── account.html
+│   ├── create-pin.html
+│   ├── dashboard.html
+│   ├── index.html
+│   ├── login.html
+│   ├── register.html
+│   └── app.js
+│   └── style.css
+│
+├── src/main/java/com/example/bankingapp/
+│   ├── config/           // Spring Security configuration
+│   ├── controller/       // REST API controllers
+│   ├── dto/              // Data Transfer Objects
+│   ├── model/            // JPA Entities (User, Account, Bank)
+│   ├── repository/       // Spring Data JPA repositories
+│   ├── security/         // JWT and UserDetails logic
+│   └── service/          // Business logic
+│
+├── .gitignore            // Specifies files to ignore
+├── pom.xml               // Maven project configuration
+└── README.md             // You are here!
+
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| **Backend** | Spring Boot 3, Java 17, Spring Security (JWT), Spring Data JPA |
+| **Frontend** | Tailwind CSS, HTML5, Vanilla JS (ES6), Bootstrap Icons |
+| **Database** | MySQL |
+| **Other Tools** | Chart.js, Maven, Google Fonts (Inter) |
+
+---
+
+## 🚀 Getting Started
+
+### ✅ **Prerequisites**
+
+- Java 17+
+- Maven
+- MySQL Server
+- Git
+
+---
+
+### 📌 **1. Clone the Repository**
+```bash
+
 git clone <your-repository-url>
 cd <your-repository-folder>
+```
+###📌 **2. Configure Database**
+```
+CREATE DATABASE banking_db;
+
+CREATE DATABASE banking_db;
+
+
+Update credentials in src/main/resources/application.properties:
+
+spring.datasource.username=root
+spring.datasource.password=your_mysql_password
+```
+📌 3. Run the Backend
+
+```
+On Windows:
+
+.\mvnw.cmd spring-boot:run
+
+
+On Mac/Linux:
+
+./mvnw spring-boot:run
+
+
+Server runs at: http://localhost:8080
+```
+📌 4. Launch the Frontend
+```
+Open /frontend/index.html in your browser.
+
+Start by clicking Register → Login → Dashboard.
+
