@@ -1,5 +1,6 @@
 package com.example.bankingapp.controller;
 
+import java.io.IOException; // <-- IMPORT
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +30,9 @@ import com.example.bankingapp.dto.UserDto;
 import com.example.bankingapp.model.User;
 import com.example.bankingapp.repository.UserRepository;
 import com.example.bankingapp.service.AccountService;
+import com.example.bankingapp.service.CsvExportService; // <-- IMPORT
 
+import jakarta.servlet.http.HttpServletResponse; // <-- IMPORT
 import jakarta.validation.Valid;
 
 @RestController
@@ -40,6 +43,8 @@ public class AccountController {
     @Autowired private AccountService accountService;
     @Autowired private UserRepository userRepository;
     @Autowired private com.example.bankingapp.repository.AccountRepository accountRepository;
+
+    @Autowired private CsvExportService csvExportService; // <-- INJECT NEW SERVICE
 
     private String getAuthenticatedUsername() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -52,7 +57,7 @@ public class AccountController {
     private void verifyAccountOwner(Long accountId) {
         String username = getAuthenticatedUsername();
         com.example.bankingapp.model.Account account = accountRepository.findById(accountId)
-            .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new RuntimeException("Account not found"));
         if (!account.getUser().getUsername().equals(username)) {
             throw new IllegalStateException("User does not own this account");
         }
@@ -90,7 +95,7 @@ public class AccountController {
                 accountId,
                 transferRequest.getRecipientAccountNumber(),
                 transferRequest.getAmount(),
-                transferRequest.getPassword()
+                transferRequest.getPin() // --- MODIFIED --- (was getPassword())
             );
             return ResponseEntity.ok("Transfer successful");
         } catch (Exception e) {
@@ -107,7 +112,7 @@ public class AccountController {
                 accountId,
                 paymentRequest.getBillerName(), 
                 paymentRequest.getAmount(),
-                paymentRequest.getPassword()
+                paymentRequest.getPin() // --- MODIFIED --- 
             );
             return ResponseEntity.ok("Payment successful");
         } catch (Exception e) {
@@ -168,8 +173,8 @@ public class AccountController {
     @PostMapping("/set-pin")
     public ResponseEntity<?> setPin(@Valid @RequestBody PinSetupRequest request) {
         try {
-            accountService.setPin(request.getUsername(), request.getPassword(), request.getPin());
-            return ResponseEntity.ok("PIN set successfully. Please log in.");
+            accountService.setPin(getAuthenticatedUsername(), request.getPassword(), request.getPin());
+            return ResponseEntity.ok("PIN set successfully."); 
         } catch (AuthenticationException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid password. Please try again.");
         } catch (Exception e) {
@@ -185,5 +190,32 @@ public class AccountController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-}
 
+    // --- NEW ENDPOINT FOR CSV DOWNLOAD ---
+    @GetMapping("/{accountId}/export/csv")
+    public void exportTransactionsToCsv(@PathVariable Long accountId, HttpServletResponse response) {
+        try {
+            // 1. Verify the user owns this account
+            verifyAccountOwner(accountId);
+            String username = getAuthenticatedUsername();
+
+            // 2. Set HTTP headers for file download
+            response.setContentType("text/csv");
+            String headerKey = "Content-Disposition";
+            // Create a dynamic filename like "statement-12345.csv"
+            String headerValue = "attachment; filename=\"statement-" + accountId + ".csv\"";
+            response.setHeader(headerKey, headerValue);
+
+            // 3. Call the service to write CSV data directly to the response
+            csvExportService.writeTransactionsToCsv(response.getWriter(), username, accountId);
+
+        } catch (IOException e) {
+            // Handle IO exception
+            response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        } catch (Exception e) {
+            // Handle other exceptions (like security verification failure)
+            response.setStatus(HttpStatus.BAD_REQUEST.value());
+        }
+    }
+    // ------------------------------------
+}

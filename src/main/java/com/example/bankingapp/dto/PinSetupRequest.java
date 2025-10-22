@@ -8,8 +8,7 @@ import lombok.Data;
 public class PinSetupRequest {
 
     // We need the username and password to verify *who* is setting the PIN
-    @NotBlank
-    private String username;
+    
     
     @NotBlank
     private String password;

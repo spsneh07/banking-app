@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
@@ -18,7 +19,8 @@ public class PaymentRequest {
     private BigDecimal amount;
     
     // --- ADD THIS FIELD ---
-    @NotBlank(message = "Password is required for verification")
-    private String password;
+    @NotBlank(message = "PIN is required for verification")
+    @Size(min = 4, max = 4, message = "PIN must be exactly 4 digits")
+    private String pin;
     // --------------------
 }

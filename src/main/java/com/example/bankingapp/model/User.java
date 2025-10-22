@@ -39,8 +39,12 @@ public class User {
     @Column(nullable = false)
     private String password;
     
-    @Column(nullable = true)
+    // --- THIS IS THE CORRECTION ---
+    // Merged both pin declarations into one.
+    // It maps to the 'user_pin' database column and is allowed to be null.
+    @Column(name = "user_pin", nullable = true)
     private String pin;
+    // -------------------------------
     
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore

@@ -39,7 +39,7 @@ public class AccountService {
     @Transactional
     public User updateUserProfile(String username, String newFullName, String newEmail) {
         User user = userRepository.findByUsername(username)
-            .orElseThrow(() -> new RuntimeException("User not found: " + username));
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
         userRepository.findByEmail(newEmail).ifPresent(existingUser -> {
             if (!existingUser.getUsername().equals(username)) {
                 throw new IllegalArgumentException("Email is already in use by another account.");
@@ -52,26 +52,25 @@ public class AccountService {
 
     @Transactional
     public void changeUserPassword(String username, String currentPassword, String newPassword) {
-        verifyUserPassword(username, currentPassword);
+        verifyUserPassword(username, currentPassword); // Uses password
         User user = userRepository.findByUsername(username)
-             .orElseThrow(() -> new RuntimeException("User not found: " + username));
+                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }
     
     @Transactional
     public void setPin(String username, String password, String newPin) {
-        verifyUserPassword(username, password);
+        verifyUserPassword(username, password); // Verifies password before setting PIN
         User user = userRepository.findByUsername(username)
-            .orElseThrow(() -> new RuntimeException("User not found: " + username));
-        user.setPin(passwordEncoder.encode(newPin));
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+        user.setPin(passwordEncoder.encode(newPin)); // Hashes and saves the new PIN
         userRepository.save(user);
     }
 
     // --- Transaction methods are now account-specific ---
     @Transactional
     public void deposit(String username, Long accountId, BigDecimal amount) {
-        // We find by username AND accountId for security, though verifyAccountOwner in controller does this
         Account account = findAccountByIdAndUsername(accountId, username);
         account.setBalance(account.getBalance().add(amount));
         accountRepository.save(account);
@@ -79,13 +78,15 @@ public class AccountService {
         transactionRepository.save(transaction);
     }
 
+    // --- MODIFIED ---
     @Transactional
-    public void transfer(String senderUsername, Long senderAccountId, String recipientAccountNumber, BigDecimal amount, String providedPassword) {
-        verifyUserPassword(senderUsername, providedPassword);
+    public void transfer(String senderUsername, Long senderAccountId, String recipientAccountNumber, BigDecimal amount, String providedPin) {
+        // 1. Verify the user's PIN instead of their password
+        verifyUserPin(senderUsername, providedPin); 
         
         Account senderAccount = findAccountByIdAndUsername(senderAccountId, senderUsername);
         Account recipientAccount = accountRepository.findByAccountNumber(recipientAccountNumber)
-            .orElseThrow(() -> new IllegalArgumentException("Recipient account number not found."));
+                .orElseThrow(() -> new IllegalArgumentException("Recipient account number not found."));
 
         if (senderAccount.getId().equals(recipientAccount.getId())) {
             throw new IllegalArgumentException("Cannot transfer money to the same account.");
@@ -104,9 +105,11 @@ public class AccountService {
         transactionRepository.save(recipientTx);
     }
 
+    // --- MODIFIED ---
     @Transactional
-    public void payBill(String username, Long accountId, String billerName, BigDecimal amount, String providedPassword) {
-        verifyUserPassword(username, providedPassword);
+    public void payBill(String username, Long accountId, String billerName, BigDecimal amount, String providedPin) {
+        // 1. Verify the user's PIN instead of their password
+        verifyUserPin(username, providedPin);
         
         Account account = findAccountByIdAndUsername(accountId, username);
         if (account.getBalance().compareTo(amount) < 0) {
@@ -120,20 +123,20 @@ public class AccountService {
     @Transactional(readOnly = true)
     public BigDecimal getBalance(Long accountId) {
          return accountRepository.findById(accountId)
-            .map(Account::getBalance)
-            .orElseThrow(() -> new RuntimeException("Account not found."));
+                .map(Account::getBalance)
+                .orElseThrow(() -> new RuntimeException("Account not found."));
     }
     
     @Transactional(readOnly = true)
     public List<TransactionDto> getRecentTransactions(Long accountId) {
         return transactionRepository.findTop10ByAccountIdOrderByTimestampDesc(accountId)
-            .stream().map(TransactionDto::new).collect(Collectors.toList());
+                .stream().map(TransactionDto::new).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public String verifyRecipient(String accountNumber) {
         Account account = accountRepository.findByAccountNumber(accountNumber)
-            .orElseThrow(() -> new RuntimeException("Recipient account number not found."));
+                .orElseThrow(() -> new RuntimeException("Recipient account number not found."));
         return account.getUser().getFullName();
     }
     
@@ -150,24 +153,41 @@ public class AccountService {
     @Transactional(readOnly = true)
     public List<AccountDto> getAccountsForUser(String username) {
         List<Account> accounts = accountRepository.findByUserUsernameOrderByBankName(username);
-        // Convert the list of Account entities to a list of AccountDto objects
         return accounts.stream()
-                       .map(AccountDto::new)
-                       .collect(Collectors.toList());
+                      .map(AccountDto::new)
+                      .collect(Collectors.toList());
     }
     
     // Helper to find a user's *specific* account
     private Account findAccountByIdAndUsername(Long accountId, String username) {
         return accountRepository.findById(accountId)
-            .filter(account -> account.getUser().getUsername().equals(username))
-            .orElseThrow(() -> new RuntimeException("Account not found or user does not own this account."));
+                .filter(account -> account.getUser().getUsername().equals(username))
+                .orElseThrow(() -> new RuntimeException("Account not found or user does not own this account."));
     }
     
+    // This method remains, used for changing password or setting PIN
     private void verifyUserPassword(String username, String password) {
         try {
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
         } catch (AuthenticationException e) {
             throw new BadCredentialsException("Invalid password. Transaction authorization failed.");
+        }
+    }
+
+    // --- NEW METHOD ---
+    // Helper method to verify the user's 4-digit PIN
+    private void verifyUserPin(String username, String providedPin) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
+        if (user.getPin() == null) {
+            logger.warn("User '{}' attempted a transaction without a PIN set.", username);
+            throw new BadCredentialsException("PIN not set. Please create a PIN in your profile.");
+        }
+
+        if (!passwordEncoder.matches(providedPin, user.getPin())) {
+            logger.warn("Invalid PIN attempt for user '{}'.", username);
+            throw new BadCredentialsException("Invalid PIN. Transaction authorization failed.");
         }
     }
 }
