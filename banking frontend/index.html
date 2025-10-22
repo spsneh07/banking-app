@@ -6,80 +6,253 @@
     <title>Welcome to Unified Banking System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="style.css">
-<script>
-    tailwind.config = {
-        darkMode: 'class',
-        theme: {
-            extend: {
-                fontFamily: { sans: ['Inter', 'sans-serif'] },
-                colors: {
-                    'bank-primary': '#3b82f6',
-                    'bank-primary-hover': '#2563eb',
-                    'bank-secondary': '#ffffff', // White for light cards
-                    'bank-dark': '#f9fafb',      // Light gray for light page BG
-                    'bank-text': '#111827',      // Dark text for light mode
-                    'bank-text-muted': '#6b7280',// Muted text for light mode
-                    'bank-success': '#22c55e',
-                    'bank-danger': '#ef4444',
-                    'bank-warning': '#f59e0b',
-                    'bank-info': '#38bdf8',
+    <script>
+        // --- Using the full config with explicit light/dark ---
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+                    colors: {
+                        // Base Palette
+                        'bank-primary': '#6366f1', // Using the indigo color from register.html style
+                        'bank-primary-hover': '#4f46e5', // Darker indigo
+                        'bank-success': '#10b981',
+                        'bank-danger': '#ef4444',
+                        'bank-warning': '#f59e0b',
+                        'bank-info': '#06b6d4',
+
+                        // Light Mode Explicit Colors (Placeholder - this page is dark only based on style)
+                        'bank-light-bg': '#f9fafb',
+                        'bank-light-card': '#ffffff',
+                        'bank-light-text': '#111827',
+                        'bank-light-text-muted': '#6b7280',
+
+                        // Dark Mode Explicit Colors (Matching register.html style)
+                        'bank-dark-bg': '#0f172a',       // Base dark BG (slate-900)
+                        'bank-dark-card': 'rgba(15, 23, 42, 0.8)', // Glass card BG
+                        'bank-dark-text': '#e2e8f0',     // slate-200 for main text
+                        'bank-dark-text-muted': '#94a3b8' // slate-400 for muted text
+                    }
                 }
             }
         }
-    }
 
-    // This script now just applies the theme, app.js handles the logic
-    function applyInitialTheme() {
-        const theme = localStorage.getItem('theme') || 'system';
-        if (theme === 'dark') {
+        // Apply theme immediately - Currently hardcoded to dark based on style
+        function applyInitialTheme() {
+            // This page uses styles assuming dark mode.
+            // If you want light mode support later, you'll need to refactor styles heavily.
             document.documentElement.classList.add('dark');
-        } else if (theme === 'light') {
-            document.documentElement.classList.remove('dark');
-        } else { // 'system'
-            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
         }
-    }
-    applyInitialTheme();
-</script>
+        applyInitialTheme();
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+        /* --- Background Color Fix --- */
+        html {
+            background-color: #0f172a; /* Matches the darkest color in body gradient */
+            scroll-behavior: smooth;
+        }
+
+        /* Background from register.html */
+        body {
+            background: linear-gradient(135deg, #0a0e1a 0%, #1e1b4b 50%, #0f172a 100%);
+            background-attachment: fixed;
+            position: relative;
+        }
+
+        /* Grid overlay from register.html */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(99, 102, 241, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Orbs from register.html */
+        .glow-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.3;
+            pointer-events: none;
+            animation: float 8s ease-in-out infinite;
+            z-index: 0;
+        }
+        .orb-1 {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, #6366f1, transparent); /* bank-primary */
+            top: -250px;
+            left: -250px;
+        }
+        .orb-2 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, #10b981, transparent); /* bank-success */
+            bottom: -200px;
+            right: -200px;
+            animation-delay: -4s;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-30px) scale(1.1); }
+        }
+
+        /* Glass Card from register.html */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.8); /* slate-900 base */
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(148, 163, 184, 0.15); /* slate-400 border */
+        }
+
+        /* Gradient Text from register.html */
+        .gradient-text {
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #06b6d4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Gradient Button (Login) */
+        .btn-gradient {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); /* Indigo to Purple */
+            transition: all 0.3s ease; /* Ensure transition is defined */
+        }
+        .btn-gradient:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
+        }
+
+        /* Secondary Button (Register) */
+        .btn-secondary {
+            background-color: rgba(51, 65, 85, 0.5); /* slate-700 with opacity */
+            border: 1px solid rgba(71, 85, 105, 0.8); /* slate-600 border */
+            color: #cbd5e1; /* slate-300 text */
+            transition: all 0.3s ease; /* Ensure transition is defined */
+        }
+        .btn-secondary:hover {
+            background-color: rgba(71, 85, 105, 0.7); /* Darker slate on hover */
+            border-color: rgba(100, 116, 139, 1); /* Brighter slate border */
+            color: #ffffff; /* White text */
+            transform: translateY(-2px); /* Keep Y transform consistent */
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .floating { /* Floating animation for logo */
+            animation: floating 3s ease-in-out infinite;
+        }
+        @keyframes floating {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
 </head>
-<body class="font-sans dark:bg-bank-dark dark:text-bank-text">
-    <div class="flex flex-col items-center justify-center min-h-screen p-6">
-        
-        <!-- --- FONT SIZES ARE NOW BALANCED --- -->
-        <h1 class="text-5xl font-extrabold text-gray-900 dark:text-white mb-4">
-            Unified Banking System
-        </h1>
-        <p class="text-2xl text-gray-600 dark:text-bank-text-muted mb-12">
-            All Your Banks. One Secure Portal.
-        </p>
-        
-        <div class="pro-card w-full max-w-sm p-10">
-            <h2 class="text-3xl font-semibold text-center text-gray-900 dark:text-white mb-8">
-                Welcome
-            </h2>
-            <!-- --------------------------------- -->
-            
-            <div class="space-y-4">
-                <a href="login.html" class="flex w-full justify-center rounded-md bg-bank-primary py-3 px-4 text-lg font-semibold text-white shadow-sm hover:bg-opacity-80 transition duration-200">
-                    Login
+<body class="font-sans text-white relative min-h-screen">
+
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+
+    <div class="absolute top-6 right-6 z-50">
+        <button id="theme-toggle" type="button" class="text-slate-300 bg-slate-800/50 hover:bg-slate-700/70 rounded-full text-sm p-3 backdrop-blur-md transition-all duration-300 shadow-lg">
+            <i id="theme-toggle-icon" class="bi text-xl"></i> </button>
+    </div>
+
+    <div class="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-12">
+
+        <div class="mb-8 floating">
+            <div class="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl">
+                <i class="bi bi-bank2 text-4xl text-white"></i>
+            </div>
+        </div>
+
+        <div class="text-center mb-12 max-w-2xl">
+            <h1 class="text-5xl md:text-6xl font-black text-white mb-4 tracking-tight">
+                Unified Banking System
+            </h1>
+            <p class="text-xl md:text-2xl text-slate-300 font-light">
+                All Your Banks. One Secure Portal.
+            </p>
+        </div>
+
+        <div class="w-full max-w-md">
+            <div class="glass-card rounded-3xl shadow-2xl p-8 md:p-10">
+                <h2 class="text-3xl font-bold text-center text-white mb-8">
+                    Get Started
+                </h2>
+
+                <div class="space-y-4">
+                    <a href="login.html" class="btn-gradient flex items-center justify-center w-full rounded-xl py-4 px-6 text-lg font-semibold text-white shadow-xl transform hover:scale-105 transition-all duration-300">
+                        <i class="bi bi-box-arrow-in-right mr-3 text-xl"></i>
+                        Login to Your Account
+                    </a>
+                    <a href="register.html" class="btn-secondary flex items-center justify-center w-full rounded-xl py-4 px-6 text-lg font-semibold shadow-lg transform hover:scale-105 transition-all duration-300">
+                        <i class="bi bi-person-plus mr-3 text-xl"></i>
+                        Create New Account
+                    </a>
+                </div>
+
+                <div class="relative my-8">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-slate-700"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="px-4 bg-slate-900 text-slate-500 font-medium" style="background-color: rgba(15, 23, 42, 0.8);"> Trusted by millions
+                        </span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4 text-center">
+                    <div class="feature-card">
+                        <div class="feature-icon inline-flex items-center justify-center w-12 h-12 bg-indigo-900/40 rounded-xl mb-2">
+                            <i class="bi bi-shield-check text-indigo-400 text-xl"></i>
+                        </div>
+                        <p class="text-xs text-slate-400 font-medium">Secure</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon inline-flex items-center justify-center w-12 h-12 bg-purple-900/40 rounded-xl mb-2">
+                            <i class="bi bi-lightning-charge text-purple-400 text-xl"></i>
+                        </div>
+                        <p class="text-xs text-slate-400 font-medium">Fast</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon inline-flex items-center justify-center w-12 h-12 bg-emerald-900/40 rounded-xl mb-2">
+                            <i class="bi bi-check-circle text-emerald-400 text-xl"></i>
+                        </div>
+                        <p class="text-xs text-slate-400 font-medium">Reliable</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-12 text-center">
+            <p class="text-sm text-slate-500">
+                © 2025 Unified Banking System. All rights reserved.
+            </p>
+            <div class="flex justify-center gap-6 mt-4">
+                <a href="#" class="text-slate-400 hover:text-white transition-colors">
+                    Privacy Policy
                 </a>
-                <a href="register.html" class="flex w-full justify-center rounded-md bg-gray-600 py-3 px-4 text-lg font-semibold text-white shadow-sm hover:bg-opacity-80 transition duration-200">
-                    Register
+                <span class="text-slate-600">•</span>
+                <a href="#" class="text-slate-400 hover:text-white transition-colors">
+                    Terms of Service
+                </a>
+                <span class="text-slate-600">•</span>
+                <a href="#" class="text-slate-400 hover:text-white transition-colors">
+                    Support
                 </a>
             </div>
         </div>
-        
-        <div class="absolute top-5 right-5">
-           <button id="theme-toggle" type="button" class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-sm p-2.5">
-    <i id="theme-toggle-icon" class="bi w-5 h-5"></i>
-</button>
-        </div>
     </div>
-    <script src="app.js"></script>
-</body>
+
+    <script src="app.js"></script> </body>
 </html>

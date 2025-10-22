@@ -1,59 +1,376 @@
-/* 1. Import Google Font (Inter) */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+/* 1. Import Google Font (Inter + Outfit for headings) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* 2. Custom dark gradient background (Slate) */
-body {
-    background-color: #0f172a; /* slate-900 fallback */
-    /* A deep slate-to-charcoal gradient */
-    background-image: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-    background-attachment: fixed;
+/* 2. Root Variables for Custom Theme */
+:root {
+    /* Primary Brand Colors - Modern Banking Blue-Purple Gradient */
+    --color-primary: #6366f1;
+    --color-primary-dark: #4f46e5;
+    --color-primary-light: #818cf8;
+    --color-secondary: #8b5cf6;
+    --color-accent: #06b6d4;
+    
+    /* Background Colors */
+    --bg-dark-1: #0a0e1a;
+    --bg-dark-2: #111827;
+    --bg-dark-3: #1e293b;
+    
+    /* Card Colors */
+    --card-bg: rgba(30, 41, 59, 0.6);
+    --card-border: rgba(148, 163, 184, 0.1);
+    --card-hover-border: rgba(148, 163, 184, 0.2);
+    
+    /* Success/Error Colors */
+    --color-success: #10b981;
+    --color-error: #ef4444;
+    --color-warning: #f59e0b;
 }
 
-/* 3. Custom component styles for a professional UI */
+/* 3. Enhanced Dark Gradient Background with Animation */
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #0a0e1a 0%, #1e1b4b 50%, #1e293b 100%);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* Animated gradient background */
+@keyframes gradientShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+/* Subtle grid pattern overlay */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Glowing orbs in background */
+body::after {
+    content: '';
+    position: fixed;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.15), transparent 70%);
+    border-radius: 50%;
+    top: -250px;
+    right: -250px;
+    pointer-events: none;
+    animation: float 20s ease-in-out infinite;
+    z-index: 0;
+}
+
+@keyframes float {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-50px, 50px) scale(1.1); }
+}
+
+/* Ensure content is above background effects */
+.app-layout, .container, main {
+    position: relative;
+    z-index: 1;
+}
+
+/* 4. Typography Enhancements */
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', 'Inter', sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+/* 5. Custom Component Styles */
 @layer components {
     /* Main App Layout */
     .app-layout {
-        @apply grid grid-cols-1 lg:grid-cols-[280px_1fr];
+        @apply grid grid-cols-1 lg:grid-cols-[280px_1fr] min-h-screen;
     }
+    
     .app-main-content {
         @apply p-6 lg:p-8;
     }
     
-    /* Sidebar Navigation */
+    /* Enhanced Sidebar Navigation */
     .sidebar-link {
-        @apply flex items-center p-3 text-base font-medium text-slate-400 rounded-lg hover:bg-slate-700 hover:text-white transition-colors duration-200;
+        @apply flex items-center gap-3 p-3.5 text-base font-medium text-slate-400 rounded-xl 
+               transition-all duration-300 ease-out relative overflow-hidden group;
     }
+    
+    .sidebar-link::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 0;
+        height: 100%;
+        background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+        transition: width 0.3s ease;
+        z-index: -1;
+    }
+    
+    .sidebar-link:hover::before {
+        width: 100%;
+    }
+    
+    .sidebar-link:hover {
+        @apply text-white transform translate-x-1;
+    }
+    
     .sidebar-link.active {
-        @apply bg-bank-primary text-white; /* Use new primary color */
+        @apply bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/30;
+        transform: translateX(4px);
     }
     
-    /* Professional Cards with Glassmorphism & Hover */
+    /* Professional Cards with Enhanced Glassmorphism */
     .pro-card {
-        @apply bg-white dark:bg-slate-800 bg-opacity-70 dark:bg-opacity-60 backdrop-blur-lg border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg 
-               transition-all duration-300 ease-in-out;
+        background: var(--card-bg);
+        backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid var(--card-border);
+        @apply rounded-2xl shadow-2xl transition-all duration-300 ease-out;
     }
-    .pro-card-hover {
-        @apply hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-2xl hover:-translate-y-1;
-    }
-
-    /* Input fields with icons */
-    .input-icon-group { @apply relative; }
-    .input-icon { @apply absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400; }
-    .input-with-icon { @apply pl-10; }
     
-    /* Style for navigation tabs on the dashboard */
-    .nav-tab-btn {
-        @apply inline-block px-6 py-3 border-b-2 border-transparent rounded-t-lg text-lg font-medium text-gray-500 dark:text-gray-400 
-               hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-400 dark:hover:border-gray-500 
-               transition-colors duration-200;
+    .pro-card-hover {
+        @apply hover:shadow-indigo-500/20 hover:border-indigo-500/30 hover:-translate-y-2 hover:scale-[1.02];
     }
+    
+    /* Bank Account Cards - Premium Design */
+    .bank-card {
+        @apply pro-card p-6 relative overflow-hidden;
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+        border: 1px solid rgba(99, 102, 241, 0.2);
+    }
+    
+    .bank-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(99, 102, 241, 0.1), transparent 60%);
+        transition: transform 0.5s ease;
+    }
+    
+    .bank-card:hover::before {
+        transform: translate(-25%, -25%);
+    }
+    
+    .bank-card:hover {
+        border-color: rgba(99, 102, 241, 0.5);
+        box-shadow: 0 20px 40px rgba(99, 102, 241, 0.2);
+    }
+    
+    /* Balance Display with Gradient */
+    .balance-amount {
+        @apply text-4xl font-bold bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent;
+        font-family: 'Outfit', sans-serif;
+    }
+    
+    /* Input Fields with Modern Design */
+    .input-icon-group {
+        @apply relative;
+    }
+    
+    .input-icon {
+        @apply absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-500;
+    }
+    
+    .input-with-icon {
+        @apply pl-11 pr-4 py-3.5 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500
+               focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+               transition-all duration-200 backdrop-blur-sm;
+    }
+    
+    .input-with-icon:focus {
+        @apply bg-slate-800/70 shadow-lg shadow-indigo-500/10;
+    }
+    
+    /* Buttons with Gradient and Animation */
+    .btn-primary {
+        @apply px-6 py-3.5 rounded-xl font-semibold text-white 
+               bg-gradient-to-r from-indigo-600 to-purple-600 
+               hover:from-indigo-700 hover:to-purple-700
+               shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50
+               transition-all duration-300 ease-out
+               hover:-translate-y-0.5 hover:scale-105
+               focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900;
+    }
+    
+    .btn-secondary {
+        @apply px-6 py-3.5 rounded-xl font-semibold text-slate-300
+               bg-slate-800/50 border border-slate-700
+               hover:bg-slate-700/50 hover:border-slate-600 hover:text-white
+               backdrop-blur-sm
+               transition-all duration-300 ease-out
+               hover:-translate-y-0.5
+               focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:ring-offset-slate-900;
+    }
+    
+    /* Navigation Tabs */
+    .nav-tab-btn {
+        @apply inline-flex items-center gap-2 px-6 py-3.5 border-b-2 border-transparent rounded-t-xl 
+               text-base font-semibold text-slate-400
+               hover:text-slate-200 hover:border-slate-600
+               transition-all duration-200;
+    }
+    
     .nav-tab-btn.active {
-        /* Use new primary color */
-        @apply text-bank-primary border-bank-primary;
+        @apply text-white border-indigo-500 bg-slate-800/30;
+    }
+    
+    /* Header/Top Bar */
+    .top-bar {
+        @apply bg-slate-900/50 backdrop-blur-xl border-b border-slate-800/50 sticky top-0 z-50;
+    }
+    
+    /* Stats Cards */
+    .stat-card {
+        @apply pro-card p-5 flex items-center justify-between;
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
+    }
+    
+    .stat-card:hover {
+        @apply transform scale-105 shadow-xl shadow-indigo-500/10;
+    }
+    
+    /* Transaction List Items */
+    .transaction-item {
+        @apply flex items-center justify-between p-4 rounded-xl bg-slate-800/30 border border-slate-700/50
+               hover:bg-slate-800/50 hover:border-slate-600/50 transition-all duration-200;
+    }
+    
+    /* Badges */
+    .badge {
+        @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold;
+    }
+    
+    .badge-success {
+        @apply bg-emerald-500/10 text-emerald-400 border border-emerald-500/20;
+    }
+    
+    .badge-error {
+        @apply bg-red-500/10 text-red-400 border border-red-500/20;
+    }
+    
+    .badge-warning {
+        @apply bg-amber-500/10 text-amber-400 border border-amber-500/20;
+    }
+    
+    .badge-info {
+        @apply bg-cyan-500/10 text-cyan-400 border border-cyan-500/20;
     }
 }
 
+/* 6. Utility Classes */
+.text-gradient {
+    @apply bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent;
+}
+
+.card-shine {
+    position: relative;
+    overflow: hidden;
+}
+
+.card-shine::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.05) 50%,
+        transparent 70%
+    );
+    transform: translateX(-100%) translateY(-100%);
+    transition: transform 0.6s ease;
+}
+
+.card-shine:hover::after {
+    transform: translateX(100%) translateY(100%);
+}
+
+/* 7. Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-dark-2);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--color-primary);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-primary-dark);
+}
+
+/* 8. Loading Animation */
+.loading-spinner {
+    border: 3px solid rgba(99, 102, 241, 0.1);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* 9. Fade In Animation */
+.fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 10. Responsive Adjustments */
+@media (max-width: 1024px) {
+    .balance-amount {
+        @apply text-3xl;
+    }
+}
+
+@media (max-width: 640px) {
+    .bank-card {
+        @apply p-4;
+    }
+    
+    .balance-amount {
+        @apply text-2xl;
+    }
+}

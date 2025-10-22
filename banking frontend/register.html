@@ -3,110 +3,219 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - Banking Unified System </title>
+    <title>Register - Unified Banking System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="style.css">
     <script>
-        // --- Using the corrected config with explicit light/dark ---
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
                     colors: {
-                        // Base Palette
-                        'bank-primary': '#3b82f6',
-                        'bank-primary-hover': '#2563eb',
-                        'bank-success': '#22c55e',
-                        'bank-danger': '#ef4444',
-                        'bank-warning': '#f59e0b',
-                        'bank-info': '#38bdf8',
-
-                        // Light Mode Explicit Colors
-                        'bank-light-bg': '#f9fafb',      // Light gray page BG
-                        'bank-light-card': '#ffffff',    // White card BG
-                        'bank-light-text': '#111827',    // Dark text
-                        'bank-light-text-muted': '#6b7280', // Muted dark text
-
-                        // Dark Mode Explicit Colors
-                        'bank-dark-bg': '#111827',       // Dark page BG (gray-900)
-                        'bank-dark-card': '#1f2937',     // Dark card BG (gray-800)
-                        'bank-dark-text': '#e5e7eb',     // Light text
-                        'bank-dark-text-muted': '#9ca3af' // Muted light text
+                        'bank-primary': '#6366f1',
+                        'bank-success': '#10b981',
                     }
                 }
             }
         }
-
-        // Apply theme immediately
         function applyInitialTheme() {
-            const theme = localStorage.getItem('theme') || 'system';
+            const theme = localStorage.getItem('theme') || 'dark'; // Defaulting to dark as per style
             if (theme === 'dark') {
                 document.documentElement.classList.add('dark');
-            } else if (theme === 'light') {
+            } else {
                 document.documentElement.classList.remove('dark');
-            } else { // 'system'
-                if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                    document.documentElement.classList.add('dark');
-                } else {
-                    document.documentElement.classList.remove('dark');
-                }
             }
         }
         applyInitialTheme();
     </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+        /* --- ADDED THIS RULE --- */
+        html {
+            background-color: #0f172a; /* Darkest color in body gradient */
+            scroll-behavior: smooth;
+        }
+        /* ------------------------ */
+
+        body {
+            background: linear-gradient(135deg, #0a0e1a 0%, #1e1b4b 50%, #0f172a 100%);
+            background-attachment: fixed;
+            position: relative; /* Needed for ::before */
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(99, 102, 241, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0; /* Behind content */
+        }
+
+        .glow-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.3;
+            pointer-events: none;
+            animation: float 8s ease-in-out infinite;
+            z-index: 0; /* Behind content */
+        }
+
+        .orb-1 {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, #6366f1, transparent);
+            top: -250px;
+            left: -250px;
+        }
+
+        .orb-2 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, #10b981, transparent);
+            bottom: -200px;
+            right: -200px;
+            animation-delay: -4s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-30px) scale(1.1); }
+        }
+
+        .glass-card {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(148, 163, 184, 0.15);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #06b6d4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .input-glow:focus {
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+        }
+    </style>
 </head>
-<body class="flex items-center justify-center min-h-screen font-sans bg-bank-light-bg dark:bg-bank-dark-bg">
-    <div class="w-full max-w-md p-8">
-        <div class="bg-bank-light-card dark:bg-bank-dark-card bg-opacity-70 dark:bg-opacity-70 backdrop-blur-lg shadow-2xl rounded-2xl p-8 border border-gray-200 dark:border-gray-700">
-            <h1 class="text-3xl font-bold text-center text-bank-light-text dark:text-bank-dark-text mb-6">Create Your Portal Account</h1>
+<body class="font-sans text-white relative min-h-screen py-12 md:py-16">
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
 
-            <form id="registerForm" class="space-y-4"> <div id="errorMessage" class="hidden p-4 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-800 dark:bg-opacity-50 rounded-lg"></div>
-                <div id="successMessage" class="hidden p-4 text-sm text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-800 dark:bg-opacity-50 rounded-lg"></div>
+    <div class="relative z-10 w-full max-w-md p-6 mx-auto">
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl mb-6 shadow-2xl shadow-emerald-500/50 transform hover:scale-110 transition-transform duration-300">
+                <i class="bi bi-person-plus-fill text-4xl"></i>
+            </div>
+            <h1 class="text-4xl font-black gradient-text mb-2">Create Account</h1>
+            <p class="text-slate-400 text-sm">Join the future of banking</p>
+        </div>
 
-                <div>
-                    <label for="fullName" class="block text-sm font-medium text-bank-light-text-muted dark:text-bank-dark-text-muted">Full Name</label>
-                    <div class="mt-2 input-icon-group">
-                        <div class="input-icon"><i class="bi bi-person-badge-fill"></i></div>
-                        <input id="fullName" type="text" required class="input-with-icon w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-bank-primary">
+        <div class="glass-card rounded-3xl p-8 shadow-2xl transform hover:scale-[1.01] transition-all duration-300">
+            <h2 class="text-2xl font-bold text-center mb-6">Get Started 🚀</h2>
+
+            <form id="registerForm" class="space-y-4">
+                <div id="errorMessage" class="hidden p-4 text-sm text-red-300 bg-red-900/30 border border-red-500/30 rounded-xl backdrop-blur-sm"></div>
+
+                <div id="successMessage" class="hidden p-4 text-sm text-green-300 bg-green-900/30 border border-green-500/30 rounded-xl backdrop-blur-sm"></div>
+
+                <div class="relative">
+                    <label for="fullName" class="block text-sm font-medium text-slate-400 mb-2">Full Name</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-500">
+                            <i class="bi bi-person-badge-fill text-lg"></i>
+                        </div>
+                        <input id="fullName" type="text" required
+                               class="w-full pl-12 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200"
+                               placeholder="John Doe">
                     </div>
                 </div>
-                <div>
-                    <label for="username" class="block text-sm font-medium text-bank-light-text-muted dark:text-bank-dark-text-muted">Username</label>
-                    <div class="mt-2 input-icon-group">
-                        <div class="input-icon"><i class="bi bi-person-fill"></i></div>
-                        <input id="username" type="text" required class="input-with-icon w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-bank-primary">
+
+                <div class="relative">
+                    <label for="username" class="block text-sm font-medium text-slate-400 mb-2">Username</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-500">
+                            <i class="bi bi-person-fill text-lg"></i>
+                        </div>
+                        <input id="username" type="text" required
+                               class="w-full pl-12 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200"
+                               placeholder="johndoe">
                     </div>
                 </div>
-                <div>
-                    <label for="email" class="block text-sm font-medium text-bank-light-text-muted dark:text-bank-dark-text-muted">Email address</label>
-                    <div class="mt-2 input-icon-group">
-                        <div class="input-icon"><i class="bi bi-envelope-fill"></i></div>
-                        <input id="email" type="email" required class="input-with-icon w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-bank-primary">
+
+                <div class="relative">
+                    <label for="email" class="block text-sm font-medium text-slate-400 mb-2">Email Address</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-500">
+                            <i class="bi bi-envelope-fill text-lg"></i>
+                        </div>
+                        <input id="email" type="email" required
+                               class="w-full pl-12 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200"
+                               placeholder="john@example.com">
                     </div>
                 </div>
-                <div>
-                    <label for="password" class="block text-sm font-medium text-bank-light-text-muted dark:text-bank-dark-text-muted">Password</label>
-                    <div class="mt-2 input-icon-group">
-                        <div class="input-icon"><i class="bi bi-lock-fill"></i></div>
-                        <input id="password" type="password" required minlength="6" class="input-with-icon w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-bank-primary">
+
+                <div class="relative">
+                    <label for="password" class="block text-sm font-medium text-slate-400 mb-2">Password</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-500">
+                            <i class="bi bi-lock-fill text-lg"></i>
+                        </div>
+                        <input id="password" type="password" required minlength="6"
+                               class="w-full pl-12 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200"
+                               placeholder="Minimum 6 characters">
                     </div>
-                </div> <div> <button type="submit" class="flex w-full justify-center rounded-md bg-bank-primary py-2 px-4 text-sm font-semibold text-white shadow-sm hover:bg-opacity-80 transition duration-200">
-                        Register
-                    </button>
+                    <p class="text-xs text-slate-500 mt-1">
+                        <i class="bi bi-info-circle mr-1"></i>Use at least 6 characters
+                    </p>
                 </div>
+
+                <button type="submit"
+                        class="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-xl font-semibold text-white shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transform hover:scale-105 transition-all duration-300 mt-6">
+                    <i class="bi bi-check-circle mr-2"></i>Create Account
+                </button>
             </form>
 
-            <p class="mt-8 text-center text-sm text-bank-light-text-muted dark:text-bank-dark-text-muted">
-                Already have an account?
-                <a href="login.html" class="font-semibold text-bank-primary hover:text-opacity-80">Login here</a>
-            </p>
-            <p class="mt-4 text-center text-sm text-bank-light-text-muted dark:text-bank-dark-text-muted">
-                <a href="index.html" class="font-semibold text-bank-primary hover:text-opacity-80">← Back to Home</a>
-            </p>
+            <div class="mt-8 space-y-4">
+                <div class="flex items-center justify-center">
+                    <div class="flex-1 border-t border-slate-700"></div>
+                    <span class="px-4 text-sm text-slate-500">or</span>
+                    <div class="flex-1 border-t border-slate-700"></div>
+                </div>
+
+                <p class="text-center text-sm text-slate-400">
+                    Already have an account?
+                    <a href="login.html" class="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors ml-1">
+                        Login here
+                    </a>
+                </p>
+
+                <p class="text-center">
+                    <a href="index.html" class="inline-flex items-center text-sm text-slate-400 hover:text-white transition-colors">
+                        <i class="bi bi-arrow-left mr-2"></i>Back to Home
+                    </a>
+                </p>
+            </div>
         </div>
+
+        <p class="text-center text-xs text-slate-500 mt-8">
+            <i class="bi bi-shield-lock mr-1"></i>
+            Your data is encrypted and secure
+        </p>
     </div>
+
     <script src="app.js"></script>
 </body>
 </html>
