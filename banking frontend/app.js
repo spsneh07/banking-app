@@ -33,15 +33,13 @@ function formatCurrency(amount) {
 // --- Main execution logic ---
 document.addEventListener('DOMContentLoaded', () => {
     const page = getPageName();
-    
-    // --- MODIFIED ---
-    // Removed 'create-pin.html' as it's no longer used.
-    // That logic is now in setupAccountDashboard().
 
     if (page === 'login.html') {
         document.getElementById('loginForm')?.addEventListener('submit', handleLogin);
     } else if (page === 'register.html') {
         document.getElementById('registerForm')?.addEventListener('submit', handleRegister);
+    } else if (page === 'create-pin.html') { // --- ADDED THIS BACK ---
+         document.getElementById('pinSetupForm')?.addEventListener('submit', handlePinSetup);
     } else if (page === 'dashboard.html') { // This is the PORTAL dashboard
         checkAuth(); // Protect this page
         if (localStorage.getItem('authToken')) {
@@ -59,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupThemeToggle();
 });
 
-// --- NEW: Portal Dashboard Setup ---
+// --- Portal Dashboard Setup ---
 function setupPortalDashboard() {
     document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
     const username = localStorage.getItem('username');
@@ -70,10 +68,10 @@ function setupPortalDashboard() {
     fetchAllBanks();
 }
 
-// --- NEW: Account Dashboard Setup ---
+// --- Account Dashboard Setup ---
 function setupAccountDashboard() {
     document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
-    
+
     const urlParams = new URLSearchParams(window.location.search);
     const accountId = urlParams.get('id');
     const bankName = urlParams.get('name');
@@ -83,7 +81,7 @@ function setupAccountDashboard() {
         window.location.href = 'dashboard.html';
         return;
     }
-    
+
     document.body.dataset.accountId = accountId;
     document.getElementById('bankNameDisplay').textContent = bankName || "Account Details";
     const username = localStorage.getItem('username');
@@ -108,7 +106,6 @@ function setupAccountDashboard() {
         });
     });
 
-    // --- MODIFIED: Added listeners for new buttons ---
     document.getElementById('depositBtn')?.addEventListener('click', () => showModal('depositModal'));
     document.getElementById('transferBtn')?.addEventListener('click', () => showModal('transferModal'));
     document.getElementById('payBillBtn')?.addEventListener('click', () => showModal('payBillModal'));
@@ -119,7 +116,7 @@ function setupAccountDashboard() {
             hideModal(modal.id);
         });
     });
-    
+
     // Form listeners
     document.getElementById('depositForm')?.addEventListener('submit', handleDepositSubmit);
     document.getElementById('transferForm')?.addEventListener('submit', handleTransferSubmit);
@@ -129,8 +126,7 @@ function setupAccountDashboard() {
     document.getElementById('verifyRecipientBtn')?.addEventListener('click', handleVerifyRecipient);
     document.getElementById('transferAccountNumber')?.addEventListener('input', resetTransferForm);
 
-    // --- NEW: Listeners for PIN and CSV Download ---
-    document.getElementById('setPinForm')?.addEventListener('submit', handleSetPinSubmit);
+    // --- MODIFIED: Removed setPinForm listener (it's not on this page) ---
     document.getElementById('download-csv-btn')?.addEventListener('click', handleDownloadCsv);
     // ----------------------------------------------
 
@@ -140,87 +136,127 @@ function setupAccountDashboard() {
 }
 
 // --- Theme & Modal UI Functions ---
-// (No changes to setupThemeToggle, showModal, hideModal, showToast, showModalError, hideModalError, toggleSpinner)
-// ... (Your existing UI functions go here, they are correct) ...
+// ... (Your setupThemeToggle, showModal, hideModal, etc. functions are correct) ...
 function setupThemeToggle() {
-    const toggleButton = document.getElementById('theme-toggle');
-    const darkIcon = document.getElementById('theme-toggle-dark-icon');
-    const lightIcon = document.getElementById('theme-toggle-light-icon');
-    if (!toggleButton || !darkIcon || !lightIcon) return;
+    const toggleButton = document.getElementById('theme-toggle');
+    const toggleIcon = document.getElementById('theme-toggle-icon'); // The new single icon
+    if (!toggleButton || !toggleIcon) return;
 
-    if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        lightIcon.classList.remove('hidden'); document.documentElement.classList.add('dark');
-    } else {
-        darkIcon.classList.remove('hidden'); document.documentElement.classList.remove('dark');
-    }
+    let currentTheme = localStorage.getItem('theme') || 'system';
 
-    toggleButton.addEventListener('click', () => {
-        const isDark = document.documentElement.classList.toggle('dark');
-        localStorage.theme = isDark ? 'dark' : 'light';
-        darkIcon.classList.toggle('hidden', !isDark);
-        lightIcon.classList.toggle('hidden', isDark);
-        if((getPageName() === 'account.html' || getPageName() === 'dashboard.html') && window.myTransactionChart) {
-             fetchTransactions(false);
-        }
-    });
+    function applyTheme(theme) {
+        // 1. Set class on <html>
+        if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else if (theme === 'light') {
+            document.documentElement.classList.remove('dark');
+        } else { // 'system'
+            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+
+        // 2. Set the icon
+        if (theme === 'dark') {
+            toggleIcon.className = 'bi bi-moon-stars-fill w-5 h-5';
+        } else if (theme === 'light') {
+            toggleIcon.className = 'bi bi-sun-fill w-5 h-5';
+        } else {
+            toggleIcon.className = 'bi bi-display-fill w-5 h-5'; // System icon
+        }
+
+        currentTheme = theme;
+        localStorage.setItem('theme', theme);
+
+        // 3. Re-render chart if needed
+        if (window.myTransactionChart && (getPageName() === 'account.html' || getPageName() === 'dashboard.html')) {
+             window.myTransactionChart.destroy();
+             fetchTransactions(false); // Re-fetch and render chart
+        }
+    }
+
+    // Button click cycles: light -> dark -> system -> light ...
+    toggleButton.addEventListener('click', () => {
+        if (currentTheme === 'light') {
+            applyTheme('dark');
+        } else if (currentTheme === 'dark') {
+            applyTheme('system');
+        } else {
+            applyTheme('light');
+        }
+    });
+
+    // Listen for OS theme changes (if user is in 'system' mode)
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (currentTheme === 'system') {
+            applyTheme('system');
+        }
+    });
+
+    // Set initial icon on page load
+    applyTheme(currentTheme);
 }
+
 function showModal(modalId) {
-    document.getElementById(modalId)?.classList.remove('hidden');
-    document.getElementById('modalBackdrop')?.classList.remove('hidden');
+    document.getElementById(modalId)?.classList.remove('hidden');
+    document.getElementById('modalBackdrop')?.classList.remove('hidden');
 }
 function hideModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.add('hidden');
-        document.getElementById('modalBackdrop')?.classList.add('hidden');
-        const form = modal.querySelector('form');
-        if (form) form.reset();
-        if (modalId === 'transferModal') resetTransferForm();
-        modal.querySelectorAll('.p-4.text-sm.text-red-300').forEach(err => err.classList.add('hidden'));
-    }
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('hidden');
+        document.getElementById('modalBackdrop')?.classList.add('hidden');
+        const form = modal.querySelector('form');
+        if (form) form.reset();
+        if (modalId === 'transferModal') resetTransferForm();
+        modal.querySelectorAll('.p-4.text-sm').forEach(err => err.classList.add('hidden')); // Generalize error hiding
+    }
 }
 function showToast(message, isError = false) {
-    const container = document.getElementById('toastContainer');
-    if (!container) return;
-    const toastId = `toast-${Date.now()}`;
-    const icon = isError 
-        ? `<i class="bi bi-exclamation-triangle-fill text-red-400"></i>` 
-        : `<i class="bi bi-check-circle-fill text-green-400"></i>`;
-    const title = isError ? "Error" : "Success";
-    const borderColor = isError ? 'border-red-500' : 'border-green-500';
-    const toastHTML = `<div id="${toastId}" class="w-full max-w-sm p-4 text-gray-200 bg-gray-800 rounded-lg shadow-lg border ${borderColor} transition-transform duration-300 translate-x-full dark:bg-gray-700 dark:border-gray-600 dark:text-white" role="alert"><div class="flex items-center"><div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg">${icon}</div><div class="ms-3 text-sm font-normal"><div class="text-sm font-semibold text-white dark:text-white">${title}</div><div>${message}</div></div><button type="button" class="ms-auto -mx-1.5 -my-1.5 bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-600 rounded-lg p-1.5 inline-flex items-center justify-center h-8 w-8" data-toast-dismiss="${toastId}">&times;</button></div></div>`;
-    container.insertAdjacentHTML('beforeend', toastHTML);
-    const toastEl = document.getElementById(toastId);
-    toastEl.querySelector(`[data-toast-dismiss="${toastId}"]`).addEventListener('click', () => {
-        toastEl.classList.add('opacity-0', 'scale-90');
-        setTimeout(() => toastEl.remove(), 300);
-    });
-    setTimeout(() => toastEl.classList.remove('translate-x-full'), 10);
-    setTimeout(() => {
-        toastEl.classList.add('opacity-0', 'scale-90');
-        setTimeout(() => toastEl.remove(), 300);
-    }, 5000);
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    const toastId = `toast-${Date.now()}`;
+    const icon = isError
+        ? `<i class="bi bi-exclamation-triangle-fill text-red-400"></i>`
+        : `<i class="bi bi-check-circle-fill text-green-400"></i>`;
+    const title = isError ? "Error" : "Success";
+    const borderColor = isError ? 'border-red-500' : 'border-green-500';
+    // Using explicit dark mode colors for toast
+    const toastHTML = `<div id="${toastId}" class="w-full max-w-sm p-4 text-gray-200 bg-gray-800 rounded-lg shadow-lg border ${borderColor} transition-transform duration-300 translate-x-full" role="alert"><div class="flex items-center"><div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg">${icon}</div><div class="ms-3 text-sm font-normal"><div class="text-sm font-semibold text-white">${title}</div><div>${message}</div></div><button type="button" class="ms-auto -mx-1.5 -my-1.5 bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg p-1.5 inline-flex items-center justify-center h-8 w-8" data-toast-dismiss="${toastId}">&times;</button></div></div>`;
+    container.insertAdjacentHTML('beforeend', toastHTML);
+    const toastEl = document.getElementById(toastId);
+    toastEl.querySelector(`[data-toast-dismiss="${toastId}"]`).addEventListener('click', () => {
+        toastEl.classList.add('opacity-0', 'scale-90');
+        setTimeout(() => toastEl.remove(), 300);
+    });
+    setTimeout(() => toastEl.classList.remove('translate-x-full'), 10);
+    setTimeout(() => {
+        toastEl.classList.add('opacity-0', 'scale-90');
+        setTimeout(() => toastEl.remove(), 300);
+    }, 5000);
 }
 function showModalError(errorDiv, message) {
-    if (errorDiv) {
-        errorDiv.textContent = message;
-        errorDiv.classList.remove('hidden');
-    }
+    if (errorDiv) {
+        errorDiv.textContent = message;
+        errorDiv.classList.remove('hidden');
+    }
 }
 function hideModalError(errorDiv) {
-    if (errorDiv) {
-        errorDiv.textContent = '';
-        errorDiv.classList.add('hidden');
-    }
+    if (errorDiv) {
+        errorDiv.textContent = '';
+        errorDiv.classList.add('hidden');
+    }
 }
 function toggleSpinner(button, show) {
-    if (!button) return;
-    button.disabled = show;
-    if (show) {
-        button.classList.add('opacity-70', 'cursor-not-allowed');
-    } else {
-        button.classList.remove('opacity-70', 'cursor-not-allowed');
-    }
+    if (!button) return;
+    button.disabled = show;
+    if (show) {
+        button.classList.add('opacity-70', 'cursor-not-allowed');
+    } else {
+        button.classList.remove('opacity-70', 'cursor-not-allowed');
+    }
 }
 
 // --- API Call Functions ---
@@ -232,17 +268,13 @@ async function fetchSecure(url, options = {}) {
         window.location.href = 'login.html';
         throw new Error("No auth token found");
     }
-    const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`, ...options.headers };
-    
-    // --- MODIFIED: Handle non-JSON responses (like CSV) ---
-    // We only set Content-Type if there's a body.
+    const headers = { 'Authorization': `Bearer ${token}`, ...options.headers }; // Removed default Content-Type
+
     if (options.body) {
-         headers['Content-Type'] = 'application/json';
-    } else {
-        delete headers['Content-Type']; // Let browser handle for GET requests
+         headers['Content-Type'] = 'application/json'; // Add Content-Type only if there's a body
     }
 
-    // Special case for CSV download: we don't want JSON headers
+    // Special case for CSV download: remove Content-Type
     if (options.isCsv) {
          delete headers['Content-Type'];
     }
@@ -288,13 +320,9 @@ async function fetchBalance() {
         const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/balance`);
         if (!response.ok) throw new Error(await response.text());
         const balance = await response.json();
-
-        // --- MODIFIED: Use new currency formatter ---
         balanceDisplay.textContent = formatCurrency(balance);
-
     } catch (error) {
         console.error('Error fetching balance:', error.message);
-        // --- MODIFIED: Use new currency symbol ---
         balanceDisplay.textContent = "₹ Error";
     }
 }
@@ -310,22 +338,17 @@ async function fetchTransactions(tableOnly = false) {
         if (tableBody) {
             tableBody.innerHTML = '';
             if (transactions.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-gray-500 dark:text-gray-400">No recent transactions found.</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-bank-light-text-muted dark:text-bank-dark-text-muted">No recent transactions found.</td></tr>';
             } else {
                 transactions.forEach(tx => {
                     const isCredit = tx.amount >= 0;
-                    
-                    // --- MODIFIED: Use new currency formatter ---
                     const amountClass = isCredit ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
-                    const formattedAmount = formatCurrency(tx.amount); // This handles sign and symbol
-                    
+                    const formattedAmount = formatCurrency(tx.amount);
                     let typeBadgeClass = 'bg-gray-500 text-gray-100';
                     if (tx.type === 'DEPOSIT') typeBadgeClass = 'bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-100';
                     else if (tx.type === 'TRANSFER' && isCredit) typeBadgeClass = 'bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-100';
                     else if (tx.type === 'TRANSFER' && !isCredit) typeBadgeClass = 'bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-100';
                     else if (tx.type === 'PAYMENT') typeBadgeClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-100';
-                    
-                    // --- MODIFIED: Simplified row HTML ---
                     const row = `<tr class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"><td class="px-6 py-4">${new Date(tx.timestamp).toLocaleString()}</td><td class="px-6 py-4">${tx.description}</td><td class="px-6 py-4"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${typeBadgeClass}">${tx.type}</span></td><td class="px-6 py-4 font-medium ${amountClass}">${formattedAmount}</td></tr>`;
                     tableBody.insertAdjacentHTML('beforeend', row);
                 });
@@ -348,20 +371,26 @@ function renderTransactionChart(transactions) {
         if (tx.amount >= 0) totalIncome += tx.amount;
         else totalExpenses += Math.abs(tx.amount);
     });
-    if (totalIncome === 0 && totalExpenses === 0) { totalIncome = 1; }
+    // Handle case with no transactions for chart display
+    const hasData = totalIncome > 0 || totalExpenses > 0;
+    const chartData = hasData ? [totalIncome, totalExpenses] : [1, 0]; // Show dummy data if none
+    const chartLabels = ['Income', 'Expenses'];
+
     if (window.myTransactionChart) window.myTransactionChart.destroy();
     const isDark = document.documentElement.classList.contains('dark');
-    const chartTextColor = isDark ? '#e5e7eb' : '#374151';
-    const incomeColor = isDark ? '#22c55e' : '#16a34a';
+    const chartTextColor = isDark ? '#e5e7eb' : '#111827';
+    const incomeColor = isDark ? '#22c55e' : '#16a34a'; // Consistent colors
     const expenseColor = isDark ? '#ef4444' : '#dc2626';
+    const borderColor = isDark ? '#1f2937' : '#ffffff';
+
     window.myTransactionChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: ['Income', 'Expenses'],
+            labels: chartLabels,
             datasets: [{
-                data: [totalIncome, totalExpenses],
+                data: chartData,
                 backgroundColor: [incomeColor, expenseColor],
-                borderColor: [isDark ? '#1f2937' : '#ffffff'],
+                borderColor: borderColor,
                 borderWidth: 3
             }]
         },
@@ -372,14 +401,14 @@ function renderTransactionChart(transactions) {
                 legend: { position: 'bottom', labels: { color: chartTextColor, font: { family: 'Inter' } } },
                 tooltip: {
                     callbacks: {
-                        // --- MODIFIED: Use new currency formatter ---
-                        label: (context) => (totalIncome === 1 && totalExpenses === 0) ? ' No transactions yet' : ` ${context.label}: ${formatCurrency(context.parsed)}`
+                        label: (context) => hasData ? ` ${context.label}: ${formatCurrency(context.parsed)}` : ' No transactions yet'
                     }
                 }
             }
         }
     });
 }
+
 
 // --- Portal Data Fetching ---
 async function fetchUserAccounts() {
@@ -392,14 +421,13 @@ async function fetchUserAccounts() {
         document.getElementById('accountsLoadingSpinner')?.classList.add('hidden');
         listEl.innerHTML = '';
         if (accounts.length === 0) {
-            listEl.innerHTML = `<div class="col-span-full text-center text-gray-500 dark:text-gray-400">You haven't added any bank accounts yet.</div>`;
+            listEl.innerHTML = `<div class="col-span-full text-center text-bank-light-text-muted dark:text-bank-dark-text-muted">You haven't added any bank accounts yet.</div>`;
             return;
         }
         accounts.forEach(account => {
-            // --- MODIFIED: Use new currency formatter ---
             const formattedBalance = formatCurrency(account.balance);
             const formattedAccountNumber = account.accountNumber.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
-            const cardHTML = `<a href="account.html?id=${account.id}&name=${encodeURIComponent(account.bank.name)}" class="block p-6 bg-white dark:bg-bank-secondary bg-opacity-70 dark:bg-opacity-70 backdrop-blur-lg shadow-2xl rounded-2xl border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 transform hover:scale-[1.02]"><h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">${account.bank.name}</h5><p class="font-normal text-gray-700 dark:text-gray-400">Acct: ${formattedAccountNumber}</p><p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">${formattedBalance}</p></a>`;
+            const cardHTML = `<a href="account.html?id=${account.id}&name=${encodeURIComponent(account.bank.name)}" class="block p-6 bg-bank-light-card dark:bg-bank-dark-card bg-opacity-70 dark:bg-opacity-70 backdrop-blur-lg shadow-2xl rounded-2xl border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 transform hover:scale-[1.02]"><h5 class="mb-2 text-2xl font-bold tracking-tight text-bank-light-text dark:text-bank-dark-text">${account.bank.name}</h5><p class="font-normal text-bank-light-text-muted dark:text-bank-dark-text-muted">Acct: ${formattedAccountNumber}</p><p class="text-3xl font-bold text-bank-light-text dark:text-bank-dark-text mt-2">${formattedBalance}</p></a>`;
             listEl.insertAdjacentHTML('beforeend', cardHTML);
         });
     } catch (error) {
@@ -417,8 +445,7 @@ async function fetchAllBanks() {
         const banks = await response.json();
         listEl.innerHTML = '';
         banks.forEach(bank => {
-            // --- MODIFIED: Changed $50 to ₹50 (or appropriate value) ---
-            const cardHTML = `<div class="p-6 bg-white dark:bg-bank-secondary bg-opacity-70 dark:bg-opacity-70 backdrop-blur-lg shadow-2xl rounded-2xl border border-gray-200 dark:border-gray-700 flex flex-col justify-between"><h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">${bank.name}</h5><p class="font-normal text-gray-700 dark:text-gray-400">Open a new account with us and get a ₹50 bonus.</p><button onclick="handleAddBank(${bank.id}, '${bank.name}')" class="add-bank-btn mt-4 w-full text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Add Bank</button></div>`;
+            const cardHTML = `<div class="p-6 bg-bank-light-card dark:bg-bank-dark-card bg-opacity-70 dark:bg-opacity-70 backdrop-blur-lg shadow-2xl rounded-2xl border border-gray-200 dark:border-gray-700 flex flex-col justify-between"><h5 class="mb-2 text-2xl font-bold tracking-tight text-bank-light-text dark:text-bank-dark-text">${bank.name}</h5><p class="font-normal text-bank-light-text-muted dark:text-bank-dark-text-muted">Open a new account with us and get a ₹50 bonus.</p><button onclick="handleAddBank(${bank.id}, '${bank.name}')" class="add-bank-btn mt-4 w-full text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Add Bank</button></div>`;
             listEl.insertAdjacentHTML('beforeend', cardHTML);
         });
     } catch (error) {
@@ -511,30 +538,23 @@ async function handleTransferSubmit(event) {
     const accountId = document.body.dataset.accountId;
     const recipientAccountNumber = document.getElementById('transferAccountNumber').value.replace(/[-\s]/g, '');
     const amount = parseFloat(document.getElementById('transferAmount').value);
-    
-    // --- MODIFIED: Changed from 'password' to 'pin' ---
     const pin = document.getElementById('transferPin').value;
     const errorDiv = document.getElementById('transferError');
     const submitButton = document.getElementById('submitTransfer');
-    
     hideModalError(errorDiv);
-    
     if (!recipientAccountNumber || isNaN(amount) || amount <= 0 || !pin) {
         showModalError(errorDiv, "Please complete all fields, including your 4-digit PIN."); return;
     }
     if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
          showModalError(errorDiv, "PIN must be exactly 4 digits."); return;
     }
-
     toggleSpinner(submitButton, true);
     try {
-        // --- MODIFIED: Send 'pin' in the body ---
-        const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/transfer`, { 
-            method: 'POST', 
-            body: JSON.stringify({ recipientAccountNumber, amount, pin }) 
+        const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/transfer`, {
+            method: 'POST',
+            body: JSON.stringify({ recipientAccountNumber, amount, pin })
         });
         if (!response.ok) throw new Error(await response.text());
-        
         refreshDashboardData();
         hideModal('transferModal');
         showToast("Transfer successful!");
@@ -550,30 +570,23 @@ async function handlePayBillSubmit(event) {
     const form = event.target;
     const billerName = document.getElementById('payBillBiller').value;
     const amount = parseFloat(document.getElementById('payBillAmount').value);
-    
-    // --- MODIFIED: Changed from 'password' to 'pin' ---
     const pin = document.getElementById('payBillPin').value;
     const errorDiv = document.getElementById('payBillError');
     const submitButton = document.getElementById('submitPayBill');
-    
     hideModalError(errorDiv);
-    
     if (!billerName || isNaN(amount) || amount <= 0 || !pin) {
         showModalError(errorDiv, "Please complete all fields, including your 4-digit PIN."); return;
     }
     if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
          showModalError(errorDiv, "PIN must be exactly 4 digits."); return;
     }
-
     toggleSpinner(submitButton, true);
     try {
-        // --- MODIFIED: Send 'pin' in the body ---
-        const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/paybill`, { 
-            method: 'POST', 
-            body: JSON.stringify({ billerName, amount, pin }) 
+        const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/paybill`, {
+            method: 'POST',
+            body: JSON.stringify({ billerName, amount, pin })
         });
         if (!response.ok) throw new Error(await response.text());
-        
         refreshDashboardData();
         hideModal('payBillModal');
         showToast("Bill payment successful!");
@@ -630,42 +643,6 @@ async function handleChangePasswordSubmit(event) {
     }
 }
 
-// --- NEW: Handler for the "Set PIN" form on account.html ---
-async function handleSetPinSubmit(event) {
-    event.preventDefault();
-    const form = event.target;
-    // Get values from the NEW form in account.html
-    const currentPassword = document.getElementById('pinCurrentPassword').value;
-    const newPin = document.getElementById('newPin').value;
-    const errorDiv = document.getElementById('setPinError');
-    const submitButton = document.getElementById('submitSetPin');
-    hideModalError(errorDiv);
-
-    if (!currentPassword || !newPin) {
-        showModalError(errorDiv, "Please fill in both fields."); return;
-    }
-    if (newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
-        showModalError(errorDiv, "PIN must be exactly 4 digits."); return;
-    }
-
-    toggleSpinner(submitButton, true);
-    try {
-        // Call the new, secured endpoint. Username is from the token.
-        const response = await fetchSecure(`${ACCOUNT_API_URL}/set-pin`, {
-            method: 'POST',
-            body: JSON.stringify({ password: currentPassword, pin: newPin })
-        });
-        if (!response.ok) throw new Error(await response.text());
-        
-        form.reset();
-        showToast("Security PIN updated successfully!");
-    } catch (error) {
-        showModalError(errorDiv, error.message);
-    } finally {
-        toggleSpinner(submitButton, false);
-    }
-}
-
 // --- NEW: Handler for CSV Download ---
 async function handleDownloadCsv() {
     const accountId = document.body.dataset.accountId;
@@ -679,13 +656,19 @@ async function handleDownloadCsv() {
     try {
         // Use fetchSecure to send the auth token, mark as CSV request
         const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/export/csv`, { isCsv: true });
-        
+
         if (!response.ok) {
-            throw new Error('Could not download statement.');
+            // Try to get error text if possible
+            let errorMsg = 'Could not download statement.';
+            try {
+                const errText = await response.text();
+                if (errText) errorMsg += ` Server said: ${errText}`;
+            } catch (_) {}
+            throw new Error(errorMsg);
         }
-        
+
         const blob = await response.blob();
-        
+
         // Create a temporary link to trigger the download
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -696,7 +679,7 @@ async function handleDownloadCsv() {
         a.click();
         window.URL.revokeObjectURL(url);
         a.remove();
-        
+
     } catch (error) {
         console.error('Error downloading statement:', error);
         showToast(error.message, true);
@@ -727,25 +710,37 @@ async function handleLogin(event) {
         showModalError(errorMessage, 'Cannot connect to the server.');
     }
 }
+
+// --- MODIFIED --- Updated handleRegister function to redirect to create-pin.html
 async function handleRegister(event) {
     event.preventDefault();
     const fullName = document.getElementById('fullName').value;
     const username = document.getElementById('username').value;
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
+    // --- REMOVED PIN/Confirm PIN variables ---
     const errorMessage = document.getElementById('errorMessage');
     const successMessage = document.getElementById('successMessage');
     hideModalError(errorMessage);
     successMessage.classList.add('hidden');
+
+    // --- REMOVED PIN VALIDATION ---
+
     try {
-        const response = await fetch(`${AUTH_API_URL}/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fullName, username, email, password }) });
+        // --- REMOVED 'pin' FROM REQUEST BODY ---
+        const response = await fetch(`${AUTH_API_URL}/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fullName, username, email, password }) // <-- Removed pin
+        });
+        // ---------------------------------
+
         const responseText = await response.text();
         if (response.ok) {
-            // --- MODIFIED: We no longer go to create-pin.html ---
-            // We just tell them to log in and set it from their profile.
-            successMessage.textContent = "Registration successful! Please log in to continue.";
-            successMessage.classList.remove('hidden');
-            setTimeout(() => { window.location.href = 'login.html'; }, 3000);
+            // --- MODIFIED: Save temp credentials and redirect ---
+            localStorage.setItem('tempUser', JSON.stringify({ username, password }));
+            window.location.href = 'create-pin.html';
+            // --------------------------------------------------
         } else {
             showModalError(errorMessage, responseText || `Registration failed`);
         }
@@ -754,13 +749,92 @@ async function handleRegister(event) {
     }
 }
 
-// --- MODIFIED: This function is now OBSOLETE ---
-// The new handleSetPinSubmit replaces it. I am removing it.
-/*
+// --- ADDED BACK handlePinSetup function ---
 async function handlePinSetup(event) {
-    // ... (obsolete code removed) ...
+    event.preventDefault();
+    const password = document.getElementById('password').value;
+    const newPin = document.getElementById('newPin').value;
+    const confirmNewPin = document.getElementById('confirmNewPin').value; // Corrected ID
+    const errorMessage = document.getElementById('errorMessage');
+    const successMessage = document.getElementById('successMessage');
+    const submitButton = document.getElementById('submitPinSetup');
+    hideModalError(errorMessage);
+    successMessage.classList.add('hidden');
+
+    if (!password || !newPin || !confirmNewPin) {
+        showModalError(errorMessage, "Please fill in all fields."); return;
+    }
+    if (newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
+        showModalError(errorMessage, "PIN must be exactly 4 digits."); return;
+    }
+    if (newPin !== confirmNewPin) {
+        showModalError(errorMessage, "PINs do not match."); return;
+    }
+
+    // Retrieve the temp user details (needed for authentication)
+    const tempUserData = JSON.parse(localStorage.getItem('tempUser'));
+    if (!tempUserData || !tempUserData.username || !tempUserData.password) {
+        showModalError(errorMessage, "Session expired or invalid. Please register again or log in.");
+        localStorage.removeItem('tempUser'); // Clean up bad data
+        return;
+    }
+
+    // IMPORTANT: Verify the password entered NOW matches the one saved during registration
+    if (password !== tempUserData.password) {
+        showModalError(errorMessage, "Incorrect password. Please enter the password you used during registration.");
+        return;
+    }
+
+    toggleSpinner(submitButton, true);
+    try {
+        // --- We need to authenticate first to get a token ---
+        // 1. Log in temporarily
+        const loginResponse = await fetch(`${AUTH_API_URL}/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: tempUserData.username, password: tempUserData.password })
+        });
+
+        if (!loginResponse.ok) {
+            throw new Error("Authentication failed before setting PIN. Please try logging in manually.");
+        }
+        const loginData = await loginResponse.json();
+        const tempToken = loginData.accessToken; // Get the token
+
+        // 2. Use the token to call the set-pin endpoint
+        const setPinResponse = await fetch(`${ACCOUNT_API_URL}/set-pin`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${tempToken}` // Use the temporary token
+            },
+            body: JSON.stringify({ password: tempUserData.password, pin: newPin }) // Send password and NEW pin
+        });
+
+        if (!setPinResponse.ok) {
+            // Try to get a more specific error
+            let errorText = "Failed to set PIN.";
+            try { errorText = await setPinResponse.text(); } catch(_) {}
+            throw new Error(errorText);
+        }
+
+        // Success!
+        localStorage.removeItem('tempUser'); // Clean up temp data
+        successMessage.textContent = "PIN set successfully! Redirecting to login...";
+        successMessage.classList.remove('hidden');
+        setTimeout(() => { window.location.href = 'login.html'; }, 2000);
+
+    } catch (error) {
+        showModalError(errorMessage, error.message || "An error occurred. Please try again.");
+        // If login worked but setPin failed, the user might still exist without a PIN.
+        // It's safest to just redirect to login after showing the error.
+        localStorage.removeItem('tempUser'); // Clean up temp data on error too
+        setTimeout(() => { window.location.href = 'login.html'; }, 4000); // Longer delay on error
+    } finally {
+        toggleSpinner(submitButton, false);
+    }
 }
-*/
+// ------------------------------------------
 
 function checkAuth() {
     if (!localStorage.getItem('authToken')) {

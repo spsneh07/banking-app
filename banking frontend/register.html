@@ -3,77 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - Big Bull Portal</title>
+    <title>Register - Banking Unified System </title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="style.css">
     <script>
+        // --- Using the corrected config with explicit light/dark ---
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    colors: { 'bank-primary': '#3b82f6', 'bank-secondary': '#1f2937', 'bank-dark': '#111827', 'bank-text': '#e5e7eb', 'bank-text-muted': '#9ca3af' }
+                    colors: {
+                        // Base Palette
+                        'bank-primary': '#3b82f6',
+                        'bank-primary-hover': '#2563eb',
+                        'bank-success': '#22c55e',
+                        'bank-danger': '#ef4444',
+                        'bank-warning': '#f59e0b',
+                        'bank-info': '#38bdf8',
+
+                        // Light Mode Explicit Colors
+                        'bank-light-bg': '#f9fafb',      // Light gray page BG
+                        'bank-light-card': '#ffffff',    // White card BG
+                        'bank-light-text': '#111827',    // Dark text
+                        'bank-light-text-muted': '#6b7280', // Muted dark text
+
+                        // Dark Mode Explicit Colors
+                        'bank-dark-bg': '#111827',       // Dark page BG (gray-900)
+                        'bank-dark-card': '#1f2937',     // Dark card BG (gray-800)
+                        'bank-dark-text': '#e5e7eb',     // Light text
+                        'bank-dark-text-muted': '#9ca3af' // Muted light text
+                    }
                 }
             }
         }
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
+
+        // Apply theme immediately
+        function applyInitialTheme() {
+            const theme = localStorage.getItem('theme') || 'system';
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else if (theme === 'light') {
+                document.documentElement.classList.remove('dark');
+            } else { // 'system'
+                if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            }
         }
+        applyInitialTheme();
     </script>
 </head>
-<body class="flex items-center justify-center min-h-screen font-sans dark:bg-bank-dark">
+<body class="flex items-center justify-center min-h-screen font-sans bg-bank-light-bg dark:bg-bank-dark-bg">
     <div class="w-full max-w-md p-8">
-        <div class="bg-white dark:bg-bank-secondary bg-opacity-70 dark:bg-opacity-70 backdrop-blur-lg shadow-2xl rounded-2xl p-8 border border-gray-200 dark:border-gray-700">
-            <h1 class="text-3xl font-bold text-center text-gray-900 dark:text-white mb-6">Create Your Portal Account</h1>
+        <div class="bg-bank-light-card dark:bg-bank-dark-card bg-opacity-70 dark:bg-opacity-70 backdrop-blur-lg shadow-2xl rounded-2xl p-8 border border-gray-200 dark:border-gray-700">
+            <h1 class="text-3xl font-bold text-center text-bank-light-text dark:text-bank-dark-text mb-6">Create Your Portal Account</h1>
 
-            <form id="registerForm" class="space-y-4">
-                <div id="errorMessage" class="hidden p-4 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-800 dark:bg-opacity-50 rounded-lg"></div>
+            <form id="registerForm" class="space-y-4"> <div id="errorMessage" class="hidden p-4 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-800 dark:bg-opacity-50 rounded-lg"></div>
                 <div id="successMessage" class="hidden p-4 text-sm text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-800 dark:bg-opacity-50 rounded-lg"></div>
 
                 <div>
-                    <label for="fullName" class="block text-sm font-medium text-gray-700 dark:text-bank-text-muted">Full Name</label>
+                    <label for="fullName" class="block text-sm font-medium text-bank-light-text-muted dark:text-bank-dark-text-muted">Full Name</label>
                     <div class="mt-2 input-icon-group">
                         <div class="input-icon"><i class="bi bi-person-badge-fill"></i></div>
                         <input id="fullName" type="text" required class="input-with-icon w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-bank-primary">
                     </div>
                 </div>
                 <div>
-                    <label for="username" class="block text-sm font-medium text-gray-700 dark:text-bank-text-muted">Username</label>
+                    <label for="username" class="block text-sm font-medium text-bank-light-text-muted dark:text-bank-dark-text-muted">Username</label>
                     <div class="mt-2 input-icon-group">
                         <div class="input-icon"><i class="bi bi-person-fill"></i></div>
                         <input id="username" type="text" required class="input-with-icon w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-bank-primary">
                     </div>
                 </div>
                 <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700 dark:text-bank-text-muted">Email address</label>
+                    <label for="email" class="block text-sm font-medium text-bank-light-text-muted dark:text-bank-dark-text-muted">Email address</label>
                     <div class="mt-2 input-icon-group">
                         <div class="input-icon"><i class="bi bi-envelope-fill"></i></div>
                         <input id="email" type="email" required class="input-with-icon w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-bank-primary">
                     </div>
                 </div>
                 <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700 dark:text-bank-text-muted">Password</label>
+                    <label for="password" class="block text-sm font-medium text-bank-light-text-muted dark:text-bank-dark-text-muted">Password</label>
                     <div class="mt-2 input-icon-group">
                         <div class="input-icon"><i class="bi bi-lock-fill"></i></div>
                         <input id="password" type="password" required minlength="6" class="input-with-icon w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-bank-primary">
                     </div>
-                </div>
-
-                <div>
-                    <button type="submit" class="flex w-full justify-center rounded-md bg-bank-primary py-2 px-4 text-sm font-semibold text-white shadow-sm hover:bg-opacity-80 transition duration-200">
+                </div> <div> <button type="submit" class="flex w-full justify-center rounded-md bg-bank-primary py-2 px-4 text-sm font-semibold text-white shadow-sm hover:bg-opacity-80 transition duration-200">
                         Register
                     </button>
                 </div>
             </form>
 
-            <p class="mt-8 text-center text-sm text-gray-600 dark:text-bank-text-muted">
+            <p class="mt-8 text-center text-sm text-bank-light-text-muted dark:text-bank-dark-text-muted">
                 Already have an account?
                 <a href="login.html" class="font-semibold text-bank-primary hover:text-opacity-80">Login here</a>
             </p>
-            <p class="mt-4 text-center text-sm text-gray-600 dark:text-bank-text-muted">
+            <p class="mt-4 text-center text-sm text-bank-light-text-muted dark:text-bank-dark-text-muted">
                 <a href="index.html" class="font-semibold text-bank-primary hover:text-opacity-80">← Back to Home</a>
             </p>
         </div>

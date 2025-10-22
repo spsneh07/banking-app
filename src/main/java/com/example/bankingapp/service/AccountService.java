@@ -58,15 +58,22 @@ public class AccountService {
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }
-    
-    @Transactional
-    public void setPin(String username, String password, String newPin) {
-        verifyUserPassword(username, password); // Verifies password before setting PIN
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
-        user.setPin(passwordEncoder.encode(newPin)); // Hashes and saves the new PIN
-        userRepository.save(user);
-    }
+    // Inside AccountService class
+
+// --- ADD THIS METHOD BACK ---
+@Transactional
+public void setPin(String username, String currentPassword, String newPin) {
+    // Verify the user's *current* password before allowing PIN change
+    verifyUserPassword(username, currentPassword);
+
+    User user = userRepository.findByUsername(username)
+            .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
+    // Hash and save the new PIN
+    user.setPin(passwordEncoder.encode(newPin));
+    userRepository.save(user);
+}
+// --------------------------
 
     // --- Transaction methods are now account-specific ---
     @Transactional

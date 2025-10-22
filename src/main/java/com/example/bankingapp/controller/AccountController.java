@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -169,19 +170,27 @@ public class AccountController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    // Inside AccountController class
 
-    @PostMapping("/set-pin")
-    public ResponseEntity<?> setPin(@Valid @RequestBody PinSetupRequest request) {
-        try {
-            accountService.setPin(getAuthenticatedUsername(), request.getPassword(), request.getPin());
-            return ResponseEntity.ok("PIN set successfully."); 
-        } catch (AuthenticationException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid password. Please try again.");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+// --- ADD THIS METHOD BACK ---
+@PostMapping("/set-pin")
+public ResponseEntity<?> setPin(@Valid @RequestBody PinSetupRequest request) {
+    // Note: We get the username from the security context (token), NOT the request body
+    String username = getAuthenticatedUsername();
+    try {
+        // The service method now correctly verifies the *current* password
+        accountService.setPin(username, request.getPassword(), request.getPin());
+        return ResponseEntity.ok("PIN set successfully.");
+    } catch (BadCredentialsException e) { // Catch specific password error
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid current password.");
+    } catch (AuthenticationException e) { // General auth errors
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication failed.");
+    } catch (Exception e) { // Other errors
+        return ResponseEntity.badRequest().body(e.getMessage());
     }
-    
+}
+// --------------------------
+
     @GetMapping("/verify-recipient")
     public ResponseEntity<?> verifyRecipient(@RequestParam String accountNumber) {
         try {

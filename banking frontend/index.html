@@ -7,22 +7,45 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="style.css">
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    colors: { 'bank-primary': '#3b82f6', 'bank-secondary': '#1f2937', 'bank-dark': '#0d1117', 'bank-text': '#e5e7eb', 'bank-text-muted': '#9ca3af' }
+<script>
+    tailwind.config = {
+        darkMode: 'class',
+        theme: {
+            extend: {
+                fontFamily: { sans: ['Inter', 'sans-serif'] },
+                colors: {
+                    'bank-primary': '#3b82f6',
+                    'bank-primary-hover': '#2563eb',
+                    'bank-secondary': '#ffffff', // White for light cards
+                    'bank-dark': '#f9fafb',      // Light gray for light page BG
+                    'bank-text': '#111827',      // Dark text for light mode
+                    'bank-text-muted': '#6b7280',// Muted text for light mode
+                    'bank-success': '#22c55e',
+                    'bank-danger': '#ef4444',
+                    'bank-warning': '#f59e0b',
+                    'bank-info': '#38bdf8',
                 }
             }
         }
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    }
+
+    // This script now just applies the theme, app.js handles the logic
+    function applyInitialTheme() {
+        const theme = localStorage.getItem('theme') || 'system';
+        if (theme === 'dark') {
             document.documentElement.classList.add('dark');
-        } else {
+        } else if (theme === 'light') {
             document.documentElement.classList.remove('dark');
+        } else { // 'system'
+            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
         }
-    </script>
+    }
+    applyInitialTheme();
+</script>
 </head>
 <body class="font-sans dark:bg-bank-dark dark:text-bank-text">
     <div class="flex flex-col items-center justify-center min-h-screen p-6">
@@ -52,10 +75,9 @@
         </div>
         
         <div class="absolute top-5 right-5">
-            <button id="theme-toggle" type="button" class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-sm p-2.5">
-                <i id="theme-toggle-dark-icon" class="bi bi-moon-stars-fill w-5 h-5 hidden"></i>
-                <i id="theme-toggle-light-icon" class="bi bi-sun-fill w-5 h-5 hidden"></i>
-            </button>
+           <button id="theme-toggle" type="button" class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-sm p-2.5">
+    <i id="theme-toggle-icon" class="bi w-5 h-5"></i>
+</button>
         </div>
     </div>
     <script src="app.js"></script>

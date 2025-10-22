@@ -5,34 +5,55 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 2. Custom dark gradient background */
+/* 2. Custom dark gradient background (Slate) */
 body {
-    background-color: #111827; /* Dark blue-gray fallback */
-    /* A deep navy-to-charcoal gradient */
-    background-image: linear-gradient(135deg, #111827 0%, #0d1117 100%);
+    background-color: #0f172a; /* slate-900 fallback */
+    /* A deep slate-to-charcoal gradient */
+    background-image: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
     background-attachment: fixed;
 }
 
 /* 3. Custom component styles for a professional UI */
 @layer components {
+    /* Main App Layout */
+    .app-layout {
+        @apply grid grid-cols-1 lg:grid-cols-[280px_1fr];
+    }
+    .app-main-content {
+        @apply p-6 lg:p-8;
+    }
+    
+    /* Sidebar Navigation */
+    .sidebar-link {
+        @apply flex items-center p-3 text-base font-medium text-slate-400 rounded-lg hover:bg-slate-700 hover:text-white transition-colors duration-200;
+    }
+    .sidebar-link.active {
+        @apply bg-bank-primary text-white; /* Use new primary color */
+    }
+    
+    /* Professional Cards with Glassmorphism & Hover */
+    .pro-card {
+        @apply bg-white dark:bg-slate-800 bg-opacity-70 dark:bg-opacity-60 backdrop-blur-lg border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg 
+               transition-all duration-300 ease-in-out;
+    }
+    .pro-card-hover {
+        @apply hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-2xl hover:-translate-y-1;
+    }
+
+    /* Input fields with icons */
+    .input-icon-group { @apply relative; }
+    .input-icon { @apply absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400; }
+    .input-with-icon { @apply pl-10; }
+    
     /* Style for navigation tabs on the dashboard */
     .nav-tab-btn {
-        @apply inline-block px-6 py-3 border-b-2 border-transparent rounded-t-lg text-lg font-medium text-gray-400 
-               hover:text-gray-200 hover:border-gray-500 
+        @apply inline-block px-6 py-3 border-b-2 border-transparent rounded-t-lg text-lg font-medium text-gray-500 dark:text-gray-400 
+               hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-400 dark:hover:border-gray-500 
                transition-colors duration-200;
     }
     .nav-tab-btn.active {
+        /* Use new primary color */
         @apply text-bank-primary border-bank-primary;
     }
-
-    /* Style for input fields with icons */
-    .input-icon-group {
-        @apply relative;
-    }
-    .input-icon {
-        @apply absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400;
-    }
-    .input-with-icon {
-        @apply pl-10; /* Add padding to the left for the icon */
-    }
 }
+
