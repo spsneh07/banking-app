@@ -24,21 +24,34 @@
                         'bank-info': '#38bdf8',
 
                         // Light Mode Explicit Colors
-                        'bank-light-bg': '#f9fafb',
-                        'bank-light-card': '#ffffff',
-                        'bank-light-text': '#111827',
-                        'bank-light-text-muted': '#6b7280',
+                        'bank-light-bg': '#f9fafb',      // Light gray page BG
+                        'bank-light-card': '#ffffff',    // White card BG
+                        'bank-light-text': '#111827',    // Dark text
+                        'bank-light-text-muted': '#6b7280', // Muted dark text
 
                         // Dark Mode Explicit Colors
-                        'bank-dark-bg': '#111827',
-                        'bank-dark-card': '#1f2937',
-                        'bank-dark-text': '#e5e7eb',
-                        'bank-dark-text-muted': '#9ca3af'
+                        'bank-dark-bg': '#111827',       // Dark page BG (gray-900)
+                        'bank-dark-card': '#1f2937',     // Dark card BG (gray-800)
+                        'bank-dark-text': '#e5e7eb',     // Light text
+                        'bank-dark-text-muted': '#9ca3af' // Muted light text
                     }
                 }
             }
         }
-        function applyInitialTheme() { /* ... same as other pages ... */ }
+        function applyInitialTheme() {
+            const theme = localStorage.getItem('theme') || 'system';
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else if (theme === 'light') {
+                document.documentElement.classList.remove('dark');
+            } else { // 'system'
+                if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            }
+        }
         applyInitialTheme();
     </script>
 </head>
@@ -85,8 +98,8 @@
                     </button>
                 </div>
             </form>
-             <p class="mt-4 text-center text-sm text-gray-600 dark:text-bank-text-muted">
-                <a href="login.html" class="font-semibold text-bank-primary hover:text-opacity-80">Skip and Login (You can set PIN later)</a>
+             <p class="mt-4 text-center text-sm text-bank-light-text-muted dark:text-bank-dark-text-muted">
+                <a href="login.html" class="font-semibold text-bank-light-text-muted dark:text-bank-dark-text-muted hover:text-bank-primary dark:hover:text-bank-primary">Skip and Login (You can set PIN later)</a>
             </p>
         </div>
     </div>
