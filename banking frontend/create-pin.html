@@ -3,48 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Security PIN - Banking Unified System</title>
+    <title>Create Security PIN - Unified Banking System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <script>
-        // --- Using the config matching register/index ---
         tailwind.config = {
-            darkMode: 'class', // Keep class-based, though this page is styled dark
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
                     colors: {
-                        'bank-primary': '#6366f1', // Indigo
-                        'bank-success': '#10b981', // Emerald/Teal
-                        // Add other colors if needed by app.js (e.g., for toasts)
-                        'bank-danger': '#ef4444',
+                        'bank-primary': '#6366f1',
+                        'bank-success': '#10b981',
                     }
                 }
             }
         }
         function applyInitialTheme() {
-            // Hardcoding dark for this page based on style block
-            document.documentElement.classList.add('dark');
-            // If you want theme switching on this page, replace above with
-            // the logic from app.js setupThemeToggle (applyTheme part)
+            const theme = localStorage.getItem('theme') || 'dark';
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            }
         }
         applyInitialTheme();
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-
-        /* --- Dark Background Fix --- */
+        
         html {
             background-color: #0f172a;
-            scroll-behavior: smooth;
         }
-
-        /* --- Styles from register.html --- */
+        
         body {
             background: linear-gradient(135deg, #0a0e1a 0%, #1e1b4b 50%, #0f172a 100%);
             background-attachment: fixed;
-            position: relative;
+            min-height: 100vh;
         }
+        
         body::before {
             content: '';
             position: fixed;
@@ -52,13 +47,13 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-image:
+            background-image: 
                 linear-gradient(rgba(99, 102, 241, 0.05) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(99, 102, 241, 0.05) 1px, transparent 1px);
             background-size: 50px 50px;
             pointer-events: none;
-            z-index: 0;
         }
+        
         .glow-orb {
             position: fixed;
             border-radius: 50%;
@@ -66,120 +61,159 @@
             opacity: 0.3;
             pointer-events: none;
             animation: float 8s ease-in-out infinite;
-            z-index: 0;
         }
+        
         .orb-1 {
             width: 500px;
             height: 500px;
             background: radial-gradient(circle, #6366f1, transparent);
             top: -250px;
-            left: -250px;
+            right: -250px;
         }
+        
         .orb-2 {
             width: 400px;
             height: 400px;
             background: radial-gradient(circle, #10b981, transparent);
             bottom: -200px;
-            right: -200px;
+            left: -200px;
             animation-delay: -4s;
         }
+        
         @keyframes float {
             0%, 100% { transform: translateY(0) scale(1); }
             50% { transform: translateY(-30px) scale(1.1); }
         }
+        
         .glass-card {
             background: rgba(15, 23, 42, 0.8);
             backdrop-filter: blur(20px) saturate(180%);
             border: 1px solid rgba(148, 163, 184, 0.15);
         }
-        .gradient-text { /* Not used on this page, but kept for consistency */
+        
+        .gradient-text {
             background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #06b6d4 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
+        
         .input-glow:focus {
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
         }
-        /* --- Input Icon Styling (if you used style.css before) --- */
-        .input-icon-group {
-            position: relative;
-        }
-        .input-icon {
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            display: flex;
-            align-items: center;
-            padding-left: 1rem; /* Adjust as needed */
-            pointer-events: none;
-            color: #6b7280; /* text-slate-500 */
-        }
-        .input-with-icon {
-            padding-left: 3rem; /* Adjust to clear the icon */
-        }
     </style>
 </head>
-<body class="font-sans text-white relative min-h-screen py-12 md:py-16">
+<body class="flex items-center justify-center min-h-screen font-sans text-white relative overflow-y-auto py-8">
+    <!-- Glowing Orbs -->
     <div class="glow-orb orb-1"></div>
     <div class="glow-orb orb-2"></div>
 
-    <div class="relative z-10 w-full max-w-md p-6 mx-auto">
-        <div class="glass-card rounded-3xl p-8 shadow-2xl">
-            <h1 class="text-3xl font-bold text-center text-white mb-6">Create Your Security PIN</h1>
-            <p class="text-center text-sm text-slate-400 mb-6">
-                Registration successful! Please create a 4-digit PIN for transaction security. You'll need to enter your account password to confirm.
-            </p>
+    <!-- Main Content -->
+    <div class="relative z-10 w-full max-w-md p-6">
+        <!-- Logo Section -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl mb-6 shadow-2xl shadow-emerald-500/50 transform hover:scale-110 transition-transform duration-300">
+                <i class="bi bi-shield-lock-fill text-4xl"></i>
+            </div>
+            <h1 class="text-4xl font-black gradient-text mb-2">Secure Your Account</h1>
+            <p class="text-slate-400 text-sm">Set up your 4-digit security PIN</p>
+        </div>
 
-            <form id="pinSetupForm" class="space-y-4">
+        <!-- PIN Setup Card -->
+        <div class="glass-card rounded-3xl p-8 shadow-2xl transform hover:scale-[1.01] transition-all duration-300">
+            <div class="mb-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-emerald-600/20 rounded-xl flex items-center justify-center">
+                        <i class="bi bi-check-circle text-emerald-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold">Registration Successful!</h3>
+                        <p class="text-sm text-slate-400">Now set your PIN</p>
+                    </div>
+                </div>
+                <p class="text-sm text-slate-400">
+                    Your PIN will be used to authorize transfers, bill payments, and other sensitive transactions.
+                </p>
+            </div>
+            
+            <form id="pinSetupForm" class="space-y-5">
+                <!-- Error Message -->
                 <div id="errorMessage" class="hidden p-4 text-sm text-red-300 bg-red-900/30 border border-red-500/30 rounded-xl backdrop-blur-sm"></div>
+                
+                <!-- Success Message -->
                 <div id="successMessage" class="hidden p-4 text-sm text-green-300 bg-green-900/30 border border-green-500/30 rounded-xl backdrop-blur-sm"></div>
 
-                <div>
+                <!-- Password Input -->
+                <div class="relative">
                     <label for="password" class="block text-sm font-medium text-slate-400 mb-2">Your Account Password</label>
-                    <div class="mt-2 input-icon-group relative">
-                        <div class="input-icon absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-500"><i class="bi bi-lock-fill text-lg"></i></div>
-                        <input id="password" type="password" required
-                               class="input-with-icon w-full pl-12 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-500">
+                            <i class="bi bi-lock-fill text-lg"></i>
+                        </div>
+                        <input id="password" type="password" required 
+                            class="w-full pl-12 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200"
+                            placeholder="Enter your password">
                     </div>
+                    <p class="text-xs text-slate-500 mt-1">
+                        <i class="bi bi-info-circle mr-1"></i>Use the password you just created
+                    </p>
                 </div>
 
-                <div>
+                <!-- New PIN Input -->
+                <div class="relative">
                     <label for="newPin" class="block text-sm font-medium text-slate-400 mb-2">New 4-Digit PIN</label>
-                    <div class="mt-2 input-icon-group relative">
-                         <div class="input-icon absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-500"><i class="bi bi-shield-lock-fill text-lg"></i></div>
-                         <input type="password" id="newPin" placeholder="••••"
-                                class="input-with-icon w-full pl-12 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200"
-                                required maxlength="4" pattern="\d{4}" title="PIN must be 4 digits." inputmode="numeric">
-                    </div>
-                </div>
-                <div>
-                    <label for="confirmNewPin" class="block text-sm font-medium text-slate-400 mb-2">Confirm 4-Digit PIN</label>
-                    <div class="mt-2 input-icon-group relative">
-                        <div class="input-icon absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-500"><i class="bi bi-shield-check text-lg"></i></div>
-                        <input type="password" id="confirmNewPin" placeholder="••••"
-                               class="input-with-icon w-full pl-12 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200"
-                               required maxlength="4" pattern="\d{4}" title="PIN must be 4 digits." inputmode="numeric">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-500">
+                            <i class="bi bi-shield-lock-fill text-lg"></i>
+                        </div>
+                        <input type="password" id="newPin" placeholder="••••" 
+                            class="w-full pl-12 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200"
+                            required maxlength="4" pattern="\d{4}" title="PIN must be 4 digits." inputmode="numeric">
                     </div>
                 </div>
 
-                <div>
-                    <button id="submitPinSetup" type="submit"
-                            class="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-xl font-semibold text-white shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transform hover:scale-105 transition-all duration-300 mt-6">
-                        <i class="bi bi-check-circle mr-2"></i>Set PIN and Finish
-                    </button>
+                <!-- Confirm PIN Input -->
+                <div class="relative">
+                    <label for="confirmNewPin" class="block text-sm font-medium text-slate-400 mb-2">Confirm 4-Digit PIN</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-500">
+                            <i class="bi bi-shield-check text-lg"></i>
+                        </div>
+                        <input type="password" id="confirmNewPin" placeholder="••••" 
+                            class="w-full pl-12 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200"
+                            required maxlength="4" pattern="\d{4}" title="PIN must be 4 digits." inputmode="numeric">
+                    </div>
                 </div>
+
+                <!-- Submit Button -->
+                <button id="submitPinSetup" type="submit" 
+                    class="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-xl font-semibold text-white shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transform hover:scale-105 transition-all duration-300">
+                    <i class="bi bi-check-circle mr-2"></i>Set PIN and Finish
+                </button>
             </form>
-            <p class="mt-6 text-center text-sm text-slate-400">
-                <a href="login.html" class="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">Skip and Login (You can set PIN later)</a>
-            </p>
+
+            <!-- Skip Link -->
+            <div class="mt-6 text-center">
+                <p class="text-sm text-slate-400">
+                    <a href="login.html" class="font-semibold text-slate-300 hover:text-indigo-400 transition-colors">
+                        Skip for now (You can set PIN later)
+                    </a>
+                </p>
+            </div>
         </div>
-         <p class="text-center text-xs text-slate-500 mt-8">
-            <i class="bi bi-shield-lock mr-1"></i>
-            Your data is encrypted and secure
-        </p>
+
+        <!-- Security Info -->
+        <div class="mt-6 glass-card rounded-2xl p-4">
+            <div class="flex items-start gap-3">
+                <i class="bi bi-shield-check text-emerald-400 text-xl mt-1"></i>
+                <div>
+                    <p class="text-sm font-semibold text-white mb-1">Why do I need a PIN?</p>
+                    <p class="text-xs text-slate-400">Your PIN provides an extra layer of security for transactions. It's separate from your password and helps protect against unauthorized access.</p>
+                </div>
+            </div>
+        </div>
     </div>
+
     <script src="app.js"></script>
 </body>
 </html>

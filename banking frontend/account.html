@@ -8,57 +8,36 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <script>
-        // --- Using the full config with explicit light/dark (though this page is styled dark) ---
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
                     colors: {
-                        // Base Palette (Matching register/index)
-                        'bank-primary': '#6366f1', // Indigo
-                        'bank-primary-hover': '#4f46e5',
-                        'bank-success': '#10b981', // Emerald/Teal
+                        'bank-primary': '#6366f1',
+                        'bank-success': '#10b981',
                         'bank-danger': '#ef4444',
                         'bank-warning': '#f59e0b',
-                        'bank-info': '#06b6d4',
-
-                        // Light Mode (Placeholder)
-                        'bank-light-bg': '#f9fafb',
-                        'bank-light-card': '#ffffff',
-                        'bank-light-text': '#111827',
-                        'bank-light-text-muted': '#6b7280',
-
-                        // Dark Mode (Matching register/index)
-                        'bank-dark-bg': '#0f172a',
-                        'bank-dark-card': 'rgba(15, 23, 42, 0.8)', // Glass card BG
-                        'bank-dark-text': '#e2e8f0',     // slate-200
-                        'bank-dark-text-muted': '#94a3b8' // slate-400
                     }
                 }
             }
         }
-        function applyInitialTheme() {
-            // Hardcoding dark for this page based on style block
-            document.documentElement.classList.add('dark');
-        }
-        applyInitialTheme();
+        document.documentElement.classList.add('dark');
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-        /* --- Dark Background Fix --- */
         html {
-            background-color: #0f172a; /* Add base dark color */
+            background-color: #0f172a;
             scroll-behavior: smooth;
         }
 
-        /* --- Styles from register.html --- */
         body {
             background: linear-gradient(135deg, #0a0e1a 0%, #1e1b4b 50%, #0f172a 100%);
             background-attachment: fixed;
             position: relative;
         }
+        
         body::before {
             content: '';
             position: fixed;
@@ -73,6 +52,7 @@
             pointer-events: none;
             z-index: 0;
         }
+        
         .glow-orb {
             position: fixed;
             border-radius: 50%;
@@ -82,6 +62,7 @@
             animation: float 8s ease-in-out infinite;
             z-index: 0;
         }
+        
         .orb-1 {
             width: 500px;
             height: 500px;
@@ -89,6 +70,7 @@
             top: -250px;
             left: -250px;
         }
+        
         .orb-2 {
             width: 400px;
             height: 400px;
@@ -97,186 +79,250 @@
             right: -200px;
             animation-delay: -4s;
         }
+        
         @keyframes float {
             0%, 100% { transform: translateY(0) scale(1); }
             50% { transform: translateY(-30px) scale(1.1); }
         }
-        .glass-card { /* Main card style */
+        
+        .glass-card {
             background: rgba(15, 23, 42, 0.8);
             backdrop-filter: blur(20px) saturate(180%);
             border: 1px solid rgba(148, 163, 184, 0.15);
         }
-         .nav-glass { /* Navbar style */
+        
+        .nav-glass {
             background: rgba(15, 23, 42, 0.8);
             backdrop-filter: blur(20px) saturate(180%);
             border-bottom: 1px solid rgba(148, 163, 184, 0.1);
         }
-        .gradient-text { /* Gradient text style */
+        
+        .gradient-text {
             background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #06b6d4 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-        .input-glow:focus { /* Input focus glow */
+        
+        .input-glow:focus {
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
         }
-        /* Tab styling - UPDATED SIZE */
-        @layer components {
-            .nav-tab-btn {
-                 /* Larger Size Attempt 2: text-xl, font-bold, px-10, py-5 */
-                @apply inline-block px-10 py-5 border-b-2 border-transparent rounded-t-lg text-xl font-bold text-slate-400 /* text-xl, font-bold, px-10, py-5 */
-                       hover:text-slate-200 hover:border-slate-500
-                       transition-colors duration-200;
-            }
-            .nav-tab-btn.active {
-                @apply text-indigo-400 border-indigo-500;
-            }
+        
+        .nav-tab-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            border-bottom: 3px solid transparent;
+            border-radius: 0.75rem 0.75rem 0 0;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #94a3b8;
+            transition: all 0.2s ease;
+            position: relative;
         }
-
-        /* Modal styling */
+        
+        .nav-tab-btn:hover {
+            color: #cbd5e1;
+            background: rgba(99, 102, 241, 0.1);
+        }
+        
+        .nav-tab-btn.active {
+            color: #818cf8;
+            border-bottom-color: #818cf8;
+            background: rgba(99, 102, 241, 0.15);
+        }
+        
         .modal-card {
-            background: rgba(30, 41, 59, 0.95); /* Slightly less transparent than glass-card */
-             backdrop-filter: blur(15px) saturate(150%);
-             border: 1px solid rgba(148, 163, 184, 0.2);
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(15px) saturate(150%);
+            border: 1px solid rgba(148, 163, 184, 0.2);
         }
-        /* Input icon styles */
-         .input-icon-group { position: relative; }
-         .input-icon { position: absolute; left: 0; top: 0; bottom: 0; display: flex; align-items: center; padding-left: 1rem; pointer-events: none; color: #6b7280; } /* text-slate-500 */
-         .input-with-icon { padding-left: 3rem; }
     </style>
 </head>
-<body class="font-sans text-bank-dark-text relative min-h-screen"> <div class="glow-orb orb-1"></div>
+<body class="font-sans text-white relative min-h-screen">
+    <div class="glow-orb orb-1"></div>
     <div class="glow-orb orb-2"></div>
 
-    <nav class="nav-glass fixed w-full z-20 top-0 start-0">
-        <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
+    <!-- Navigation -->
+    <nav class="nav-glass fixed w-full z-20 top-0">
+        <div class="max-w-7xl flex items-center justify-between mx-auto p-4">
             <div class="flex items-center space-x-4">
-                <a href="dashboard.html" title="Back to Portal" class="text-slate-400 hover:text-white transition-colors">
+                <a href="dashboard.html" title="Back to Portal" class="text-slate-400 hover:text-white transition-colors transform hover:scale-110">
                     <i class="bi bi-arrow-left-circle-fill text-2xl"></i>
                 </a>
-                <span class="text-2xl font-bold text-white" id="bankNameDisplay">Account Details</span>
+                <span class="text-2xl font-bold gradient-text" id="bankNameDisplay">Account Details</span>
             </div>
             <div class="flex items-center space-x-4">
-                <button id="theme-toggle" type="button" class="p-3 rounded-xl bg-slate-800/50 hover:bg-indigo-600/20 text-slate-300 transition-all duration-300 transform hover:scale-110">
-                    <i id="theme-toggle-icon" class="bi text-xl"></i>
+                <button id="theme-toggle" type="button" class="p-3 rounded-xl glass-card hover:bg-indigo-600/20 transition-all duration-300 transform hover:scale-110">
+                    <i id="theme-toggle-icon" class="bi bi-moon-stars-fill text-xl"></i>
                 </button>
-                <button id="logoutButton" type="button" class="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl font-semibold text-white transition-all duration-300 transform hover:scale-105 shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50">
-                     <i class="bi bi-box-arrow-right mr-2"></i>Logout
+                <button id="logoutButton" type="button" class="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg shadow-indigo-500/30">
+                    <i class="bi bi-box-arrow-right mr-2"></i>Logout
                 </button>
             </div>
         </div>
     </nav>
 
-    <div class="relative z-10 max-w-screen-xl mx-auto pt-24 px-4 pb-16">
-        <header class="mb-8">
-            <h1 class="text-3xl font-bold text-white">Welcome, <span id="username-display" class="gradient-text">User</span>!</h1>
-            <p class="text-lg text-slate-400 mt-2">
+    <!-- Main Content -->
+    <div class="relative z-10 max-w-7xl mx-auto pt-28 px-4 sm:px-6 lg:px-8 pb-16">
+        <!-- Header -->
+        <header class="mb-10">
+            <h1 class="text-4xl font-bold text-white mb-2">
+                Welcome, <span id="username-display" class="gradient-text">User</span>! 👋
+            </h1>
+            <p class="text-lg text-slate-400">
                 Account Number: <strong id="userAccountNumber" class="text-slate-300">Loading...</strong>
             </p>
         </header>
 
-        <div class="mb-4 border-b border-slate-700">
-             <ul class="flex flex-wrap -mb-px text-center" id="main-tabs">
-                <li class="me-6"><button class="nav-tab-btn active" id="overview-tab" type="button">Overview</button></li>
-                <li class="me-6"><button class="nav-tab-btn" id="transactions-tab" type="button">Transactions</button></li>
-                <li class="me-6"><button class="nav-tab-btn" id="profile-tab" type="button">Portal Settings</button></li>
+        <!-- Tab Navigation -->
+        <div class="mb-8 border-b border-slate-700/50">
+            <ul class="flex flex-wrap gap-2 -mb-px" id="main-tabs">
+                <li>
+                    <button class="nav-tab-btn active" id="overview-tab" type="button">
+                        <i class="bi bi-speedometer2"></i>
+                        <span>Overview</span>
+                    </button>
+                </li>
+                <li>
+                    <button class="nav-tab-btn" id="transactions-tab" type="button">
+                        <i class="bi bi-clock-history"></i>
+                        <span>Transactions</span>
+                    </button>
+                </li>
+                <li>
+                    <button class="nav-tab-btn" id="profile-tab" type="button">
+                        <i class="bi bi-gear-fill"></i>
+                        <span>Portal Settings</span>
+                    </button>
+                </li>
             </ul>
         </div>
 
+        <!-- Tab Content -->
         <div>
+            <!-- Overview Pane -->
             <div id="overview-pane" class="nav-tab-content">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="lg:col-span-2 glass-card rounded-2xl p-6">
-                        <h5 class="text-lg font-semibold text-slate-400">Current Balance</h5>
-                        <p class="text-5xl font-extrabold text-white mt-2" id="accountBalanceDisplay">₹ --.--</p>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                    <!-- Balance Card -->
+                    <div class="lg:col-span-2 glass-card rounded-3xl p-8 transform hover:scale-[1.02] transition-all duration-300">
+                        <h5 class="text-lg font-semibold text-slate-400 mb-3">Current Balance</h5>
+                        <p class="text-6xl font-black gradient-text" id="accountBalanceDisplay">₹ --.--</p>
                     </div>
-                    <div class="glass-card rounded-2xl p-6">
-                        <h5 class="text-lg font-semibold text-slate-400">Quick Actions</h5>
-                        <div class="flex flex-col sm:flex-row lg:flex-col gap-4 mt-4"> <button id="depositBtn" class="flex-1 text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-xl text-base px-6 py-3 text-center font-semibold transform hover:scale-105 transition-all duration-300 shadow-lg shadow-emerald-500/30">Deposit</button>
-                            <button id="transferBtn" class="flex-1 text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl text-base px-6 py-3 text-center font-semibold transform hover:scale-105 transition-all duration-300 shadow-lg shadow-indigo-500/30">Transfer</button>
-                            <button id="payBillBtn" class="flex-1 text-white bg-gradient-to-r from-cyan-600 to-sky-600 hover:from-cyan-700 hover:to-sky-700 rounded-xl text-base px-6 py-3 text-center font-semibold transform hover:scale-105 transition-all duration-300 shadow-lg shadow-cyan-500/30">Pay Bills</button>
+                    
+                    <!-- Quick Actions Card -->
+                    <div class="glass-card rounded-3xl p-8">
+                        <h5 class="text-lg font-semibold text-slate-400 mb-6">Quick Actions</h5>
+                        <div class="flex flex-col gap-4">
+                            <button id="depositBtn" class="w-full text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-xl text-base px-6 py-4 font-semibold transform hover:scale-105 transition-all duration-300 shadow-lg shadow-emerald-500/30">
+                                <i class="bi bi-arrow-down-circle mr-2"></i>Deposit
+                            </button>
+                            <button id="transferBtn" class="w-full text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl text-base px-6 py-4 font-semibold transform hover:scale-105 transition-all duration-300 shadow-lg shadow-indigo-500/30">
+                                <i class="bi bi-arrow-left-right mr-2"></i>Transfer
+                            </button>
+                            <button id="payBillBtn" class="w-full text-white bg-gradient-to-r from-cyan-600 to-sky-600 hover:from-cyan-700 hover:to-sky-700 rounded-xl text-base px-6 py-4 font-semibold transform hover:scale-105 transition-all duration-300 shadow-lg shadow-cyan-500/30">
+                                <i class="bi bi-receipt mr-2"></i>Pay Bills
+                            </button>
                         </div>
                     </div>
                 </div>
-                <div class="mt-6 glass-card rounded-2xl p-6">
-                    <h5 class="text-xl font-semibold text-white mb-4">Transaction Summary</h5>
-                    <div class="max-w-sm mx-auto">
+                
+                <!-- Transaction Chart -->
+                <div class="glass-card rounded-3xl p-8">
+                    <h5 class="text-2xl font-bold text-white mb-6">Transaction Summary</h5>
+                    <div class="max-w-lg mx-auto">
                         <canvas id="transactionChart"></canvas>
                     </div>
                 </div>
             </div>
 
+            <!-- Transactions Pane -->
             <div id="transactions-pane" class="nav-tab-content hidden">
-                <div class="glass-card rounded-2xl p-6">
-                    <div class="flex flex-col sm:flex-row justify-between items-center mb-4">
-                        <h5 class="text-xl font-semibold text-white">Recent Transactions</h5>
-                        <button id="download-csv-btn" class="w-full sm:w-auto mt-3 sm:mt-0 text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 font-medium rounded-lg text-sm px-4 py-2 text-center transform hover:scale-105 transition-all duration-300 shadow-lg shadow-indigo-500/30">
+                <div class="glass-card rounded-3xl p-8">
+                    <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                        <h5 class="text-2xl font-bold text-white">Recent Transactions</h5>
+                        <button id="download-csv-btn" class="w-full sm:w-auto text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 font-semibold rounded-xl text-sm px-6 py-3 transform hover:scale-105 transition-all duration-300 shadow-lg shadow-indigo-500/30">
                             <i class="bi bi-download mr-2"></i>Download Statement
                         </button>
                     </div>
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto rounded-xl">
                         <table class="w-full text-sm text-left text-slate-300">
                             <thead class="text-xs text-slate-400 uppercase bg-slate-900/50">
-                                <tr><th scope="col" class="px-6 py-3">Date</th><th scope="col" class="px-6 py-3">Description</th><th scope="col" class="px-6 py-3">Type</th><th scope="col" class="px-6 py-3">Amount</th></tr>
+                                <tr>
+                                    <th scope="col" class="px-6 py-4">Date</th>
+                                    <th scope="col" class="px-6 py-4">Description</th>
+                                    <th scope="col" class="px-6 py-4">Type</th>
+                                    <th scope="col" class="px-6 py-4">Amount</th>
+                                </tr>
                             </thead>
-                            <tbody id="transactionsTableBody"></tbody> </table>
+                            <tbody id="transactionsTableBody"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
 
+            <!-- Profile Pane -->
             <div id="profile-pane" class="nav-tab-content hidden">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="glass-card rounded-2xl p-6">
-                        <h5 class="text-xl font-semibold text-white mb-4">Update Profile Details</h5>
-                        <form id="updateProfileForm" class="space-y-4">
-                            <div id="profileUpdateError" class="hidden p-4 text-sm text-red-300 bg-red-900/30 border border-red-500/30 rounded-xl backdrop-blur-sm"></div>
+                    <!-- Update Profile -->
+                    <div class="glass-card rounded-3xl p-8">
+                        <h5 class="text-2xl font-bold text-white mb-6">Update Profile Details</h5>
+                        <form id="updateProfileForm" class="space-y-5">
+                            <div id="profileUpdateError" class="hidden p-4 text-sm text-red-300 bg-red-900/30 border border-red-500/30 rounded-xl"></div>
                             <div>
-                                <label for="profileFullName" class="block text-sm font-medium text-slate-400">Full Name</label>
-                                <input type="text" id="profileFullName" class="mt-2 w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200" required>
+                                <label for="profileFullName" class="block text-sm font-medium text-slate-400 mb-2">Full Name</label>
+                                <input type="text" id="profileFullName" class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200" required>
                             </div>
                             <div>
-                                <label for="profileEmail" class="block text-sm font-medium text-slate-400">Email Address</label>
-                                <input type="email" id="profileEmail" class="mt-2 w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200" required>
+                                <label for="profileEmail" class="block text-sm font-medium text-slate-400 mb-2">Email Address</label>
+                                <input type="email" id="profileEmail" class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200" required>
                             </div>
-                            <button id="submitProfileUpdate" type="submit" class="w-full text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center transform hover:scale-105 transition-all duration-300 shadow-lg shadow-indigo-500/30">Save Changes</button>
+                            <button id="submitProfileUpdate" type="submit" class="w-full text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 font-semibold rounded-xl text-sm px-6 py-4 transform hover:scale-105 transition-all duration-300 shadow-lg shadow-indigo-500/30">
+                                <i class="bi bi-check-circle mr-2"></i>Save Changes
+                            </button>
                         </form>
                     </div>
 
                     <div class="space-y-6">
-                        <div class="glass-card rounded-2xl p-6">
-                            <h5 class="text-xl font-semibold text-white mb-4">Change Password</h5>
-                            <form id="changePasswordForm" class="space-y-4">
-                                <div id="passwordChangeError" class="hidden p-4 text-sm text-red-300 bg-red-900/30 border border-red-500/30 rounded-xl backdrop-blur-sm"></div>
+                        <!-- Change Password -->
+                        <div class="glass-card rounded-3xl p-8">
+                            <h5 class="text-2xl font-bold text-white mb-6">Change Password</h5>
+                            <form id="changePasswordForm" class="space-y-5">
+                                <div id="passwordChangeError" class="hidden p-4 text-sm text-red-300 bg-red-900/30 border border-red-500/30 rounded-xl"></div>
                                 <div>
-                                    <label for="currentPassword" class="block text-sm font-medium text-slate-400">Current Password</label>
-                                    <input type="password" id="currentPassword" class="mt-2 w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200" required>
+                                    <label for="currentPassword" class="block text-sm font-medium text-slate-400 mb-2">Current Password</label>
+                                    <input type="password" id="currentPassword" class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200" required>
                                 </div>
                                 <div>
-                                    <label for="newPassword" class="block text-sm font-medium text-slate-400">New Password</label>
-                                    <input type="password" id="newPassword" class="mt-2 w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200" required minlength="6">
+                                    <label for="newPassword" class="block text-sm font-medium text-slate-400 mb-2">New Password</label>
+                                    <input type="password" id="newPassword" class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200" required minlength="6">
                                 </div>
-                                <button id="submitPasswordChange" type="submit" class="w-full text-white bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center transform hover:scale-105 transition-all duration-300 shadow-lg shadow-orange-500/30">Change Password</button>
+                                <button id="submitPasswordChange" type="submit" class="w-full text-white bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 font-semibold rounded-xl text-sm px-6 py-4 transform hover:scale-105 transition-all duration-300 shadow-lg shadow-orange-500/30">
+                                    <i class="bi bi-key-fill mr-2"></i>Change Password
+                                </button>
                             </form>
                         </div>
 
-                        <div class="glass-card rounded-2xl p-6">
-                            <h5 class="text-xl font-semibold text-white mb-4">Set/Update Security PIN</h5>
-                            <form id="setPinForm" class="space-y-4">
-                                <div id="setPinError" class="hidden p-4 text-sm text-red-300 bg-red-900/30 border border-red-500/30 rounded-xl backdrop-blur-sm"></div>
+                        <!-- Set PIN -->
+                        <div class="glass-card rounded-3xl p-8">
+                            <h5 class="text-2xl font-bold text-white mb-6">Security PIN</h5>
+                            <form id="setPinForm" class="space-y-5">
+                                <div id="setPinError" class="hidden p-4 text-sm text-red-300 bg-red-900/30 border border-red-500/30 rounded-xl"></div>
                                 <p class="text-sm text-slate-400">
-                                    Set or update your 4-digit PIN for authorizing transfers and payments. You must provide your current account password to confirm.
+                                    Set or update your 4-digit PIN for secure transactions. Enter your password to confirm.
                                 </p>
                                 <div>
-                                    <label for="pinCurrentPassword" class="block text-sm font-medium text-slate-400">Current Password</label>
-                                    <input type="password" id="pinCurrentPassword" class="mt-2 w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200" required>
+                                    <label for="pinCurrentPassword" class="block text-sm font-medium text-slate-400 mb-2">Current Password</label>
+                                    <input type="password" id="pinCurrentPassword" class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200" required>
                                 </div>
                                 <div>
-                                    <label for="newPin" class="block text-sm font-medium text-slate-400">New 4-Digit PIN</label>
-                                    <input type="password" id="newPin" placeholder="••••" class="mt-2 w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200"
+                                    <label for="newPin" class="block text-sm font-medium text-slate-400 mb-2">New 4-Digit PIN</label>
+                                    <input type="password" id="newPin" placeholder="••••" class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200"
                                            required maxlength="4" pattern="\d{4}" title="PIN must be 4 digits." inputmode="numeric">
                                 </div>
-                                <button id="submitSetPin" type="submit" class="w-full text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center transform hover:scale-105 transition-all duration-300 shadow-lg shadow-emerald-500/30">
-                                    Set/Update PIN
+                                <button id="submitSetPin" type="submit" class="w-full text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 font-semibold rounded-xl text-sm px-6 py-4 transform hover:scale-105 transition-all duration-300 shadow-lg shadow-emerald-500/30">
+                                    <i class="bi bi-shield-lock mr-2"></i>Set/Update PIN
                                 </button>
                             </form>
                         </div>
@@ -286,100 +332,107 @@
         </div>
     </div>
 
+    <!-- Modal Backdrop -->
     <div id="modalBackdrop" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 hidden"></div>
 
+    <!-- Deposit Modal -->
     <div id="depositModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
-        <div class="modal-card rounded-2xl shadow-2xl w-full max-w-md">
+        <div class="modal-card rounded-3xl shadow-2xl w-full max-w-md">
             <form id="depositForm">
-                <div class="flex items-center justify-between p-4 border-b border-slate-700">
-                    <h3 class="text-xl font-semibold text-white">Make a Deposit</h3>
-                    <button type="button" class="modal-close-btn text-slate-400 hover:text-white text-3xl leading-none">&times;</button>
+                <div class="flex items-center justify-between p-6 border-b border-slate-700">
+                    <h3 class="text-2xl font-bold text-white">Make a Deposit</h3>
+                    <button type="button" class="modal-close-btn text-slate-400 hover:text-white text-3xl leading-none transition-colors">&times;</button>
                 </div>
                 <div class="p-6 space-y-4">
-                    <div id="depositError" class="hidden p-4 text-sm text-red-300 bg-red-900/30 border border-red-500/30 rounded-xl backdrop-blur-sm"></div>
-                    <p class="text-slate-300">Enter the amount you wish to deposit.</p>
+                    <div id="depositError" class="hidden p-4 text-sm text-red-300 bg-red-900/30 border border-red-500/30 rounded-xl"></div>
+                    <p class="text-slate-300">Enter the amount you wish to deposit into your account.</p>
                     <div>
-                        <label for="depositAmount" class="block text-sm font-medium text-slate-400">Amount (₹)</label>
-                        <input type="number" id="depositAmount" class="mt-2 w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow" min="0.01" step="0.01" required>
+                        <label for="depositAmount" class="block text-sm font-medium text-slate-400 mb-2">Amount (₹)</label>
+                        <input type="number" id="depositAmount" class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow" min="0.01" step="0.01" placeholder="1000.00" required>
                     </div>
                 </div>
-                <div class="flex items-center justify-end p-4 space-x-3 border-t border-slate-700 rounded-b">
-                    <button type="button" class="modal-close-btn text-slate-300 bg-transparent hover:bg-slate-700 rounded-lg text-sm px-4 py-2 transition-colors">Close</button>
-                    <button id="submitDeposit" type="submit" class="text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center transform hover:scale-105 shadow-lg shadow-emerald-500/30">Deposit</button>
+                <div class="flex items-center justify-end p-6 space-x-3 border-t border-slate-700">
+                    <button type="button" class="modal-close-btn px-6 py-3 text-slate-300 bg-transparent hover:bg-slate-700 rounded-xl text-sm transition-colors">Close</button>
+                    <button id="submitDeposit" type="submit" class="px-6 py-3 text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 font-semibold rounded-xl text-sm transform hover:scale-105 shadow-lg shadow-emerald-500/30">Deposit</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Transfer Modal -->
     <div id="transferModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
-        <div class="modal-card rounded-2xl shadow-2xl w-full max-w-md">
+        <div class="modal-card rounded-3xl shadow-2xl w-full max-w-md">
             <form id="transferForm">
-                <div class="flex items-center justify-between p-4 border-b border-slate-700">
-                    <h3 class="text-xl font-semibold text-white">Make a Transfer</h3>
-                    <button type="button" class="modal-close-btn text-slate-400 hover:text-white text-3xl leading-none">&times;</button>
+                <div class="flex items-center justify-between p-6 border-b border-slate-700">
+                    <h3 class="text-2xl font-bold text-white">Make a Transfer</h3>
+                    <button type="button" class="modal-close-btn text-slate-400 hover:text-white text-3xl leading-none transition-colors">&times;</button>
                 </div>
                 <div class="p-6 space-y-4">
-                    <div id="transferError" class="hidden p-4 text-sm text-red-300 bg-red-900/30 border border-red-500/30 rounded-xl backdrop-blur-sm"></div>
-                    <label for="transferAccountNumber" class="block text-sm font-medium text-slate-400">Recipient's Account Number</label>
-                    <div class="flex mt-2">
-                        <input type="text" id="transferAccountNumber" class="rounded-none rounded-s-xl w-full px-3 py-2 bg-slate-900/50 border border-slate-700 text-white focus:outline-none focus:border-indigo-500 input-glow" required>
-                        <button type="button" id="verifyRecipientBtn" class="px-4 py-2 text-sm font-medium text-white bg-slate-700 rounded-e-xl border border-slate-700 hover:bg-slate-600 transition-colors">Verify</button>
+                    <div id="transferError" class="hidden p-4 text-sm text-red-300 bg-red-900/30 border border-red-500/30 rounded-xl"></div>
+                    <div>
+                        <label for="transferAccountNumber" class="block text-sm font-medium text-slate-400 mb-2">Recipient's Account Number</label>
+                        <div class="flex mt-2">
+                            <input type="text" id="transferAccountNumber" class="rounded-l-xl w-full px-4 py-3 bg-slate-900/50 border border-slate-700 text-white focus:outline-none focus:border-indigo-500 input-glow" required>
+                            <button type="button" id="verifyRecipientBtn" class="px-6 py-3 text-sm font-medium text-white bg-slate-700 rounded-r-xl border border-slate-700 hover:bg-slate-600 transition-colors">Verify</button>
+                        </div>
                     </div>
                     <div id="recipientVerifiedInfo" class="hidden p-3 text-sm text-green-300 bg-green-900/30 border border-green-500/30 rounded-xl">Recipient: <strong id="verifiedRecipientName"></strong></div>
                     <fieldset id="transferDetails" disabled class="space-y-4 pt-4 border-t border-slate-700">
                         <div>
-                            <label for="transferAmount" class="block text-sm font-medium text-slate-400">Amount (₹)</label>
-                            <input type="number" id="transferAmount" class="mt-2 w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow" min="0.01" step="0.01" required>
+                            <label for="transferAmount" class="block text-sm font-medium text-slate-400 mb-2">Amount (₹)</label>
+                            <input type="number" id="transferAmount" class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow" min="0.01" step="0.01" required>
                         </div>
-                        <p class="text-sm text-slate-400 pt-2">For your security, please confirm your 4-digit PIN.</p>
+                        <p class="text-sm text-slate-400 pt-2">For security, confirm your 4-digit PIN.</p>
                         <div>
-                            <label for="transferPin" class="block text-sm font-medium text-slate-400">Your 4-Digit PIN</label>
-                            <input type="password" id="transferPin" class="mt-2 w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow"
+                            <label for="transferPin" class="block text-sm font-medium text-slate-400 mb-2">Your 4-Digit PIN</label>
+                            <input type="password" id="transferPin" class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow"
                                    required maxlength="4" pattern="\d{4}" title="PIN must be 4 digits." inputmode="numeric">
                         </div>
                     </fieldset>
                 </div>
-                <div class="flex items-center justify-end p-4 space-x-3 border-t border-slate-700 rounded-b">
-                    <button type="button" class="modal-close-btn text-slate-300 bg-transparent hover:bg-slate-700 rounded-lg text-sm px-4 py-2 transition-colors">Close</button>
-                    <button id="submitTransfer" type="submit" class="text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center transform hover:scale-105 shadow-lg shadow-indigo-500/30 disabled:opacity-50 disabled:cursor-not-allowed" disabled>Send Transfer</button>
+                <div class="flex items-center justify-end p-6 space-x-3 border-t border-slate-700">
+                    <button type="button" class="modal-close-btn px-6 py-3 text-slate-300 bg-transparent hover:bg-slate-700 rounded-xl text-sm transition-colors">Close</button>
+                    <button id="submitTransfer" type="submit" class="px-6 py-3 text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 font-semibold rounded-xl text-sm transform hover:scale-105 shadow-lg shadow-indigo-500/30 disabled:opacity-50 disabled:cursor-not-allowed" disabled>Send Transfer</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Pay Bill Modal -->
     <div id="payBillModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
-        <div class="modal-card rounded-2xl shadow-2xl w-full max-w-md">
+        <div class="modal-card rounded-3xl shadow-2xl w-full max-w-md">
             <form id="payBillForm">
-                <div class="flex items-center justify-between p-4 border-b border-slate-700">
-                    <h3 class="text-xl font-semibold text-white">Pay a Bill</h3>
-                    <button type="button" class="modal-close-btn text-slate-400 hover:text-white text-3xl leading-none">&times;</button>
+                <div class="flex items-center justify-between p-6 border-b border-slate-700">
+                    <h3 class="text-2xl font-bold text-white">Pay a Bill</h3>
+                    <button type="button" class="modal-close-btn text-slate-400 hover:text-white text-3xl leading-none transition-colors">&times;</button>
                 </div>
                 <div class="p-6 space-y-4">
-                    <div id="payBillError" class="hidden p-4 text-sm text-red-300 bg-red-900/30 border border-red-500/30 rounded-xl backdrop-blur-sm"></div>
+                    <div id="payBillError" class="hidden p-4 text-sm text-red-300 bg-red-900/30 border border-red-500/30 rounded-xl"></div>
                     <div>
-                        <label for="payBillBiller" class="block text-sm font-medium text-slate-400">Biller Name</label>
-                        <input type="text" id="payBillBiller" class="mt-2 w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow" placeholder="e.g., Power Company" required>
+                        <label for="payBillBiller" class="block text-sm font-medium text-slate-400 mb-2">Biller Name</label>
+                        <input type="text" id="payBillBiller" class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow" placeholder="e.g., Power Company" required>
                     </div>
                     <div>
-                        <label for="payBillAmount" class="block text-sm font-medium text-slate-400">Amount (₹)</label>
-                        <input type="number" id="payBillAmount" class="mt-2 w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow" min="0.01" step="0.01" required>
+                        <label for="payBillAmount" class="block text-sm font-medium text-slate-400 mb-2">Amount (₹)</label>
+                        <input type="number" id="payBillAmount" class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow" min="0.01" step="0.01" required>
                     </div>
                     <hr class="border-slate-700">
-                    <p class="text-sm text-slate-400 pt-2">For your security, please confirm your 4-digit PIN.</p>
+                    <p class="text-sm text-slate-400 pt-2">For security, confirm your 4-digit PIN.</p>
                     <div>
-                        <label for="payBillPin" class="block text-sm font-medium text-slate-400">Your 4-Digit PIN</label>
-                        <input type="password" id="payBillPin" class="mt-2 w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow"
+                        <label for="payBillPin" class="block text-sm font-medium text-slate-400 mb-2">Your 4-Digit PIN</label>
+                        <input type="password" id="payBillPin" class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow"
                                required maxlength="4" pattern="\d{4}" title="PIN must be 4 digits." inputmode="numeric">
                     </div>
                 </div>
-                <div class="flex items-center justify-end p-4 space-x-3 border-t border-slate-700 rounded-b">
-                    <button type="button" class="modal-close-btn text-slate-300 bg-transparent hover:bg-slate-700 rounded-lg text-sm px-4 py-2 transition-colors">Close</button>
-                    <button id="submitPayBill" type="submit" class="text-white bg-gradient-to-r from-cyan-600 to-sky-600 hover:from-cyan-700 hover:to-sky-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center transform hover:scale-105 shadow-lg shadow-cyan-500/30">Pay Bill</button>
+                <div class="flex items-center justify-end p-6 space-x-3 border-t border-slate-700">
+                    <button type="button" class="modal-close-btn px-6 py-3 text-slate-300 bg-transparent hover:bg-slate-700 rounded-xl text-sm transition-colors">Close</button>
+                    <button id="submitPayBill" type="submit" class="px-6 py-3 text-white bg-gradient-to-r from-cyan-600 to-sky-600 hover:from-cyan-700 hover:to-sky-700 font-semibold rounded-xl text-sm transform hover:scale-105 shadow-lg shadow-cyan-500/30">Pay Bill</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Toast Container - IMPORTANT! -->
     <div id="toastContainer" class="fixed top-24 right-5 z-50 space-y-3 max-w-md"></div>
 
     <script src="app.js"></script>
