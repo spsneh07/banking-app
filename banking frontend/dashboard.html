@@ -11,7 +11,7 @@
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: { 
+                    fontFamily: {
                         sans: ['Inter', 'system-ui', 'sans-serif']
                     },
                     colors: {
@@ -21,6 +21,11 @@
                         'bank-danger': '#ef4444',
                         'bank-warning': '#f59e0b',
                         'bank-info': '#06b6d4',
+                         // Add dark mode colors used in app.js if needed by toasts etc.
+                        'bank-dark-bg': '#0f172a',
+                        'bank-dark-card': 'rgba(15, 23, 42, 0.8)',
+                        'bank-dark-text': '#e2e8f0',
+                        'bank-dark-text-muted': '#94a3b8'
                     },
                     animation: {
                         'float': 'float 6s ease-in-out infinite',
@@ -51,24 +56,44 @@
         }
 
         function applyInitialTheme() {
-            const theme = localStorage.getItem('theme') || 'dark';
-            if (theme === 'dark') {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
+            // Logic to apply theme based on localStorage or system preference
+            // Ensure this matches the logic used in setupThemeToggle in app.js
+            const theme = localStorage.getItem('theme') || 'system'; // Use 'system' as default
+             if (theme === 'dark') {
+                 document.documentElement.classList.add('dark');
+             } else if (theme === 'light') {
+                 // Remove dark ONLY if explicitly light (shouldn't happen with current styling)
+                 // document.documentElement.classList.remove('dark');
+                 // For now, assume dark based on style block
+                 document.documentElement.classList.add('dark');
+             } else { // 'system'
+                 if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                     document.documentElement.classList.add('dark');
+                 } else {
+                     // document.documentElement.classList.remove('dark');
+                     // For now, assume dark based on style block
+                     document.documentElement.classList.add('dark');
+                 }
+             }
         }
         applyInitialTheme();
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-        
+
+        /* --- ADDED THIS RULE --- */
+        html {
+            background-color: #0f172a; /* Darkest color in body gradient */
+            scroll-behavior: smooth;
+        }
+        /* ------------------------ */
+
         body {
             background: linear-gradient(135deg, #0a0e1a 0%, #1e1b4b 50%, #0f172a 100%);
             background-attachment: fixed;
             position: relative;
         }
-        
+
         body::before {
             content: '';
             position: fixed;
@@ -76,14 +101,14 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: 
+            background-image:
                 linear-gradient(rgba(99, 102, 241, 0.05) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(99, 102, 241, 0.05) 1px, transparent 1px);
             background-size: 50px 50px;
             pointer-events: none;
             z-index: 0;
         }
-        
+
         .glow-orb {
             position: fixed;
             border-radius: 50%;
@@ -92,7 +117,7 @@
             pointer-events: none;
             z-index: 0;
         }
-        
+
         .orb-1 {
             width: 400px;
             height: 400px;
@@ -101,7 +126,7 @@
             right: -200px;
             animation: float 8s ease-in-out infinite;
         }
-        
+
         .orb-2 {
             width: 300px;
             height: 300px;
@@ -110,25 +135,27 @@
             left: -150px;
             animation: float 10s ease-in-out infinite reverse;
         }
-        
+
         .glass-card {
             background: rgba(15, 23, 42, 0.7);
             backdrop-filter: blur(20px) saturate(180%);
             border: 1px solid rgba(148, 163, 184, 0.1);
+            transition: background 0.3s ease, border-color 0.3s ease; /* Added transition */
         }
-        
+
         .glass-card:hover {
             background: rgba(15, 23, 42, 0.85);
             border-color: rgba(99, 102, 241, 0.3);
         }
-        
+
         .bank-card {
             background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
             border: 1px solid rgba(99, 102, 241, 0.2);
             position: relative;
             overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease; /* Combined transitions */
         }
-        
+
         .bank-card::before {
             content: '';
             position: absolute;
@@ -138,73 +165,64 @@
             height: 200%;
             background: radial-gradient(circle, rgba(99, 102, 241, 0.15), transparent 70%);
             transition: transform 0.6s ease;
+            z-index: 0; /* Ensure pseudo-element is behind content */
         }
-        
+
         .bank-card:hover::before {
             transform: translate(-25%, -25%);
         }
-        
+
         .bank-card:hover {
             border-color: rgba(99, 102, 241, 0.5);
             transform: translateY(-8px) scale(1.02);
             box-shadow: 0 25px 50px rgba(99, 102, 241, 0.25);
         }
-        
+        /* Ensure content inside bank-card is above pseudo-element */
+        .bank-card > * {
+            position: relative;
+            z-index: 1;
+        }
+
+
         .gradient-text {
             background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #06b6d4 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-        
+
         .nav-glass {
             background: rgba(15, 23, 42, 0.8);
             backdrop-filter: blur(20px) saturate(180%);
             border-bottom: 1px solid rgba(148, 163, 184, 0.1);
         }
-        
+
         .pulse-glow {
             box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
             animation: glow 2s ease-in-out infinite;
         }
-        
-        @keyframes shimmer {
-            0% { background-position: -1000px 0; }
-            100% { background-position: 1000px 0; }
-        }
-        
-        .shimmer {
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-            background-size: 1000px 100%;
-            animation: shimmer 2s infinite;
-        }
+
+        /* Removed unnecessary shimmer styles */
+
     </style>
 </head>
-<body class="font-sans text-white overflow-x-hidden">
-    <!-- Glowing Orbs -->
-    <div class="glow-orb orb-1"></div>
+<body class="font-sans text-white min-h-screen"> <div class="glow-orb orb-1"></div>
     <div class="glow-orb orb-2"></div>
 
-    <!-- Navigation -->
     <nav class="nav-glass fixed w-full z-50 top-0">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-20">
-                <!-- Logo -->
                 <a href="dashboard.html" class="flex items-center space-x-3 group">
                     <div class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center transform group-hover:scale-110 transition-transform duration-300 pulse-glow">
                         <i class="bi bi-bank2 text-2xl"></i>
                     </div>
                     <span class="text-2xl font-bold gradient-text hidden sm:block">Unified Banking</span>
                 </a>
-                
-                <!-- Right Section -->
+
                 <div class="flex items-center space-x-4">
-                    <!-- Theme Toggle -->
-                    <button id="theme-toggle" type="button" class="p-3 rounded-xl glass-card hover:bg-indigo-600/20 transition-all duration-300 transform hover:scale-110">
-                        <i id="theme-toggle-icon" class="bi bi-moon-stars-fill text-xl"></i>
-                    </button>
-                    
-                    <!-- Logout Button -->
+                    <button id="theme-toggle" type="button" class="p-3 rounded-xl glass-card hover:bg-indigo-600/20 text-slate-300 transition-all duration-300 transform hover:scale-110">
+                        <i id="theme-toggle-icon" class="bi text-xl"></i> </button>
+
                     <button id="logoutButton" type="button" class="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50">
                         <i class="bi bi-box-arrow-right mr-2"></i>Logout
                     </button>
@@ -213,42 +231,36 @@
         </div>
     </nav>
 
-    <!-- Main Content -->
     <div class="relative z-10 max-w-7xl mx-auto pt-32 px-4 sm:px-6 lg:px-8 pb-20">
-        <!-- Header Section -->
         <header class="mb-12 animate-slide-down">
             <div class="glass-card rounded-3xl p-8 sm:p-10">
-                <h1 class="text-4xl sm:text-5xl font-black mb-3">
-                    Welcome back, <span id="username-display" class="gradient-text">User</span>! 
+                <h1 class="text-4xl sm:text-5xl font-black mb-3 text-white"> Welcome back, <span id="username-display" class="gradient-text">User</span>!
                 </h1>
                 <p class="text-xl text-slate-400">Manage your connected bank accounts seamlessly</p>
-                
-                <!-- Quick Stats -->
+
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
                     <div class="glass-card rounded-2xl p-5 hover:scale-105 transition-transform duration-300">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-slate-400 text-sm mb-1">Total Accounts</p>
-                                <p class="text-3xl font-bold gradient-text" id="total-accounts">0</p>
-                            </div>
+                                <p class="text-3xl font-bold gradient-text" id="total-accounts">...</p> </div>
                             <div class="w-14 h-14 bg-indigo-600/20 rounded-xl flex items-center justify-center">
                                 <i class="bi bi-bank text-2xl text-indigo-400"></i>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="glass-card rounded-2xl p-5 hover:scale-105 transition-transform duration-300">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-slate-400 text-sm mb-1">Total Balance</p>
-                                <p class="text-3xl font-bold gradient-text" id="total-balance">₹0.00</p>
-                            </div>
+                                <p class="text-3xl font-bold gradient-text" id="total-balance">...</p> </div>
                             <div class="w-14 h-14 bg-purple-600/20 rounded-xl flex items-center justify-center">
                                 <i class="bi bi-currency-rupee text-2xl text-purple-400"></i>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="glass-card rounded-2xl p-5 hover:scale-105 transition-transform duration-300">
                         <div class="flex items-center justify-between">
                             <div>
@@ -264,20 +276,17 @@
             </div>
         </header>
 
-        <!-- Your Banks Section -->
         <section class="mb-16">
             <div class="flex items-center justify-between mb-6">
-                <h2 class="text-3xl font-bold flex items-center">
-                    <i class="bi bi-wallet2 mr-3 text-indigo-400"></i>
+                <h2 class="text-3xl font-bold flex items-center text-white"> <i class="bi bi-wallet2 mr-3 text-indigo-400"></i>
                     Your Banks
                 </h2>
                 <span class="px-4 py-2 glass-card rounded-full text-sm font-semibold text-indigo-400">
                     <i class="bi bi-shield-check mr-1"></i> Secured
                 </span>
             </div>
-            
+
             <div id="userAccountList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Loading Spinner -->
                 <div id="accountsLoadingSpinner" class="col-span-full">
                     <div class="glass-card rounded-3xl p-12 text-center">
                         <div class="inline-block">
@@ -289,62 +298,22 @@
                         <p class="text-xl text-slate-400">Loading your accounts...</p>
                     </div>
                 </div>
-            </div>
+                 </div>
         </section>
 
-        <!-- Available Banks Section -->
         <section>
             <div class="flex items-center justify-between mb-6">
-                <h2 class="text-3xl font-bold flex items-center">
-                    <i class="bi bi-plus-circle mr-3 text-purple-400"></i>
+                <h2 class="text-3xl font-bold flex items-center text-white"> <i class="bi bi-plus-circle mr-3 text-purple-400"></i>
                     Available Banks
                 </h2>
             </div>
-            
+
             <div id="availableBankList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Available banks will be loaded here -->
-            </div>
+                </div>
         </section>
     </div>
-    
-    <!-- Toast Container -->
+
     <div id="toastContainer" class="fixed top-24 right-5 z-50 space-y-3 max-w-md"></div>
 
-    <script>
-        // Theme Toggle
-        const themeToggleBtn = document.getElementById('theme-toggle');
-        const themeIcon = document.getElementById('theme-toggle-icon');
-        
-        function setTheme(theme) {
-            if (theme === 'dark') {
-                document.documentElement.classList.add('dark');
-                themeIcon.className = 'bi bi-sun-fill text-xl';
-            } else {
-                document.documentElement.classList.remove('dark');
-                themeIcon.className = 'bi bi-moon-stars-fill text-xl';
-            }
-            localStorage.setItem('theme', theme);
-        }
-        
-        themeToggleBtn.addEventListener('click', () => {
-            const currentTheme = localStorage.getItem('theme') || 'dark';
-            setTheme(currentTheme === 'dark' ? 'light' : 'dark');
-        });
-
-        // Demo: Calculate totals (will be replaced by your app.js logic)
-        function updateStats() {
-            const accounts = document.querySelectorAll('#userAccountList .bank-card').length;
-            document.getElementById('total-accounts').textContent = accounts;
-            
-            // Calculate total balance (you'll need to update this based on your data)
-            let totalBalance = accounts * 50; // Demo calculation
-            document.getElementById('total-balance').textContent = `₹${totalBalance.toFixed(2)}`;
-        }
-
-        // Call updateStats when accounts load
-        const observer = new MutationObserver(updateStats);
-        observer.observe(document.getElementById('userAccountList'), { childList: true, subtree: true });
-    </script>
-    <script src="app.js"></script>
-</body>
+    <script src="app.js"></script> </body>
 </html>

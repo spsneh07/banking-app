@@ -120,11 +120,11 @@
         .input-glow:focus { /* Input focus glow */
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
         }
-        /* Tab styling - UPDATED */
+        /* Tab styling - UPDATED SIZE */
         @layer components {
             .nav-tab-btn {
-                 /* Increased padding (px-10 py-5), font size (text-2xl), font weight (font-semibold) */
-                @apply inline-block px-10 py-5 border-b-2 border-transparent rounded-t-lg text-2xl font-semibold text-slate-400
+                 /* Larger Size: text-xl, font-semibold, px-10, py-4 */
+                @apply inline-block px-10 py-4 border-b-2 border-transparent rounded-t-lg text-xl font-semibold text-slate-400
                        hover:text-slate-200 hover:border-slate-500
                        transition-colors duration-200;
             }
@@ -258,7 +258,29 @@
                                 <button id="submitPasswordChange" type="submit" class="w-full text-white bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center transform hover:scale-105 transition-all duration-300 shadow-lg shadow-orange-500/30">Change Password</button>
                             </form>
                         </div>
-                       </div>
+
+                        <div class="glass-card rounded-2xl p-6">
+                            <h5 class="text-xl font-semibold text-white mb-4">Set/Update Security PIN</h5>
+                            <form id="setPinForm" class="space-y-4">
+                                <div id="setPinError" class="hidden p-4 text-sm text-red-300 bg-red-900/30 border border-red-500/30 rounded-xl backdrop-blur-sm"></div>
+                                <p class="text-sm text-slate-400">
+                                    Set or update your 4-digit PIN for authorizing transfers and payments. You must provide your current account password to confirm.
+                                </p>
+                                <div>
+                                    <label for="pinCurrentPassword" class="block text-sm font-medium text-slate-400">Current Password</label>
+                                    <input type="password" id="pinCurrentPassword" class="mt-2 w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200" required>
+                                </div>
+                                <div>
+                                    <label for="newPin" class="block text-sm font-medium text-slate-400">New 4-Digit PIN</label>
+                                    <input type="password" id="newPin" placeholder="••••" class="mt-2 w-full px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200"
+                                           required maxlength="4" pattern="\d{4}" title="PIN must be 4 digits." inputmode="numeric">
+                                </div>
+                                <button id="submitSetPin" type="submit" class="w-full text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center transform hover:scale-105 transition-all duration-300 shadow-lg shadow-emerald-500/30">
+                                    Set/Update PIN
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
