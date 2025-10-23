@@ -162,35 +162,41 @@ function setupThemeToggle() {
     function applyTheme(theme) {
         console.log("Applying theme:", theme);
         const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        // Determine if dark mode should be applied
         const isDark = (theme === 'dark') || (theme === 'system' && systemPrefersDark);
 
+        // 1. Set/Remove 'dark' class on <html>
         document.documentElement.classList.toggle('dark', isDark);
         console.log("<html> classList after toggle:", document.documentElement.classList.toString());
 
+        // 2. Set the correct icon based on the *selected* theme (not the applied one)
         let iconClass = 'bi bi-display-fill text-xl'; // Default to system icon
         if (theme === 'dark') {
             iconClass = 'bi bi-moon-stars-fill text-xl';
         } else if (theme === 'light') {
             iconClass = 'bi bi-sun-fill text-xl';
         }
-        toggleIcon.className = iconClass;
+        toggleIcon.className = iconClass; // Update the icon class
         console.log("Set icon class to:", toggleIcon.className);
 
-        currentTheme = theme;
-        localStorage.setItem('theme', theme);
+        currentTheme = theme; // Update the state variable
+        localStorage.setItem('theme', theme); // Save the selected theme
 
+        // 3. Re-render chart if needed
         if (window.myTransactionChart && typeof window.myTransactionChart.destroy === 'function') {
             const currentPage = getPageName();
             if (currentPage === 'account.html' || currentPage === 'dashboard.html') {
                  console.log("Destroying and re-rendering chart for theme change.");
                  window.myTransactionChart.destroy();
+                 // Ensure fetchTransactions exists before calling to avoid errors on other pages
                  if(typeof fetchTransactions === 'function') {
-                    fetchTransactions(false);
+                    fetchTransactions(false); // Re-fetch data and render new chart
                  }
             }
         }
     }
 
+    // Button click cycles: system -> light -> dark -> system ...
     toggleButton.addEventListener('click', () => {
         console.log("Theme toggle button clicked!");
         let nextTheme;
@@ -198,19 +204,21 @@ function setupThemeToggle() {
             nextTheme = 'light';
         } else if (currentTheme === 'light') {
             nextTheme = 'dark';
-        } else {
+        } else { // currentTheme is 'dark'
             nextTheme = 'system';
         }
         applyTheme(nextTheme);
     });
 
+    // Listen for OS theme changes (only matters if 'system' is selected)
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
         console.log("OS theme changed, current theme selection is:", currentTheme);
         if (currentTheme === 'system') {
-            applyTheme('system');
+            applyTheme('system'); // Re-apply system theme logic
         }
     });
 
+    // Set initial icon and theme on page load
     applyTheme(currentTheme);
 }
 
@@ -239,6 +247,7 @@ function showToast(message, isError = false) {
     const iconClass = isError ? 'bi-exclamation-triangle-fill text-red-400' : 'bi-check-circle-fill text-green-400';
     const title = isError ? "Error" : "Success";
     const borderColor = isError ? 'border-red-500' : 'border-green-500';
+    // Dark themed toast consistent across modes
     const toastHTML = `
         <div id="${toastId}" class="w-full max-w-sm p-4 text-gray-200 bg-gray-800 rounded-lg shadow-lg border ${borderColor} transition-transform duration-300 translate-x-full" role="alert">
             <div class="flex items-center">
@@ -389,7 +398,7 @@ async function fetchTransactions(tableOnly = false) {
                     const isCredit = tx.amount >= 0;
                     const amountClass = isCredit ? 'text-green-400' : 'text-red-400';
                     const formattedAmount = formatCurrency(tx.amount);
-                    let typeBadgeClass = 'bg-slate-700 text-slate-200';
+                    let typeBadgeClass = 'bg-slate-700 text-slate-200'; // Default dark badge
                     if (tx.type === 'DEPOSIT') typeBadgeClass = 'bg-emerald-900/50 text-emerald-300 border border-emerald-500/30';
                     else if (tx.type === 'TRANSFER' && isCredit) typeBadgeClass = 'bg-blue-900/50 text-blue-300 border border-blue-500/30';
                     else if (tx.type === 'TRANSFER' && !isCredit) typeBadgeClass = 'bg-red-900/50 text-red-300 border border-red-500/30';
@@ -400,6 +409,7 @@ async function fetchTransactions(tableOnly = false) {
             }
         }
 
+        // Render chart only if NOT tableOnly and on the account page
         if (!tableOnly && (getPageName() === 'account.html')) {
             renderTransactionChart(transactions);
         }
@@ -431,11 +441,12 @@ function renderTransactionChart(transactions) {
         window.myTransactionChart.destroy();
     }
 
+    // Determine colors based on current theme (dark/light)
     const isDark = document.documentElement.classList.contains('dark');
-    const chartTextColor = isDark ? '#e2e8f0' : '#111827';
-    const incomeColor = isDark ? '#10b981' : '#16a34a';
-    const expenseColor = isDark ? '#ef4444' : '#dc2626';
-    const borderColor = isDark ? '#0f172a' : '#ffffff';
+    const chartTextColor = isDark ? '#e2e8f0' : '#111827'; // slate-200 or gray-900
+    const incomeColor = isDark ? '#10b981' : '#16a34a';    // Emerald dark/light
+    const expenseColor = isDark ? '#ef4444' : '#dc2626';   // Red dark/light
+    const borderColor = isDark ? '#0f172a' : '#ffffff';    // Dark BG or White BG
 
     window.myTransactionChart = new Chart(ctx, {
         type: 'doughnut',
@@ -482,7 +493,7 @@ async function fetchUserAccounts() {
         const numberOfAccounts = accounts.length;
 
         if (numberOfAccounts === 0) {
-            listEl.innerHTML = `<div class="col-span-full text-center text-slate-400 glass-card rounded-3xl p-12">You haven't added any bank accounts yet.</div>`;
+            listEl.innerHTML = `<div class="col-span-full text-center text-bank-text-muted dark:text-slate-400 glass-card rounded-3xl p-12">You haven't added any bank accounts yet.</div>`;
             totalAccountsEl.textContent = '0';
             totalBalanceEl.textContent = formatCurrency(0);
             return;
@@ -497,11 +508,11 @@ async function fetchUserAccounts() {
                    class="bank-card rounded-3xl p-6 block transition-all duration-300 ease-in-out relative group animate-slide-up">
                     <div class="relative z-10">
                         <div class="flex justify-between items-center mb-4">
-                            <h5 class="text-2xl font-bold tracking-tight text-white group-hover:gradient-text transition-colors duration-300">${account.bank.name}</h5>
-                            <i class="bi bi-arrow-right-circle text-slate-500 group-hover:text-indigo-400 text-2xl transition-colors duration-300"></i>
+                            <h5 class="text-2xl font-bold tracking-tight text-bank-text-main dark:text-white group-hover:gradient-text transition-colors duration-300">${account.bank.name}</h5>
+                            <i class="bi bi-arrow-right-circle text-bank-text-muted dark:text-slate-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 text-2xl transition-colors duration-300"></i>
                         </div>
-                        <p class="font-normal text-slate-400 mb-1">Acct: ${formattedAccountNumber}</p>
-                        <p class="text-4xl font-extrabold text-white">${formattedBalance}</p>
+                        <p class="font-normal text-bank-text-muted dark:text-slate-400 mb-1">Acct: ${formattedAccountNumber}</p>
+                        <p class="text-4xl font-extrabold text-bank-text-main dark:text-white">${formattedBalance}</p>
                     </div>
                 </a>`;
             listEl.insertAdjacentHTML('beforeend', cardHTML);
@@ -528,7 +539,7 @@ async function fetchAllBanks() {
         listEl.innerHTML = '';
 
         if (banks.length === 0) {
-             listEl.innerHTML = `<div class="col-span-full text-center text-slate-400 glass-card rounded-3xl p-12">No banks available to add right now.</div>`;
+             listEl.innerHTML = `<div class="col-span-full text-center text-bank-text-muted dark:text-slate-400 glass-card rounded-3xl p-12">No banks available to add right now.</div>`;
              return;
         }
 
@@ -536,8 +547,8 @@ async function fetchAllBanks() {
             const cardHTML = `
                 <div class="bank-card rounded-3xl p-6 flex flex-col justify-between transition-all duration-300 ease-in-out">
                      <div class="relative z-10">
-                        <h5 class="mb-2 text-2xl font-bold tracking-tight text-white">${bank.name}</h5>
-                        <p class="font-normal text-slate-400 mb-4">Open a new account with us and get a ₹50 bonus.</p>
+                        <h5 class="mb-2 text-2xl font-bold tracking-tight text-bank-text-main dark:text-white">${bank.name}</h5>
+                        <p class="font-normal text-bank-text-muted dark:text-slate-400 mb-4">Open a new account with us and get a ₹50 bonus.</p>
                      </div>
                      <button onclick="handleAddBank(event, ${bank.id}, '${bank.name}')"
                              class="add-bank-btn mt-4 w-full text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 font-medium rounded-xl text-sm px-5 py-3 text-center transform hover:scale-105 transition-transform duration-300 shadow-lg shadow-indigo-500/30 relative z-10">
@@ -627,11 +638,8 @@ function resetTransferForm() {
         verifyBtn.disabled = false;
         toggleSpinner(verifyBtn, false);
     }
-    const accountInput = document.getElementById('transferAccountNumber'); 
-    // --- THIS IS THE FIX ---
-    // We should NOT clear the value, only reset the button
-    // if(accountInput) accountInput.value = ''; 
-    // ----------------------
+    // DO NOT CLEAR THE INPUT VALUE
+    // const accountInput = document.getElementById('transferAccountNumber'); if(accountInput) accountInput.value = '';
     hideModalError(document.getElementById('transferError'));
 }
 
@@ -854,14 +862,21 @@ function checkAuth() {
     const token = localStorage.getItem('authToken');
     const currentPage = getPageName();
     const protectedPages = ['dashboard.html', 'account.html'];
-    const authPages = ['login.html', 'register.html', 'create-pin.html'];
+    const authPages = ['login.html', 'register.html', 'create-pin.html', 'index.html']; // Add index.html to auth pages
+
     if (token) {
         const username = localStorage.getItem('username');
         const usernameDisplay = document.getElementById('username-display');
         if (usernameDisplay && username) usernameDisplay.textContent = username;
-        if (authPages.includes(currentPage)) window.location.href = 'dashboard.html';
+        // If logged in and on an auth page, redirect to dashboard
+        if (authPages.includes(currentPage)) {
+            window.location.href = 'dashboard.html';
+        }
     } else {
-        if (protectedPages.includes(currentPage)) window.location.href = 'index.html';
+        // If not logged in and on a protected page, redirect to index
+        if (protectedPages.includes(currentPage)) {
+            window.location.href = 'index.html';
+        }
     }
 }
 

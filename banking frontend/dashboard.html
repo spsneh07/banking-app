@@ -6,26 +6,45 @@
     <title>Portal Dashboard - Unified Banking System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
     <script>
         tailwind.config = {
-            darkMode: 'class',
+            darkMode: 'class', // Crucial: Enables toggling via <html class="dark">
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif']
-                    },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
                     colors: {
-                        'bank-primary': '#6366f1',
-                        'bank-primary-hover': '#4f46e5',
-                        'bank-success': '#10b981',
-                        'bank-danger': '#ef4444',
-                        'bank-warning': '#f59e0b',
-                        'bank-info': '#06b6d4',
-                         // Add dark mode colors used in app.js if needed by toasts etc.
-                        'bank-dark-bg': '#0f172a',
-                        'bank-dark-card': 'rgba(15, 23, 42, 0.8)',
-                        'bank-dark-text': '#e2e8f0',
-                        'bank-dark-text-muted': '#94a3b8'
+                        // Base Palette (Shared)
+                        'bank-primary': '#6366f1', // Indigo-500
+                        'bank-primary-hover': '#4f46e5', // Indigo-600
+                        'bank-success': '#10b981', // Emerald-500
+                        'bank-danger': '#ef4444', // Red-500
+                        'bank-warning': '#f59e0b', // Amber-500
+                        'bank-info': '#06b6d4', // Cyan-500
+
+                        // Light Mode (Default)
+                        'bank-bg': '#f9fafb',        // gray-50 (Page Background)
+                        'bank-card': 'rgba(255, 255, 255, 0.8)', // white glass
+                        'bank-nav': 'rgba(255, 255, 255, 0.8)',
+                        'bank-modal': '#ffffff',
+                        'bank-text-main': '#111827', // gray-900 (Main Text)
+                        'bank-text-muted': '#6b7280',// gray-500 (Subtle Text)
+                        'bank-border': '#e5e7eb',    // gray-200 (Borders)
+                        'bank-input-bg': '#f9fafb',   // gray-50
+                        'bank-input-border': '#d1d5db',// gray-300
+                        'bank-input-text': '#111827', // gray-900
+
+                        // Dark Mode (via dark: prefix)
+                        'bank-bg-dark': '#0f172a',
+                        'bank-card-dark': 'rgba(15, 23, 42, 0.8)',
+                        'bank-nav-dark': 'rgba(15, 23, 42, 0.8)',
+                        'bank-modal-dark': 'rgba(30, 41, 59, 0.95)',
+                        'bank-text-main-dark': '#e2e8f0',   // slate-200
+                        'bank-text-muted-dark': '#94a3b8', // slate-400
+                        'bank-border-dark': '#374151',   // gray-700
+                        'bank-input-bg-dark': 'rgba(55, 65, 81, 0.5)', // gray-700/50
+                        'bank-input-border-dark': '#4b5563',// gray-600
+                        'bank-input-text-dark': '#e2e8f0', // slate-200
                     },
                     animation: {
                         'float': 'float 6s ease-in-out infinite',
@@ -34,179 +53,133 @@
                         'slide-up': 'slideUp 0.3s ease-out',
                     },
                     keyframes: {
-                        float: {
-                            '0%, 100%': { transform: 'translateY(0px)' },
-                            '50%': { transform: 'translateY(-10px)' },
-                        },
-                        glow: {
-                            '0%, 100%': { boxShadow: '0 0 20px rgba(99, 102, 241, 0.3)' },
-                            '50%': { boxShadow: '0 0 40px rgba(99, 102, 241, 0.6)' },
-                        },
-                        slideDown: {
-                            '0%': { transform: 'translateY(-100%)', opacity: '0' },
-                            '100%': { transform: 'translateY(0)', opacity: '1' },
-                        },
-                        slideUp: {
-                            '0%': { transform: 'translateY(100%)', opacity: '0' },
-                            '100%': { transform: 'translateY(0)', opacity: '1' },
-                        },
+                        float: { '0%, 100%': { transform: 'translateY(0px)' }, '50%': { transform: 'translateY(-10px)' }, },
+                        glow: { '0%, 100%': { boxShadow: '0 0 20px rgba(99, 102, 241, 0.3)' }, '50%': { boxShadow: '0 0 40px rgba(99, 102, 241, 0.6)' }, },
+                        slideDown: { '0%': { transform: 'translateY(-100%)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' }, },
+                        slideUp: { '0%': { transform: 'translateY(100%)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' }, },
                     }
                 }
             }
         }
 
+        // CORRECTED Initial Theme script
         function applyInitialTheme() {
-            // Logic to apply theme based on localStorage or system preference
-            // Ensure this matches the logic used in setupThemeToggle in app.js
-            const theme = localStorage.getItem('theme') || 'system'; // Use 'system' as default
-             if (theme === 'dark') {
-                 document.documentElement.classList.add('dark');
-             } else if (theme === 'light') {
-                 // Remove dark ONLY if explicitly light (shouldn't happen with current styling)
-                 // document.documentElement.classList.remove('dark');
-                 // For now, assume dark based on style block
-                 document.documentElement.classList.add('dark');
-             } else { // 'system'
-                 if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                     document.documentElement.classList.add('dark');
-                 } else {
-                     // document.documentElement.classList.remove('dark');
-                     // For now, assume dark based on style block
-                     document.documentElement.classList.add('dark');
-                 }
-             }
+            const theme = localStorage.getItem('theme') || 'system';
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            if (theme === 'dark' || (theme === 'system' && systemPrefersDark)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
         }
         applyInitialTheme();
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-        /* --- ADDED THIS RULE --- */
+        /* --- Base HTML/Body Styles (Responsive) --- */
         html {
-            background-color: #0f172a; /* Darkest color in body gradient */
             scroll-behavior: smooth;
+            background-color: #f9fafb; /* bank-bg */
         }
-        /* ------------------------ */
-
+        html.dark {
+            background-color: #0f172a; /* bank-bg-dark */
+        }
         body {
-            background: linear-gradient(135deg, #0a0e1a 0%, #1e1b4b 50%, #0f172a 100%);
+            background: linear-gradient(135deg, #f0f5ff 0%, #e6e9f0 100%);
             background-attachment: fixed;
             position: relative;
         }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image:
-                linear-gradient(rgba(99, 102, 241, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(99, 102, 241, 0.05) 1px, transparent 1px);
-            background-size: 50px 50px;
-            pointer-events: none;
-            z-index: 0;
+        .dark body {
+            background: linear-gradient(135deg, #0a0e1a 0%, #1e1b4b 50%, #0f172a 100%);
+            background-attachment: fixed;
         }
-
-        .glow-orb {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(100px);
-            opacity: 0.3;
-            pointer-events: none;
-            z-index: 0;
+        
+        /* Grid Overlay (dark mode only) */
+        body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(99, 102, 241, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(99, 102, 241, 0.05) 1px, transparent 1px); background-size: 50px 50px; pointer-events: none; z-index: 0; opacity: 0; transition: opacity 0.3s; }
+        .dark body::before { opacity: 1; }
+        
+        /* Orbs (dark mode only) */
+        .glow-orb { position: fixed; border-radius: 50%; filter: blur(100px); opacity: 0; pointer-events: none; animation: float 8s ease-in-out infinite; z-index: 0; transition: opacity 0.3s; }
+        .dark .glow-orb { opacity: 0.3; }
+        .orb-1 { width: 400px; height: 400px; background: radial-gradient(circle, #6366f1, transparent); top: -200px; right: -200px; animation-delay: -2s; }
+        .orb-2 { width: 300px; height: 300px; background: radial-gradient(circle, #8b5cf6, transparent); bottom: -150px; left: -150px; animation-delay: -6s; }
+        @keyframes float { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-30px) scale(1.1); } }
+        
+        /* Glass Card (responsive) */
+        .glass-card { 
+            background: rgba(255, 255, 255, 0.8); /* bank-card */
+            backdrop-filter: blur(20px) saturate(180%); 
+            border: 1px solid rgba(229, 231, 235, 0.7); /* bank-border */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.01), 0 2px 4px -2px rgba(0, 0, 0, 0.01); /* Light shadow */
         }
-
-        .orb-1 {
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, #6366f1, transparent);
-            top: -200px;
-            right: -200px;
-            animation: float 8s ease-in-out infinite;
+        .dark .glass-card { 
+            background: rgba(15, 23, 42, 0.8); /* bank-card-dark */
+            border: 1px solid rgba(148, 163, 184, 0.15);
+            box-shadow: none;
         }
-
-        .orb-2 {
-            width: 300px;
-            height: 300px;
-            background: radial-gradient(circle, #8b5cf6, transparent);
-            bottom: -150px;
-            left: -150px;
-            animation: float 10s ease-in-out infinite reverse;
-        }
-
-        .glass-card {
-            background: rgba(15, 23, 42, 0.7);
-            backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid rgba(148, 163, 184, 0.1);
-            transition: background 0.3s ease, border-color 0.3s ease; /* Added transition */
-        }
-
         .glass-card:hover {
-            background: rgba(15, 23, 42, 0.85);
-            border-color: rgba(99, 102, 241, 0.3);
+             border-color: rgba(99, 102, 241, 0.3); /* bank-primary */
+        }
+        .dark .glass-card:hover {
+             background: rgba(15, 23, 42, 0.85);
+             border-color: rgba(99, 102, 241, 0.3);
         }
 
+        /* Nav Glass (responsive) */
+        .nav-glass { 
+            background: rgba(255, 255, 255, 0.8); /* bank-nav */
+            backdrop-filter: blur(20px) saturate(180%); 
+            border-bottom: 1px solid #e5e7eb; /* bank-border */
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05); /* Light shadow */
+        }
+        .dark .nav-glass { 
+            background: rgba(15, 23, 42, 0.8); /* bank-nav-dark */
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1); 
+            box-shadow: none;
+        }
+        
+        /* Bank Card (responsive) */
         .bank-card {
-            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
-            border: 1px solid rgba(99, 102, 241, 0.2);
+            background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+            border: 1px solid #e5e7eb; /* bank-border */
             position: relative;
             overflow: hidden;
-            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease; /* Combined transitions */
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.03), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
         }
-
-        .bank-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(99, 102, 241, 0.15), transparent 70%);
-            transition: transform 0.6s ease;
-            z-index: 0; /* Ensure pseudo-element is behind content */
+        .dark .bank-card {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            box-shadow: none;
         }
-
-        .bank-card:hover::before {
-            transform: translate(-25%, -25%);
-        }
-
+        .bank-card::before { content: ''; position: absolute; top: -50%; right: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(99, 102, 241, 0.05), transparent 70%); transition: transform 0.6s ease; z-index: 0; }
+        .dark .bank-card::before { background: radial-gradient(circle, rgba(99, 102, 241, 0.15), transparent 70%); }
+        .bank-card:hover::before { transform: translate(-25%, -25%); }
         .bank-card:hover {
-            border-color: rgba(99, 102, 241, 0.5);
+            border-color: #a5b4fc; /* indigo-300 */
             transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+        }
+        .dark .bank-card:hover {
+            border-color: rgba(99, 102, 241, 0.5);
             box-shadow: 0 25px 50px rgba(99, 102, 241, 0.25);
         }
-        /* Ensure content inside bank-card is above pseudo-element */
-        .bank-card > * {
-            position: relative;
-            z-index: 1;
-        }
+        .bank-card > * { position: relative; z-index: 1; }
 
-
-        .gradient-text {
-            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #06b6d4 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .nav-glass {
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(20px) saturate(180%);
-            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
-        }
-
-        .pulse-glow {
-            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
-            animation: glow 2s ease-in-out infinite;
-        }
-
-        /* Removed unnecessary shimmer styles */
-
+        /* Gradient Text (responsive) */
+        .gradient-text { color: #1f2937; }
+        .dark .gradient-text { background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #06b6d4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        
+        .pulse-glow { animation: glow 2s ease-in-out infinite; }
+        /* Only glow in dark mode */
+        html:not(.dark) .pulse-glow { animation: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); }
     </style>
 </head>
-<body class="font-sans text-white min-h-screen"> <div class="glow-orb orb-1"></div>
+<body class="font-sans text-bank-text-main bg-bank-bg dark:text-bank-dark-text dark:bg-bank-bg-dark min-h-screen">
+
+    <div class="glow-orb orb-1"></div>
     <div class="glow-orb orb-2"></div>
 
     <nav class="nav-glass fixed w-full z-50 top-0">
@@ -214,16 +187,16 @@
             <div class="flex items-center justify-between h-20">
                 <a href="dashboard.html" class="flex items-center space-x-3 group">
                     <div class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center transform group-hover:scale-110 transition-transform duration-300 pulse-glow">
-                        <i class="bi bi-bank2 text-2xl"></i>
-                    </div>
+                        <i class="bi bi-bank2 text-2xl text-white"></i> </div>
                     <span class="text-2xl font-bold gradient-text hidden sm:block">Unified Banking</span>
                 </a>
 
                 <div class="flex items-center space-x-4">
-                    <button id="theme-toggle" type="button" class="p-3 rounded-xl glass-card hover:bg-indigo-600/20 text-slate-300 transition-all duration-300 transform hover:scale-110">
-                        <i id="theme-toggle-icon" class="bi text-xl"></i> </button>
-
-                    <button id="logoutButton" type="button" class="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50">
+                    <button id="theme-toggle" type="button" class="p-3 rounded-xl glass-card hover:bg-gray-100 dark:hover:bg-indigo-600/20 transition-all duration-300 transform hover:scale-110 text-bank-text-muted dark:text-slate-300">
+                        <i id="theme-toggle-icon" class="bi text-xl"></i>
+                    </button>
+                    
+                    <button id="logoutButton" type="button" class="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl font-semibold text-white transition-all duration-300 transform hover:scale-105 shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50">
                         <i class="bi bi-box-arrow-right mr-2"></i>Logout
                     </button>
                 </div>
@@ -234,41 +207,44 @@
     <div class="relative z-10 max-w-7xl mx-auto pt-32 px-4 sm:px-6 lg:px-8 pb-20">
         <header class="mb-12 animate-slide-down">
             <div class="glass-card rounded-3xl p-8 sm:p-10">
-                <h1 class="text-4xl sm:text-5xl font-black mb-3 text-white"> Welcome back, <span id="username-display" class="gradient-text">User</span>!
+                <h1 class="text-4xl sm:text-5xl font-black mb-3 text-bank-text-main dark:text-white">
+                    Welcome back, <span id="username-display" class="gradient-text">User</span>! 
                 </h1>
-                <p class="text-xl text-slate-400">Manage your connected bank accounts seamlessly</p>
-
+                <p class="text-xl text-bank-text-muted dark:text-slate-400">Manage your connected bank accounts seamlessly</p>
+                
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
                     <div class="glass-card rounded-2xl p-5 hover:scale-105 transition-transform duration-300">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-slate-400 text-sm mb-1">Total Accounts</p>
-                                <p class="text-3xl font-bold gradient-text" id="total-accounts">...</p> </div>
-                            <div class="w-14 h-14 bg-indigo-600/20 rounded-xl flex items-center justify-center">
-                                <i class="bi bi-bank text-2xl text-indigo-400"></i>
+                                <p class="text-bank-text-muted dark:text-slate-400 text-sm mb-1">Total Accounts</p>
+                                <p class="text-3xl font-bold gradient-text" id="total-accounts">...</p>
+                            </div>
+                            <div class="w-14 h-14 bg-indigo-100 dark:bg-indigo-600/20 rounded-xl flex items-center justify-center">
+                                <i class="bi bi-bank text-2xl text-indigo-600 dark:text-indigo-400"></i>
                             </div>
                         </div>
                     </div>
-
+                    
                     <div class="glass-card rounded-2xl p-5 hover:scale-105 transition-transform duration-300">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-slate-400 text-sm mb-1">Total Balance</p>
-                                <p class="text-3xl font-bold gradient-text" id="total-balance">...</p> </div>
-                            <div class="w-14 h-14 bg-purple-600/20 rounded-xl flex items-center justify-center">
-                                <i class="bi bi-currency-rupee text-2xl text-purple-400"></i>
+                                <p class="text-bank-text-muted dark:text-slate-400 text-sm mb-1">Total Balance</p>
+                                <p class="text-3xl font-bold gradient-text" id="total-balance">...</p>
+                            </div>
+                            <div class="w-14 h-14 bg-purple-100 dark:bg-purple-600/20 rounded-xl flex items-center justify-center">
+                                <i class="bi bi-currency-rupee text-2xl text-purple-600 dark:text-purple-400"></i>
                             </div>
                         </div>
                     </div>
-
+                    
                     <div class="glass-card rounded-2xl p-5 hover:scale-105 transition-transform duration-300">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-slate-400 text-sm mb-1">Active Status</p>
-                                <p class="text-3xl font-bold text-emerald-400">Active</p>
+                                <p class="text-bank-text-muted dark:text-slate-400 text-sm mb-1">Active Status</p>
+                                <p class="text-3xl font-bold text-emerald-600 dark:text-emerald-400">Active</p>
                             </div>
-                            <div class="w-14 h-14 bg-emerald-600/20 rounded-xl flex items-center justify-center">
-                                <i class="bi bi-check-circle-fill text-2xl text-emerald-400"></i>
+                            <div class="w-14 h-14 bg-emerald-100 dark:bg-emerald-600/20 rounded-xl flex items-center justify-center">
+                                <i class="bi bi-check-circle-fill text-2xl text-emerald-600 dark:text-emerald-400"></i>
                             </div>
                         </div>
                     </div>
@@ -278,24 +254,25 @@
 
         <section class="mb-16">
             <div class="flex items-center justify-between mb-6">
-                <h2 class="text-3xl font-bold flex items-center text-white"> <i class="bi bi-wallet2 mr-3 text-indigo-400"></i>
+                <h2 class="text-3xl font-bold flex items-center text-bank-text-main dark:text-white">
+                    <i class="bi bi-wallet2 mr-3 text-indigo-600 dark:text-indigo-400"></i>
                     Your Banks
                 </h2>
-                <span class="px-4 py-2 glass-card rounded-full text-sm font-semibold text-indigo-400">
+                <span class="px-4 py-2 glass-card rounded-full text-sm font-semibold text-indigo-600 dark:text-indigo-400">
                     <i class="bi bi-shield-check mr-1"></i> Secured
                 </span>
             </div>
-
+            
             <div id="userAccountList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div id="accountsLoadingSpinner" class="col-span-full">
                     <div class="glass-card rounded-3xl p-12 text-center">
                         <div class="inline-block">
-                            <svg class="animate-spin h-12 w-12 text-indigo-500 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <svg class="animate-spin h-12 w-12 text-bank-primary dark:text-indigo-500 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
                         </div>
-                        <p class="text-xl text-slate-400">Loading your accounts...</p>
+                        <p class="text-xl text-bank-text-muted dark:text-slate-400">Loading your accounts...</p>
                     </div>
                 </div>
                  </div>
@@ -303,17 +280,19 @@
 
         <section>
             <div class="flex items-center justify-between mb-6">
-                <h2 class="text-3xl font-bold flex items-center text-white"> <i class="bi bi-plus-circle mr-3 text-purple-400"></i>
+                <h2 class="text-3xl font-bold flex items-center text-bank-text-main dark:text-white">
+                    <i class="bi bi-plus-circle mr-3 text-purple-600 dark:text-purple-400"></i>
                     Available Banks
                 </h2>
             </div>
-
+            
             <div id="availableBankList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 </div>
         </section>
     </div>
-
+    
     <div id="toastContainer" class="fixed top-24 right-5 z-50 space-y-3 max-w-md"></div>
 
-    <script src="app.js"></script> </body>
+    <script src="app.js"></script>
+</body>
 </html>
