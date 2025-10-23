@@ -316,11 +316,25 @@ async function fetchSecure(url, options = {}) {
     }
     try {
         const response = await fetch(url, { ...options, headers });
+        
+        // --- THIS IS THE FIX ---
+        // Check for 401/403
         if (response.status === 401 || response.status === 403) {
-            showToast("Session expired or unauthorized. Logging out.", true);
-            handleLogout();
-            throw new Error(`Unauthorized: ${response.status}`);
+            // Check if this is a "special" endpoint where 401 is an expected error
+            const isPasswordCheck = url.includes('/set-pin') || url.includes('/change-password');
+
+            if (isPasswordCheck) {
+                // Don't log out. Just return the bad response for the form handler to deal with.
+                return response; 
+            } else {
+                // This is a REAL auth error (like an expired token). Log out.
+                showToast("Session expired or unauthorized. Logging out.", true);
+                handleLogout();
+                throw new Error(`Unauthorized: ${response.status}`);
+            }
         }
+        // --- END FIX ---
+
         return response;
     } catch (networkError) {
         console.error("Network error during fetchSecure:", networkError);
