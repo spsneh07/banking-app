@@ -131,7 +131,11 @@ function setupAccountDashboard() {
 
     // Transfer Form Specifics
     document.getElementById('verifyRecipientBtn')?.addEventListener('click', handleVerifyRecipient);
-    document.getElementById('transferAccountNumber')?.addEventListener('input', resetTransferForm);
+    
+    // --- THIS IS THE FIX ---
+    // Removed the line that was causing the input to clear
+    // document.getElementById('transferAccountNumber')?.addEventListener('input', resetTransferForm);
+    // ------------------------
 
     // Initial Data Fetch
     fetchUserDetails();
@@ -158,41 +162,35 @@ function setupThemeToggle() {
     function applyTheme(theme) {
         console.log("Applying theme:", theme);
         const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        // Determine if dark mode should be applied
         const isDark = (theme === 'dark') || (theme === 'system' && systemPrefersDark);
 
-        // 1. Set/Remove 'dark' class on <html>
         document.documentElement.classList.toggle('dark', isDark);
         console.log("<html> classList after toggle:", document.documentElement.classList.toString());
 
-        // 2. Set the correct icon based on the *selected* theme (not the applied one)
         let iconClass = 'bi bi-display-fill text-xl'; // Default to system icon
         if (theme === 'dark') {
             iconClass = 'bi bi-moon-stars-fill text-xl';
         } else if (theme === 'light') {
             iconClass = 'bi bi-sun-fill text-xl';
         }
-        toggleIcon.className = iconClass; // Update the icon class
+        toggleIcon.className = iconClass;
         console.log("Set icon class to:", toggleIcon.className);
 
-        currentTheme = theme; // Update the state variable
-        localStorage.setItem('theme', theme); // Save the selected theme
+        currentTheme = theme;
+        localStorage.setItem('theme', theme);
 
-        // 3. Re-render chart if it exists and we are on a relevant page
         if (window.myTransactionChart && typeof window.myTransactionChart.destroy === 'function') {
             const currentPage = getPageName();
             if (currentPage === 'account.html' || currentPage === 'dashboard.html') {
-                console.log("Destroying and re-rendering chart for theme change.");
-                window.myTransactionChart.destroy();
-                // Ensure fetchTransactions exists before calling to avoid errors on other pages
-                if (typeof fetchTransactions === 'function') {
-                    fetchTransactions(false); // Re-fetch data and render new chart
-                }
+                 console.log("Destroying and re-rendering chart for theme change.");
+                 window.myTransactionChart.destroy();
+                 if(typeof fetchTransactions === 'function') {
+                    fetchTransactions(false);
+                 }
             }
         }
     }
 
-    // Button click cycles: system -> light -> dark -> system ...
     toggleButton.addEventListener('click', () => {
         console.log("Theme toggle button clicked!");
         let nextTheme;
@@ -200,21 +198,19 @@ function setupThemeToggle() {
             nextTheme = 'light';
         } else if (currentTheme === 'light') {
             nextTheme = 'dark';
-        } else { // currentTheme is 'dark'
+        } else {
             nextTheme = 'system';
         }
         applyTheme(nextTheme);
     });
 
-    // Listen for OS theme changes (only matters if 'system' is selected)
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
         console.log("OS theme changed, current theme selection is:", currentTheme);
         if (currentTheme === 'system') {
-            applyTheme('system'); // Re-apply system theme logic
+            applyTheme('system');
         }
     });
 
-    // Set initial icon and theme on page load
     applyTheme(currentTheme);
 }
 
@@ -243,7 +239,6 @@ function showToast(message, isError = false) {
     const iconClass = isError ? 'bi-exclamation-triangle-fill text-red-400' : 'bi-check-circle-fill text-green-400';
     const title = isError ? "Error" : "Success";
     const borderColor = isError ? 'border-red-500' : 'border-green-500';
-    // Dark themed toast consistent across modes
     const toastHTML = `
         <div id="${toastId}" class="w-full max-w-sm p-4 text-gray-200 bg-gray-800 rounded-lg shadow-lg border ${borderColor} transition-transform duration-300 translate-x-full" role="alert">
             <div class="flex items-center">
@@ -394,7 +389,7 @@ async function fetchTransactions(tableOnly = false) {
                     const isCredit = tx.amount >= 0;
                     const amountClass = isCredit ? 'text-green-400' : 'text-red-400';
                     const formattedAmount = formatCurrency(tx.amount);
-                    let typeBadgeClass = 'bg-slate-700 text-slate-200'; // Default dark badge
+                    let typeBadgeClass = 'bg-slate-700 text-slate-200';
                     if (tx.type === 'DEPOSIT') typeBadgeClass = 'bg-emerald-900/50 text-emerald-300 border border-emerald-500/30';
                     else if (tx.type === 'TRANSFER' && isCredit) typeBadgeClass = 'bg-blue-900/50 text-blue-300 border border-blue-500/30';
                     else if (tx.type === 'TRANSFER' && !isCredit) typeBadgeClass = 'bg-red-900/50 text-red-300 border border-red-500/30';
@@ -405,7 +400,6 @@ async function fetchTransactions(tableOnly = false) {
             }
         }
 
-        // Render chart only if NOT tableOnly and on the account page
         if (!tableOnly && (getPageName() === 'account.html')) {
             renderTransactionChart(transactions);
         }
@@ -437,12 +431,11 @@ function renderTransactionChart(transactions) {
         window.myTransactionChart.destroy();
     }
 
-    // Determine colors based on current theme (dark/light)
     const isDark = document.documentElement.classList.contains('dark');
-    const chartTextColor = isDark ? '#e2e8f0' : '#111827'; // slate-200 or gray-900
-    const incomeColor = isDark ? '#10b981' : '#16a34a';    // Emerald dark/light
-    const expenseColor = isDark ? '#ef4444' : '#dc2626';   // Red dark/light
-    const borderColor = isDark ? '#0f172a' : '#ffffff';    // Dark BG or White BG
+    const chartTextColor = isDark ? '#e2e8f0' : '#111827';
+    const incomeColor = isDark ? '#10b981' : '#16a34a';
+    const expenseColor = isDark ? '#ef4444' : '#dc2626';
+    const borderColor = isDark ? '#0f172a' : '#ffffff';
 
     window.myTransactionChart = new Chart(ctx, {
         type: 'doughnut',
@@ -558,7 +551,7 @@ async function fetchAllBanks() {
         listEl.innerHTML = `<div class="col-span-full text-center text-red-500 glass-card rounded-3xl p-12">Error loading available banks.</div>`;
     }
 }
-async function handleAddBank(event, bankId, bankName) { // Pass event
+async function handleAddBank(event, bankId, bankName) {
     const btn = event.target;
     if(!btn) return;
     toggleSpinner(btn, true);
@@ -570,10 +563,10 @@ async function handleAddBank(event, bankId, bankName) { // Pass event
             throw new Error(errorText);
         }
         showToast(`Successfully opened an account at ${bankName}!`);
-        await fetchUserAccounts(); // Await refresh
+        await fetchUserAccounts();
 
     } catch (error) {
-        showToast(error.message, true); // Shows specific message like "You already have..."
+        showToast(error.message, true);
         console.error("Error adding bank:", error);
     } finally {
         toggleSpinner(btn, false);
@@ -581,7 +574,6 @@ async function handleAddBank(event, bankId, bankName) { // Pass event
 }
 
 // --- Form Handlers ---
-// (handleDepositSubmit, handleVerifyRecipient, resetTransferForm, handleTransferSubmit, handlePayBillSubmit, handleProfileUpdateSubmit, handleChangePasswordSubmit, handleSetPinSubmit, handleDownloadCsv remain unchanged from the previous correct version)
 async function handleDepositSubmit(event) {
     event.preventDefault();
     const accountId = document.body.dataset.accountId; if (!accountId) return;
@@ -635,7 +627,11 @@ function resetTransferForm() {
         verifyBtn.disabled = false;
         toggleSpinner(verifyBtn, false);
     }
-    const accountInput = document.getElementById('transferAccountNumber'); if(accountInput) accountInput.value = '';
+    const accountInput = document.getElementById('transferAccountNumber'); 
+    // --- THIS IS THE FIX ---
+    // We should NOT clear the value, only reset the button
+    // if(accountInput) accountInput.value = ''; 
+    // ----------------------
     hideModalError(document.getElementById('transferError'));
 }
 
