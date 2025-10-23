@@ -126,21 +126,19 @@ function setupAccountDashboard() {
     document.getElementById('payBillForm')?.addEventListener('submit', handlePayBillSubmit);
     document.getElementById('updateProfileForm')?.addEventListener('submit', handleProfileUpdateSubmit);
     document.getElementById('changePasswordForm')?.addEventListener('submit', handleChangePasswordSubmit);
-    document.getElementById('setPinForm')?.addEventListener('submit', handleSetPinSubmit); // Listener for updating PIN
+    document.getElementById('setPinForm')?.addEventListener('submit', handleSetPinSubmit);
     document.getElementById('download-csv-btn')?.addEventListener('click', handleDownloadCsv);
 
     // Transfer Form Specifics
     document.getElementById('verifyRecipientBtn')?.addEventListener('click', handleVerifyRecipient);
     
-    // --- THIS IS THE FIX ---
     // Removed the line that was causing the input to clear
     // document.getElementById('transferAccountNumber')?.addEventListener('input', resetTransferForm);
-    // ------------------------
 
     // Initial Data Fetch
-    fetchUserDetails();
+    fetchUserDetails(); // This will now call populateProfileForm()
     fetchBalance();
-    fetchTransactions(false); // Fetch for overview chart and table
+    fetchTransactions(false);
 }
 
 // --- Theme & Modal UI Functions ---
@@ -162,41 +160,35 @@ function setupThemeToggle() {
     function applyTheme(theme) {
         console.log("Applying theme:", theme);
         const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        // Determine if dark mode should be applied
         const isDark = (theme === 'dark') || (theme === 'system' && systemPrefersDark);
 
-        // 1. Set/Remove 'dark' class on <html>
         document.documentElement.classList.toggle('dark', isDark);
         console.log("<html> classList after toggle:", document.documentElement.classList.toString());
 
-        // 2. Set the correct icon based on the *selected* theme (not the applied one)
-        let iconClass = 'bi bi-display-fill text-xl'; // Default to system icon
+        let iconClass = 'bi bi-display-fill text-xl';
         if (theme === 'dark') {
             iconClass = 'bi bi-moon-stars-fill text-xl';
         } else if (theme === 'light') {
             iconClass = 'bi bi-sun-fill text-xl';
         }
-        toggleIcon.className = iconClass; // Update the icon class
+        toggleIcon.className = iconClass;
         console.log("Set icon class to:", toggleIcon.className);
 
-        currentTheme = theme; // Update the state variable
-        localStorage.setItem('theme', theme); // Save the selected theme
+        currentTheme = theme;
+        localStorage.setItem('theme', theme);
 
-        // 3. Re-render chart if needed
         if (window.myTransactionChart && typeof window.myTransactionChart.destroy === 'function') {
             const currentPage = getPageName();
             if (currentPage === 'account.html' || currentPage === 'dashboard.html') {
                  console.log("Destroying and re-rendering chart for theme change.");
                  window.myTransactionChart.destroy();
-                 // Ensure fetchTransactions exists before calling to avoid errors on other pages
                  if(typeof fetchTransactions === 'function') {
-                    fetchTransactions(false); // Re-fetch data and render new chart
+                    fetchTransactions(false);
                  }
             }
         }
     }
 
-    // Button click cycles: system -> light -> dark -> system ...
     toggleButton.addEventListener('click', () => {
         console.log("Theme toggle button clicked!");
         let nextTheme;
@@ -204,21 +196,19 @@ function setupThemeToggle() {
             nextTheme = 'light';
         } else if (currentTheme === 'light') {
             nextTheme = 'dark';
-        } else { // currentTheme is 'dark'
+        } else {
             nextTheme = 'system';
         }
         applyTheme(nextTheme);
     });
 
-    // Listen for OS theme changes (only matters if 'system' is selected)
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
         console.log("OS theme changed, current theme selection is:", currentTheme);
         if (currentTheme === 'system') {
-            applyTheme('system'); // Re-apply system theme logic
+            applyTheme('system');
         }
     });
 
-    // Set initial icon and theme on page load
     applyTheme(currentTheme);
 }
 
@@ -247,7 +237,6 @@ function showToast(message, isError = false) {
     const iconClass = isError ? 'bi-exclamation-triangle-fill text-red-400' : 'bi-check-circle-fill text-green-400';
     const title = isError ? "Error" : "Success";
     const borderColor = isError ? 'border-red-500' : 'border-green-500';
-    // Dark themed toast consistent across modes
     const toastHTML = `
         <div id="${toastId}" class="w-full max-w-sm p-4 text-gray-200 bg-gray-800 rounded-lg shadow-lg border ${borderColor} transition-transform duration-300 translate-x-full" role="alert">
             <div class="flex items-center">
@@ -317,24 +306,16 @@ async function fetchSecure(url, options = {}) {
     try {
         const response = await fetch(url, { ...options, headers });
         
-        // --- THIS IS THE FIX ---
-        // Check for 401/403
         if (response.status === 401 || response.status === 403) {
-            // Check if this is a "special" endpoint where 401 is an expected error
             const isPasswordCheck = url.includes('/set-pin') || url.includes('/change-password');
-
             if (isPasswordCheck) {
-                // Don't log out. Just return the bad response for the form handler to deal with.
                 return response; 
             } else {
-                // This is a REAL auth error (like an expired token). Log out.
                 showToast("Session expired or unauthorized. Logging out.", true);
                 handleLogout();
                 throw new Error(`Unauthorized: ${response.status}`);
             }
         }
-        // --- END FIX ---
-
         return response;
     } catch (networkError) {
         console.error("Network error during fetchSecure:", networkError);
@@ -342,6 +323,7 @@ async function fetchSecure(url, options = {}) {
         throw networkError;
     }
 }
+
 async function fetchUserDetails() {
     const accountNumberDisplay = document.getElementById('userAccountNumber');
     const pageAccountId = document.body.dataset.accountId;
@@ -351,7 +333,7 @@ async function fetchUserDetails() {
         const response = await fetchSecure(`${ACCOUNT_API_URL}/me`);
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const user = await response.json();
-        localStorage.setItem('currentUser', JSON.stringify(user));
+        localStorage.setItem('currentUser', JSON.stringify(user)); // Update user data
 
         const currentAccount = user.accounts?.find(acc => acc.id == pageAccountId);
         if (currentAccount?.accountNumber) {
@@ -362,20 +344,42 @@ async function fetchUserDetails() {
             accountNumberDisplay.textContent = "N/A";
             console.warn("Account number not found.");
         }
+        
+        // --- THIS IS THE FIX ---
+        // Call populateProfileForm *after* fetching details
+        if (getPageName() === 'account.html') {
+             populateProfileForm();
+        }
+        // ----------------------
+
     } catch (error) {
         console.error('Error fetching user details:', error);
         accountNumberDisplay.textContent = "Error";
     }
 }
+
+// --- MODIFIED: populateProfileForm ---
 function populateProfileForm() {
     const userData = JSON.parse(localStorage.getItem('currentUser'));
     if (userData) {
-        const fullNameInput = document.getElementById('profileFullName');
-        const emailInput = document.getElementById('profileEmail');
-        if (fullNameInput) fullNameInput.value = userData.fullName || '';
-        if (emailInput) emailInput.value = userData.email || '';
+        document.getElementById('profileFullName').value = userData.fullName || '';
+        document.getElementById('profileEmail').value = userData.email || '';
+        
+        // Check if phone number exists and starts with +91.
+        // If so, strip the +91 and show only the 10 digits.
+        let phoneDisplay = '';
+        if (userData.phoneNumber && userData.phoneNumber.startsWith('+91')) {
+            phoneDisplay = userData.phoneNumber.substring(3); // Get only the 10 digits
+        }
+        // Set the 10-digit number to the input field
+        document.getElementById('profilePhone').value = phoneDisplay;
+        
+        document.getElementById('profileDob').value = userData.dateOfBirth || '';
+        document.getElementById('profileAddress').value = userData.address || '';
+        document.getElementById('profileNominee').value = userData.nomineeName || '';
     }
 }
+
 async function fetchBalance() {
     const accountId = document.body.dataset.accountId;
     if (!accountId) return;
@@ -412,7 +416,7 @@ async function fetchTransactions(tableOnly = false) {
                     const isCredit = tx.amount >= 0;
                     const amountClass = isCredit ? 'text-green-400' : 'text-red-400';
                     const formattedAmount = formatCurrency(tx.amount);
-                    let typeBadgeClass = 'bg-slate-700 text-slate-200'; // Default dark badge
+                    let typeBadgeClass = 'bg-slate-700 text-slate-200';
                     if (tx.type === 'DEPOSIT') typeBadgeClass = 'bg-emerald-900/50 text-emerald-300 border border-emerald-500/30';
                     else if (tx.type === 'TRANSFER' && isCredit) typeBadgeClass = 'bg-blue-900/50 text-blue-300 border border-blue-500/30';
                     else if (tx.type === 'TRANSFER' && !isCredit) typeBadgeClass = 'bg-red-900/50 text-red-300 border border-red-500/30';
@@ -423,7 +427,6 @@ async function fetchTransactions(tableOnly = false) {
             }
         }
 
-        // Render chart only if NOT tableOnly and on the account page
         if (!tableOnly && (getPageName() === 'account.html')) {
             renderTransactionChart(transactions);
         }
@@ -455,12 +458,11 @@ function renderTransactionChart(transactions) {
         window.myTransactionChart.destroy();
     }
 
-    // Determine colors based on current theme (dark/light)
     const isDark = document.documentElement.classList.contains('dark');
-    const chartTextColor = isDark ? '#e2e8f0' : '#111827'; // slate-200 or gray-900
-    const incomeColor = isDark ? '#10b981' : '#16a34a';    // Emerald dark/light
-    const expenseColor = isDark ? '#ef4444' : '#dc2626';   // Red dark/light
-    const borderColor = isDark ? '#0f172a' : '#ffffff';    // Dark BG or White BG
+    const chartTextColor = isDark ? '#e2e8f0' : '#111827';
+    const incomeColor = isDark ? '#10b981' : '#16a34a';
+    const expenseColor = isDark ? '#ef4444' : '#dc2626';
+    const borderColor = isDark ? '#0f172a' : '#ffffff';
 
     window.myTransactionChart = new Chart(ctx, {
         type: 'doughnut',
@@ -562,7 +564,7 @@ async function fetchAllBanks() {
                 <div class="bank-card rounded-3xl p-6 flex flex-col justify-between transition-all duration-300 ease-in-out">
                      <div class="relative z-10">
                         <h5 class="mb-2 text-2xl font-bold tracking-tight text-bank-text-main dark:text-white">${bank.name}</h5>
-                        <p class="font-normal text-bank-text-muted dark:text-slate-400 mb-4">Open a new account with us and get a ₹50 bonus.</p>
+                        <p class="font-normal text-bank-text-muted dark:text-slate-400 mb-4">Link this bank to your portal.</p>
                      </div>
                      <button onclick="handleAddBank(event, ${bank.id}, '${bank.name}')"
                              class="add-bank-btn mt-4 w-full text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 font-medium rounded-xl text-sm px-5 py-3 text-center transform hover:scale-105 transition-transform duration-300 shadow-lg shadow-indigo-500/30 relative z-10">
@@ -699,25 +701,75 @@ async function handlePayBillSubmit(event) {
     } catch (error) { console.error("Pay bill error:", error); showModalError(errorDiv, error.message); }
     finally { toggleSpinner(submitButton, false); }
 }
+
+// --- MODIFIED: handleProfileUpdateSubmit ---
 async function handleProfileUpdateSubmit(event) {
     event.preventDefault();
+    
+    // Read all new values
     const fullName = document.getElementById('profileFullName').value;
     const email = document.getElementById('profileEmail').value;
+    const phoneDigits = document.getElementById('profilePhone').value; // This is *only* the 10 digits
+    const dateOfBirth = document.getElementById('profileDob').value;
+    const address = document.getElementById('profileAddress').value;
+    const nomineeName = document.getElementById('profileNominee').value;
+
     const errorDiv = document.getElementById('profileUpdateError');
     const submitButton = document.getElementById('submitProfileUpdate');
     hideModalError(errorDiv);
-    if (!fullName || !email) { showModalError(errorDiv, "Name and email required."); return; }
-    if (!/\S+@\S+\.\S+/.test(email)) { showModalError(errorDiv, "Invalid email."); return; }
+
+    if (!fullName || !email) {
+        showModalError(errorDiv, "Full name and email are required."); return;
+    }
+    if (!/\S+@\S+\.\S+/.test(email)) { // Basic email validation
+         showModalError(errorDiv, "Please enter a valid email address."); return;
+    }
+    
+    // Added phone validation
+    let phoneToSend = null; // Default to null
+    if (phoneDigits) { // If the field is not empty
+        if (!/^\d{10}$/.test(phoneDigits)) { // Check if it's exactly 10 digits
+            showModalError(errorDiv, "Phone number must be exactly 10 digits.");
+            return;
+        }
+        // If it is 10 digits, prepend "+91" to send to backend
+        phoneToSend = `+91${phoneDigits}`;
+    }
+    // If phoneDigits is empty, phoneToSend remains null
+    // -------------------------------------
+
     toggleSpinner(submitButton, true);
     try {
-        const response = await fetchSecure(`${ACCOUNT_API_URL}/profile`, { method: 'PUT', body: JSON.stringify({ fullName, email }) });
+        // Send the full object
+        const response = await fetchSecure(`${ACCOUNT_API_URL}/profile`, {
+            method: 'PUT',
+            body: JSON.stringify({ 
+                fullName, 
+                email, 
+                phoneNumber: phoneToSend, // Send the cleaned-up number
+                dateOfBirth: dateOfBirth || null, // Send null if empty
+                address, 
+                nomineeName 
+            })
+        });
+
         if (!response.ok) throw new Error(await response.text() || 'Profile update failed.');
+        
         const updatedUser = await response.json();
-        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser)); // Update stored user
+        
         showToast("Profile updated!");
-    } catch (error) { console.error("Profile update error:", error); showModalError(errorDiv, error.message); }
+        
+        // Repopulate form with potentially cleaned-up data
+        populateProfileForm(); 
+
+    } catch (error) { 
+        console.error("Profile update error:", error); 
+        showModalError(errorDiv, error.message); 
+    }
     finally { toggleSpinner(submitButton, false); }
 }
+
 async function handleChangePasswordSubmit(event) {
     event.preventDefault();
     const form = event.target;
@@ -734,7 +786,9 @@ async function handleChangePasswordSubmit(event) {
         const response = await fetchSecure(`${ACCOUNT_API_URL}/change-password`, { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) });
         if (!response.ok) {
             let errorText = await response.text() || 'Password change failed.';
-            if (response.status === 400 || response.status === 401) errorText = "Incorrect current password.";
+            if (response.status === 400 || response.status === 401 || errorText.toLowerCase().includes("invalid")) {
+                 errorText = "Incorrect current password.";
+            }
             showModalError(errorDiv, errorText); throw new Error(errorText);
         }
         form.reset(); showToast("Password changed!");
@@ -756,7 +810,9 @@ async function handleSetPinSubmit(event) { // For updating PIN on account.html
         const response = await fetchSecure(`${ACCOUNT_API_URL}/set-pin`, { method: 'POST', body: JSON.stringify({ password: currentPassword, pin: newPin }) });
         if (!response.ok) {
              let errorText = await response.text() || 'Failed to update PIN.';
-            if (response.status === 401) errorText = "Invalid current password.";
+            if (response.status === 401 || errorText.toLowerCase().includes("invalid")) {
+                 errorText = "Invalid current password.";
+            }
              showModalError(errorDiv, errorText); throw new Error(errorText);
         }
         form.reset(); showToast("Security PIN updated!");
@@ -876,18 +932,16 @@ function checkAuth() {
     const token = localStorage.getItem('authToken');
     const currentPage = getPageName();
     const protectedPages = ['dashboard.html', 'account.html'];
-    const authPages = ['login.html', 'register.html', 'create-pin.html', 'index.html']; // Add index.html to auth pages
+    const authPages = ['login.html', 'register.html', 'create-pin.html', 'index.html'];
 
     if (token) {
         const username = localStorage.getItem('username');
         const usernameDisplay = document.getElementById('username-display');
         if (usernameDisplay && username) usernameDisplay.textContent = username;
-        // If logged in and on an auth page, redirect to dashboard
         if (authPages.includes(currentPage)) {
             window.location.href = 'dashboard.html';
         }
     } else {
-        // If not logged in and on a protected page, redirect to index
         if (protectedPages.includes(currentPage)) {
             window.location.href = 'index.html';
         }

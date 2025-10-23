@@ -1,6 +1,6 @@
 package com.example.bankingapp.controller;
 
-import java.io.IOException; // <-- IMPORT
+import java.io.IOException;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,9 +31,9 @@ import com.example.bankingapp.dto.UserDto;
 import com.example.bankingapp.model.User;
 import com.example.bankingapp.repository.UserRepository;
 import com.example.bankingapp.service.AccountService;
-import com.example.bankingapp.service.CsvExportService; // <-- IMPORT
+import com.example.bankingapp.service.CsvExportService;
 
-import jakarta.servlet.http.HttpServletResponse; // <-- IMPORT
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
 @RestController
@@ -45,7 +45,7 @@ public class AccountController {
     @Autowired private UserRepository userRepository;
     @Autowired private com.example.bankingapp.repository.AccountRepository accountRepository;
 
-    @Autowired private CsvExportService csvExportService; // <-- INJECT NEW SERVICE
+    @Autowired private CsvExportService csvExportService; 
 
     private String getAuthenticatedUsername() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -64,11 +64,9 @@ public class AccountController {
         }
     }
 
-    // --- THIS IS THE SINGLE, CORRECT /all ENDPOINT ---
     @GetMapping("/all")
     public ResponseEntity<?> getAllUserAccounts() {
         try {
-            // Call the service method that returns DTOs with all the needed data
             List<AccountDto> accounts = accountService.getAccountsForUser(getAuthenticatedUsername());
             return ResponseEntity.ok(accounts);
         } catch (Exception e) {
@@ -96,7 +94,7 @@ public class AccountController {
                 accountId,
                 transferRequest.getRecipientAccountNumber(),
                 transferRequest.getAmount(),
-                transferRequest.getPin() // --- MODIFIED --- (was getPassword())
+                transferRequest.getPin()
             );
             return ResponseEntity.ok("Transfer successful");
         } catch (Exception e) {
@@ -113,7 +111,7 @@ public class AccountController {
                 accountId,
                 paymentRequest.getBillerName(), 
                 paymentRequest.getAmount(),
-                paymentRequest.getPin() // --- MODIFIED --- 
+                paymentRequest.getPin()
             );
             return ResponseEntity.ok("Payment successful");
         } catch (Exception e) {
@@ -151,15 +149,18 @@ public class AccountController {
         }
     }
     
+    // --- MODIFIED THIS METHOD ---
     @PutMapping("/profile")
     public ResponseEntity<?> updateUserProfile(@Valid @RequestBody ProfileUpdateRequest request) {
         try {
-            User updatedUser = accountService.updateUserProfile(getAuthenticatedUsername(), request.getFullName(), request.getEmail());
+            // Now we pass the entire 'request' object to the service
+            User updatedUser = accountService.updateUserProfile(getAuthenticatedUsername(), request);
             return ResponseEntity.ok(new UserDto(updatedUser));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    // --- END OF MODIFICATION ---
     
     @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(@Valid @RequestBody PasswordChangeRequest request) {
@@ -170,27 +171,22 @@ public class AccountController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-    // Inside AccountController class
 
-// --- ADD THIS METHOD BACK ---
-@PostMapping("/set-pin")
-public ResponseEntity<?> setPin(@Valid @RequestBody PinSetupRequest request) {
-    // Note: We get the username from the security context (token), NOT the request body
-    String username = getAuthenticatedUsername();
-    try {
-        // The service method now correctly verifies the *current* password
-        accountService.setPin(username, request.getPassword(), request.getPin());
-        return ResponseEntity.ok("PIN set successfully.");
-    } catch (BadCredentialsException e) { // Catch specific password error
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid current password.");
-    } catch (AuthenticationException e) { // General auth errors
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication failed.");
-    } catch (Exception e) { // Other errors
-        return ResponseEntity.badRequest().body(e.getMessage());
+    @PostMapping("/set-pin")
+    public ResponseEntity<?> setPin(@Valid @RequestBody PinSetupRequest request) {
+        String username = getAuthenticatedUsername();
+        try {
+            accountService.setPin(username, request.getPassword(), request.getPin());
+            return ResponseEntity.ok("PIN set successfully.");
+        } catch (BadCredentialsException e) { 
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid current password.");
+        } catch (AuthenticationException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication failed.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
-}
-// --------------------------
-
+    
     @GetMapping("/verify-recipient")
     public ResponseEntity<?> verifyRecipient(@RequestParam String accountNumber) {
         try {
@@ -200,31 +196,23 @@ public ResponseEntity<?> setPin(@Valid @RequestBody PinSetupRequest request) {
         }
     }
 
-    // --- NEW ENDPOINT FOR CSV DOWNLOAD ---
     @GetMapping("/{accountId}/export/csv")
     public void exportTransactionsToCsv(@PathVariable Long accountId, HttpServletResponse response) {
         try {
-            // 1. Verify the user owns this account
             verifyAccountOwner(accountId);
             String username = getAuthenticatedUsername();
 
-            // 2. Set HTTP headers for file download
             response.setContentType("text/csv");
             String headerKey = "Content-Disposition";
-            // Create a dynamic filename like "statement-12345.csv"
             String headerValue = "attachment; filename=\"statement-" + accountId + ".csv\"";
             response.setHeader(headerKey, headerValue);
 
-            // 3. Call the service to write CSV data directly to the response
             csvExportService.writeTransactionsToCsv(response.getWriter(), username, accountId);
 
         } catch (IOException e) {
-            // Handle IO exception
             response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
         } catch (Exception e) {
-            // Handle other exceptions (like security verification failure)
             response.setStatus(HttpStatus.BAD_REQUEST.value());
         }
     }
-    // ------------------------------------
 }

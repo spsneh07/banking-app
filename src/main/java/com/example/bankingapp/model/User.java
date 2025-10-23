@@ -1,5 +1,6 @@
 package com.example.bankingapp.model;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,6 +39,18 @@ public class User {
 
     @Column(nullable = false)
     private String password;
+    
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth; // Use java.time.LocalDate
+
+    @Column(name = "address")
+    private String address;
+
+    @Column(name = "nominee_name")
+    private String nomineeName;
     
     // --- THIS IS THE CORRECTION ---
     // Merged both pin declarations into one.

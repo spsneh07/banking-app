@@ -1,5 +1,6 @@
 package com.example.bankingapp.dto;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import com.example.bankingapp.model.Account;
@@ -12,6 +13,11 @@ public class UserDto {
     private String username;
     private String fullName;
     private String email;
+    private boolean hasPin;
+    private String phoneNumber;
+    private LocalDate dateOfBirth;
+    private String address;
+    private String nomineeName;
     
     // This DTO will now include the user's list of accounts
     private List<Account> accounts;
