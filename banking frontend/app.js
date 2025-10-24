@@ -105,6 +105,7 @@ function setupAccountDashboard() {
             if (paneId === 'profile-pane') populateProfileForm();
             if (paneId === 'transactions-pane') fetchTransactions(true);
             if (paneId === 'overview-pane') fetchTransactions(false);
+            if (paneId === 'card-pane') loadCardDetails();
         });
     });
 
@@ -738,31 +739,75 @@ async function fetchDashboardSummary() {
 }
 
 // --- Fix #2: Card details stuck on loading ---
+// --- Fix #2: Card details stuck on loading (REVISED) ---
+// --- Fix #2: Card details stuck on loading (REVISED) ---
 async function loadCardDetails() {
-  const loading = document.getElementById('card-status-loading');
-  const controls = document.getElementById('card-controls');
-  loading.classList.remove('hidden');
-  controls.classList.add('hidden');
+    const accountId = document.body.dataset.accountId;
+    if (!accountId) {
+        console.error("No accountId found for loadCardDetails");
+        return;
+    }
 
-  try {
-    const token = localStorage.getItem('token');
-    const res = await fetch(`${ACCOUNT_API_URL}/card`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (!res.ok) throw new Error('Card fetch failed');
-    const card = await res.json();
+    const loading = document.getElementById('card-status-loading');
+    const controls = document.getElementById('card-controls');
+    // Get the <p> tag inside the loading div
+    const loadingTextElement = loading.querySelector('p'); 
+    const defaultLoadingText = 'Loading card status...';
 
-    document.getElementById('card-status-text').textContent = card.active ? 'ACTIVE' : 'FROZEN';
-    document.getElementById('card-toggle-btn').textContent = card.active ? 'Freeze Card' : 'Unfreeze Card';
+    // Reset UI to loading state
+    loading.classList.remove('hidden');
+    controls.classList.add('hidden');
+    // Reset loading text
+    if (loadingTextElement) loadingTextElement.textContent = defaultLoadingText;
 
-    loading.classList.add('hidden');
-    controls.classList.remove('hidden');
-  } catch (err) {
-    console.error(err);
-    loading.textContent = 'Failed to load card details.';
-  }
+    try {
+        // Use fetchSecure and the correct URL that includes the accountId
+        const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/card`);
+        
+        if (!response.ok) {
+            const errorMsg = await response.text();
+            throw new Error(errorMsg || 'Failed to fetch card details');
+        }
+        
+        const card = await response.json();
+
+        // --- Populate the Visual Debit Card ---
+        document.getElementById('card-bank-name').textContent = document.getElementById('bankNameDisplay').textContent; // Re-use bank name
+        document.getElementById('card-number').textContent = card.cardNumber.replace(/(\d{4})/g, '$1 ').trim(); // Format as XXXX XXXX ...
+        document.getElementById('card-holder-name').textContent = card.cardHolderName;
+        document.getElementById('card-expiry-date').textContent = card.expiryDate; // Assumes MM/YY format
+
+        // --- Populate the Card Settings Box ---
+        const statusText = document.getElementById('card-status-text');
+        const toggleBtn = document.getElementById('card-toggle-btn');
+        
+        if (card.active) {
+            statusText.textContent = 'ACTIVE';
+            statusText.className = "text-sm font-bold text-green-500"; // Green text
+            toggleBtn.textContent = 'Freeze Card';
+            // Add classes for 'Freeze' button
+            toggleBtn.className = 'px-6 py-3 font-semibold rounded-xl text-sm transform hover:scale-105 transition-all duration-300 text-white bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 shadow-lg shadow-orange-500/30';
+        } else {
+            statusText.textContent = 'FROZEN';
+            statusText.className = "text-sm font-bold text-red-500"; // Red text
+            toggleBtn.textContent = 'Unfreeze Card';
+            // Add classes for 'Unfreeze' button
+            toggleBtn.className = 'px-6 py-3 font-semibold rounded-xl text-sm transform hover:scale-105 transition-all duration-300 text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/30';
+        }
+
+        // Show the card controls
+        loading.classList.add('hidden');
+        controls.classList.remove('hidden');
+
+    } catch (err) {
+        console.error("Error in loadCardDetails:", err);
+        // Show the error message in the loading area
+        if (loadingTextElement) {
+            loadingTextElement.textContent = `Error: ${err.message}`;
+            loadingTextElement.classList.add('text-red-400'); // Make error red
+        }
+    }
 }
-
 // --- Fix #1: Portal settings visible and populated ---
 async function loadPortalSettings() {
   try {
