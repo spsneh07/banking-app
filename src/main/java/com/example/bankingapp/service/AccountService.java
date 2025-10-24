@@ -40,6 +40,7 @@ public class AccountService {
     @Autowired private AuthenticationManager authenticationManager;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private DebitCardRepository debitCardRepository;
+    
 
     @Transactional
     public User updateUserProfile(String username, ProfileUpdateRequest request) { // Use DTO

@@ -129,6 +129,8 @@ function setupAccountDashboard() {
     document.getElementById('changePasswordForm')?.addEventListener('submit', handleChangePasswordSubmit);
     document.getElementById('setPinForm')?.addEventListener('submit', handleSetPinSubmit);
     document.getElementById('download-csv-btn')?.addEventListener('click', handleDownloadCsv);
+    // Inside setupAccountDashboard()
+document.getElementById('card-toggle-btn')?.addEventListener('click', handleCardToggle);
 
     // Transfer Form Specifics
     document.getElementById('verifyRecipientBtn')?.addEventListener('click', handleVerifyRecipient);
@@ -807,6 +809,35 @@ async function loadCardDetails() {
             loadingTextElement.classList.add('text-red-400'); // Make error red
         }
     }
+}
+async function handleCardToggle() {
+    const accountId = document.body.dataset.accountId;
+    if (!accountId) return;
+
+    // Show the loading spinner and hide controls for instant feedback
+    document.getElementById('card-status-loading').classList.remove('hidden');
+    document.getElementById('card-controls').classList.add('hidden');
+
+    try {
+        const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/card/toggle`, {
+            method: 'POST'
+        });
+
+        if (!response.ok) {
+            throw new Error(await response.text() || 'Failed to toggle card status.');
+        }
+
+        // Success! Now just reload the card details.
+        // loadCardDetails will fetch the new state and show the controls again.
+        await loadCardDetails(); 
+        showToast("Card status updated!");
+
+    } catch (error) {
+        console.error('Error toggling card:', error);
+        showToast(error.message, true); 
+        // If the toggle fails, still reload the card details to show the original state
+        await loadCardDetails();
+    }
 }
 // --- Fix #1: Portal settings visible and populated ---
 async function loadPortalSettings() {

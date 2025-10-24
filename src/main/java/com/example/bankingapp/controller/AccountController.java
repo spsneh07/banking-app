@@ -1,7 +1,10 @@
 package com.example.bankingapp.controller;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.bankingapp.dto.AccountDto;
+import com.example.bankingapp.dto.CreateAccountRequest;
 import com.example.bankingapp.dto.DebitCardDto;
 import com.example.bankingapp.dto.DepositRequest;
 import com.example.bankingapp.dto.PasswordChangeRequest;
@@ -29,7 +33,10 @@ import com.example.bankingapp.dto.PinSetupRequest;
 import com.example.bankingapp.dto.ProfileUpdateRequest;
 import com.example.bankingapp.dto.TransferRequest;
 import com.example.bankingapp.dto.UserDto;
+import com.example.bankingapp.model.Account;
+import com.example.bankingapp.model.DebitCard;
 import com.example.bankingapp.model.User;
+import com.example.bankingapp.repository.DebitCardRepository;
 import com.example.bankingapp.repository.UserRepository;
 import com.example.bankingapp.service.AccountService;
 import com.example.bankingapp.service.CsvExportService;
@@ -44,6 +51,7 @@ public class AccountController {
 
     @Autowired private AccountService accountService;
     @Autowired private UserRepository userRepository;
+    @Autowired private DebitCardRepository debitCardRepository;
     @Autowired private com.example.bankingapp.repository.AccountRepository accountRepository;
 
     @Autowired private CsvExportService csvExportService; 
@@ -73,6 +81,43 @@ public class AccountController {
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error fetching accounts");
         }
+    }
+    @PostMapping("/create")
+    public ResponseEntity<?> createAccount(@Valid @RequestBody CreateAccountRequest request) {
+        try {
+            // 1. Find the logged-in user
+            String username = getAuthenticatedUsername();
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // 2. Create the new Account
+            Account newAccount = new Account();
+            newAccount.setUser(user);
+            newAccount.setBankName(request.getBankName());
+            newAccount.setAccountNumber(generateRandomAccountNumber());
+            newAccount.setBalance(new BigDecimal("50.00")); // Initial bonus
+            
+            Account savedAccount = accountRepository.save(newAccount);
+
+            // 3. Create the initial deposit transaction
+            accountService.createInitialDepositTransaction(savedAccount);
+
+            // 4. Create the new Debit Card
+            DebitCard newCard = new DebitCard();
+            newCard.setCardHolderName(user.getFullName());
+            newCard.setAccount(savedAccount); // <-- Link to the new account
+            newCard.setActive(true);
+            newCard.setCardNumber(generateRandomCardNumber());
+            newCard.setCvv(generateRandomCvv());
+            newCard.setExpiryDate(LocalDate.now().plusYears(5)); 
+            
+            debitCardRepository.save(newCard); // Save the card!
+
+            return ResponseEntity.ok(new AccountDto(savedAccount));
+        
+       } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error creating account: " + e.getMessage());
+       }
     }
 
 @PostMapping("/{accountId}/deposit")
@@ -248,4 +293,25 @@ public class AccountController {
         }
     }
     // ---------------------------------
+    private String generateRandomAccountNumber() {
+        Random random = new Random();
+        long number = 1_000_000_000L + random.nextInt(900_000_000); // 10-digit number
+        return String.valueOf(number);
+    }
+
+    private String generateRandomCardNumber() {
+        Random random = new Random();
+        StringBuilder sb = new StringBuilder();
+        sb.append("4200"); // Example prefix
+        for (int i = 0; i < 12; i++) {
+            sb.append(random.nextInt(10));
+        }
+        return sb.toString(); // 16-digit number
+    }
+
+    private String generateRandomCvv() {
+        Random random = new Random();
+        int cvv = 100 + random.nextInt(900); // 3-digit CVV
+        return String.valueOf(cvv);
+    }
 }

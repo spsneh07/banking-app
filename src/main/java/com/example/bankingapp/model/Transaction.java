@@ -3,6 +3,7 @@ package com.example.bankingapp.model;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Column;
@@ -46,6 +47,7 @@ public class Transaction {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", nullable = false)
     @JsonIgnore
+    @JsonBackReference
     private Account account;
 
     // Constructor to easily create new transactions

@@ -39,6 +39,9 @@ public class Account {
     @JsonIgnore
     private User user;
 
+    @Column(name = "bank_name")
+     private String bankName;
+
     @OneToOne(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private DebitCard debitCard;
     
@@ -55,7 +58,13 @@ public class Account {
         this.user = user;
         this.bank = bank;
     }
+    public String getBankName() {
+    return bankName;
+    }
 
+    public void setBankName(String bankName) {
+    this.bankName = bankName;
+   }
     // --- 3. ADD THIS HELPER METHOD ---
     // This correctly links the card to the account
     public void setDebitCard(DebitCard debitCard) {
