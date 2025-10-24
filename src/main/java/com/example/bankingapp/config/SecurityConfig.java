@@ -54,7 +54,7 @@ public class SecurityConfig {
         return source;
     }
 
-    @Bean
+@Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -63,12 +63,16 @@ public class SecurityConfig {
             .authorizeHttpRequests(authz -> authz
                 
                 // --- THIS IS THE FIX ---
-                // Allow public access to auth endpoints AND the new set-pin endpoint
-                .requestMatchers("/api/auth/**", "/api/account/set-pin").permitAll() 
+                // Allow public access ONLY to auth endpoints
+                .requestMatchers("/api/auth/**").permitAll() 
+                
+                // All other /api/account/ and /api/banks/ endpoints MUST be authenticated
+                .requestMatchers("/api/account/**", "/api/banks/**").authenticated()
                 // ---------------------
                 
-                // All other requests must be authenticated
-                .anyRequest().authenticated()
+                // Any other request (if any) can be denied or authenticated based on your policy
+                // .anyRequest().authenticated() // This is a good default
+                .anyRequest().permitAll() // Use this if you have issues with favicon.ico etc.
             );
 
         http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);

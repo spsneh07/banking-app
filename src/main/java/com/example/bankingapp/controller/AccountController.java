@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.bankingapp.dto.AccountDto;
+import com.example.bankingapp.dto.DebitCardDto;
 import com.example.bankingapp.dto.DepositRequest;
 import com.example.bankingapp.dto.PasswordChangeRequest;
 import com.example.bankingapp.dto.PaymentRequest;
@@ -74,11 +75,19 @@ public class AccountController {
         }
     }
 
-    @PostMapping("/{accountId}/deposit")
+@PostMapping("/{accountId}/deposit")
     public ResponseEntity<?> makeDeposit(@PathVariable Long accountId, @Valid @RequestBody DepositRequest depositRequest) {
         try {
             verifyAccountOwner(accountId);
-            accountService.deposit(getAuthenticatedUsername(), accountId, depositRequest.getAmount()); 
+            // --- MODIFIED ---
+            // Now pass the source to the service
+            accountService.deposit(
+                getAuthenticatedUsername(), 
+                accountId, 
+                depositRequest.getAmount(), 
+                depositRequest.getSource()
+            ); 
+            // ------------------
             return ResponseEntity.ok("Deposit successful");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -215,4 +224,28 @@ public class AccountController {
             response.setStatus(HttpStatus.BAD_REQUEST.value());
         }
     }
+    @GetMapping("/{accountId}/card")
+    public ResponseEntity<?> getDebitCardDetails(@PathVariable Long accountId) {
+        try {
+            verifyAccountOwner(accountId);
+            String username = getAuthenticatedUsername();
+            DebitCardDto cardDto = accountService.getDebitCardDetails(accountId, username);
+            return ResponseEntity.ok(cardDto);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/{accountId}/card/toggle")
+    public ResponseEntity<?> toggleCardStatus(@PathVariable Long accountId) {
+        try {
+            verifyAccountOwner(accountId);
+            String username = getAuthenticatedUsername();
+            DebitCardDto updatedCardDto = accountService.toggleDebitCardStatus(accountId, username);
+            return ResponseEntity.ok(updatedCardDto);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+    // ---------------------------------
 }

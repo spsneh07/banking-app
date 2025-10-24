@@ -9,26 +9,28 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
     <script>
-        // --- CORRECTED: Full Tailwind Config ---
         tailwind.config = {
-            darkMode: 'class',
+            darkMode: 'class', // Crucial: Enables toggling via <html class="dark">
             theme: {
                 extend: {
                     fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
                     colors: {
-                        // Base Palette
-                        'bank-primary': '#6366f1', 'bank-primary-hover': '#4f46e5',
-                        'bank-success': '#10b981', 'bank-danger': '#ef4444',
-                        'bank-warning': '#f59e0b', 'bank-info': '#06b6d4',
+                        // Base Palette (Shared)
+                        'bank-primary': '#6366f1', // Indigo-500
+                        'bank-primary-hover': '#4f46e5', // Indigo-600
+                        'bank-success': '#10b981', // Emerald-500
+                        'bank-danger': '#ef4444', // Red-500
+                        'bank-warning': '#f59e0b', // Amber-500
+                        'bank-info': '#06b6d4', // Cyan-500
 
                         // Light Mode (Default)
-                        'bank-bg': '#f9fafb',        // gray-50
+                        'bank-bg': '#f9fafb',        // gray-50 (Page Background)
                         'bank-card': 'rgba(255, 255, 255, 0.8)', // white glass
                         'bank-nav': 'rgba(255, 255, 255, 0.8)',
                         'bank-modal': '#ffffff',
-                        'bank-text-main': '#111827', // gray-900
-                        'bank-text-muted': '#6b7280',// gray-500
-                        'bank-border': '#e5e7eb',    // gray-200
+                        'bank-text-main': '#111827', // gray-900 (Main Text)
+                        'bank-text-muted': '#6b7280',// gray-500 (Subtle Text)
+                        'bank-border': '#e5e7eb',    // gray-200 (Borders)
                         'bank-input-bg': '#f9fafb',   // gray-50
                         'bank-input-border': '#d1d5db',// gray-300
                         'bank-input-text': '#111827', // gray-900
@@ -188,6 +190,55 @@
         .dark input[type="date"]:not(:valid) {
             color: #94a3b8; /* bank-dark-text-muted */
         }
+
+        /* --- ADDED DEBIT CARD STYLES --- */
+        .debit-card {
+            width: 100%;
+            max-width: 400px;
+            height: 250px;
+            border-radius: 1.5rem; /* rounded-3xl */
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); /* Light mode: indigo-600 to purple-600 */
+            padding: 1.5rem; /* p-6 */
+            color: white;
+            font-family: 'Courier New', Courier, monospace;
+            letter-spacing: 1.5px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        .dark .debit-card {
+            background: linear-gradient(135deg, #1e3a8a 0%, #4c1d95 100%); /* Dark mode: blue-900 to purple-900 */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        .debit-card-chip {
+            width: 50px;
+            height: 40px;
+            background: linear-gradient(135deg, #fde047, #facc15); /* yellow-300 to yellow-500 */
+            border-radius: 0.25rem; /* rounded */
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        .debit-card-logo {
+            font-size: 1.5rem; /* text-2xl */
+            font-weight: 700; /* font-bold */
+            font-family: 'Inter', sans-serif;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+        .debit-card-number {
+            font-size: 1.5rem; /* text-2xl */
+            font-weight: 600; /* font-semibold */
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        .debit-card-details {
+            font-size: 0.875rem; /* text-sm */
+            text-transform: uppercase;
+            opacity: 0.7;
+        }
+        .debit-card-holder {
+            font-size: 1rem; /* text-base */
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        /* --- END OF DEBIT CARD STYLES --- */
     </style>
 </head>
 <body class="font-sans text-bank-text-main bg-bank-bg dark:text-bank-dark-text dark:bg-bank-bg-dark relative min-h-screen">
@@ -217,7 +268,7 @@
     <div class="relative z-10 max-w-7xl mx-auto pt-28 px-4 sm:px-6 lg:px-8 pb-16">
         <header class="mb-10">
             <h1 class="text-4xl font-bold text-bank-text-main dark:text-white mb-2">
-                Welcome, <span id="username-display" class="gradient-text">User</span>! 
+                Welcome, <span id="username-display" class="gradient-text">User</span>! 👋
             </h1>
             <p class="text-lg text-bank-text-muted dark:text-slate-400">
                 Account Number: <strong id="userAccountNumber" class="text-bank-text-main dark:text-slate-300">Loading...</strong>
@@ -236,6 +287,12 @@
                     <button class="nav-tab-btn" id="transactions-tab" type="button">
                         <i class="bi bi-clock-history"></i>
                         <span>Transactions</span>
+                    </button>
+                </li>
+                <li>
+                    <button class="nav-tab-btn" id="card-tab" type="button">
+                        <i class="bi bi-credit-card-fill"></i>
+                        <span>My Card</span>
                     </button>
                 </li>
                 <li>
@@ -258,15 +315,9 @@
                     <div class="glass-card rounded-3xl p-8 transform hover:scale-[1.02] transition-all duration-300">
                         <h5 class="text-lg font-semibold text-bank-text-muted dark:text-slate-400 mb-6">Quick Actions</h5>
                         <div class="flex flex-col gap-4">
-                            <button id="depositBtn" class="w-full text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-xl text-base px-6 py-4 font-semibold transform hover:scale-105 transition-all duration-300 shadow-lg shadow-emerald-500/30">
-                                <i class="bi bi-arrow-down-circle mr-2"></i>Deposit
-                            </button>
-                            <button id="transferBtn" class="w-full text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl text-base px-6 py-4 font-semibold transform hover:scale-105 transition-all duration-300 shadow-lg shadow-indigo-500/30">
-                                <i class="bi bi-arrow-left-right mr-2"></i>Transfer
-                            </button>
-                            <button id="payBillBtn" class="w-full text-white bg-gradient-to-r from-cyan-600 to-sky-600 hover:from-cyan-700 hover:to-sky-700 rounded-xl text-base px-6 py-4 font-semibold transform hover:scale-105 transition-all duration-300 shadow-lg shadow-cyan-500/30">
-                                <i class="bi bi-receipt mr-2"></i>Pay Bills
-                            </button>
+                            <button id="depositBtn" class="w-full text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-xl text-base px-6 py-4 font-semibold transform hover:scale-105 transition-all duration-300 shadow-lg shadow-emerald-500/30"><i class="bi bi-arrow-down-circle mr-2"></i>Deposit</button>
+                            <button id="transferBtn" class="w-full text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl text-base px-6 py-4 font-semibold transform hover:scale-105 transition-all duration-300 shadow-lg shadow-indigo-500/30"><i class="bi bi-arrow-left-right mr-2"></i>Transfer</button>
+                            <button id="payBillBtn" class="w-full text-white bg-gradient-to-r from-cyan-600 to-sky-600 hover:from-cyan-700 hover:to-sky-700 rounded-xl text-base px-6 py-4 font-semibold transform hover:scale-105 transition-all duration-300 shadow-lg shadow-cyan-500/30"><i class="bi bi-receipt mr-2"></i>Pay Bills</button>
                         </div>
                     </div>
                 </div>
@@ -302,7 +353,57 @@
                     </div>
                 </div>
             </div>
-
+            
+            <div id="card-pane" class="nav-tab-content hidden">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="md:col-span-2 glass-card rounded-3xl p-8 transform hover:scale-[1.02] transition-all duration-300 flex items-center justify-center">
+                        
+                        <div class="debit-card mx-auto">
+                            <div class="flex justify-between items-center mb-4">
+                                <div class="debit-card-chip"></div>
+                                <div id="card-bank-name" class="debit-card-logo">Bank Name</div>
+                            </div>
+                            <div class="mb-6">
+                                <p id="card-number" class="debit-card-number">XXXX XXXX XXXX XXXX</p>
+                            </div>
+                            <div class="flex justify-between items-end">
+                                <div>
+                                    <p class="debit-card-details">Card Holder</p>
+                                    <p id="card-holder-name" class="debit-card-holder">Your Name</p>
+                                </div>
+                                <div>
+                                    <p class="debit-card-details">Expires</p>
+                                    <p id="card-expiry-date" class="font-semibold">MM/YY</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="glass-card rounded-3xl p-8 transform hover:scale-[1.02] transition-all duration-300">
+                        <h5 class="text-2xl font-bold text-bank-text-main dark:text-white mb-6">Card Settings</h5>
+                        <div classs="space-y-4">
+                            <div id="card-status-loading" class="text-center text-bank-text-muted dark:text-bank-dark-text-muted">
+                                <svg class="animate-spin h-8 w-8 text-bank-primary dark:text-indigo-500 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Loading card status...
+                            </div>
+                            
+                            <div id="card-controls" class="hidden space-y-4">
+                                <div class="flex items-center justify-between p-4 bg-bank-input-bg dark:bg-bank-input-bg-dark rounded-xl border border-bank-border dark:border-bank-border-dark">
+                                    <div>
+                                        <p class="font-semibold text-bank-text-main dark:text-bank-text-main-dark">Card Status</p>
+                                        <p id="card-status-text" class="text-sm font-bold">ACTIVE</p>
+                                    </div>
+                                    <button id="card-toggle-btn" class="px-6 py-3 font-semibold rounded-xl text-sm transform hover:scale-105 transition-all duration-300">
+                                        </button>
+                                </div>
+                                </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div id="profile-pane" class="nav-tab-content hidden">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="glass-card rounded-3xl p-8 transform hover:scale-[1.02] transition-all duration-300">
@@ -318,31 +419,29 @@
                                 <input type="email" id="profileEmail" class="w-full px-4 py-3 bg-bank-input-bg dark:bg-bank-input-bg-dark border border-bank-input-border dark:border-bank-input-border-dark rounded-xl text-bank-input-text dark:text-bank-input-text-dark placeholder-bank-text-muted dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200" required>
                             </div>
                             <div>
-    <label for="profilePhone" class="block text-sm font-medium text-bank-text-muted dark:text-slate-400 mb-2">Phone Number</label>
-    
-    <div class="flex mt-2">
-        <span class="inline-flex items-center px-3 rounded-l-xl 
-                     border border-r-0 border-bank-input-border dark:border-bank-input-border-dark 
-                     bg-gray-200 dark:bg-slate-800 
-                     text-bank-text-muted dark:text-bank-dark-text-muted 
-                     text-sm">
-            +91
-        </span>
-        
-        <input type="tel" 
-               id="profilePhone" 
-               inputmode="numeric"
-               placeholder="9876543210"
-               maxlength="10"
-               pattern="\d{10}" 
-               title="Please enter exactly 10 digits."
-               class="w-full px-4 py-3 rounded-r-xl bg-bank-input-bg dark:bg-bank-input-bg-dark 
-                      border border-bank-input-border dark:border-bank-input-border-dark 
-                      text-bank-input-text dark:text-bank-input-text-dark 
-                      placeholder-bank-text-muted dark:placeholder-slate-500 
-                      focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200">
-    </div>
-</div>
+                                <label for="profilePhone" class="block text-sm font-medium text-bank-text-muted dark:text-slate-400 mb-2">Phone Number</label>
+                                <div class="flex mt-2">
+                                    <span class="inline-flex items-center px-3 rounded-l-xl 
+                                                 border border-r-0 border-bank-input-border dark:border-bank-input-border-dark 
+                                                 bg-gray-200 dark:bg-slate-800 
+                                                 text-bank-text-muted dark:text-bank-dark-text-muted 
+                                                 text-sm">
+                                        +91
+                                    </span>
+                                    <input type="tel" 
+                                           id="profilePhone" 
+                                           inputmode="numeric"
+                                           placeholder="9876543210"
+                                           maxlength="10"
+                                           pattern="\d{10}" 
+                                           title="Please enter exactly 10 digits."
+                                           class="w-full px-4 py-3 rounded-r-xl bg-bank-input-bg dark:bg-bank-input-bg-dark 
+                                                  border border-bank-input-border dark:border-bank-input-border-dark 
+                                                  text-bank-input-text dark:text-bank-input-text-dark 
+                                                  placeholder-bank-text-muted dark:placeholder-slate-500 
+                                                  focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200">
+                                </div>
+                            </div>
                             <div>
                                 <label for="profileDob" class="block text-sm font-medium text-bank-text-muted dark:text-slate-400 mb-2">Date of Birth</label>
                                 <input type="date" id="profileDob" class="w-full px-4 py-3 bg-bank-input-bg dark:bg-bank-input-bg-dark border border-bank-input-border dark:border-bank-input-border-dark rounded-xl text-bank-input-text dark:text-bank-input-text-dark placeholder-bank-text-muted dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200">
@@ -419,6 +518,17 @@
                 <div class="p-6 space-y-4">
                     <div id="depositError" class="hidden p-4 text-sm text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900/30 border border-red-500/30 rounded-xl"></div>
                     <p class="text-bank-text-muted dark:text-slate-300">Enter the amount you wish to deposit.</p>
+                    
+                    <div>
+                        <label for="depositSource" class="block text-sm font-medium text-bank-text-muted dark:text-slate-400 mb-2">Source</label>
+                        <select id="depositSource" class="w-full px-4 py-3 bg-bank-input-bg dark:bg-bank-input-bg-dark border border-bank-input-border dark:border-bank-input-border-dark rounded-xl text-bank-input-text dark:text-bank-input-text-dark placeholder-bank-text-muted dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow" required>
+                            <option value="">Select a source</option>
+                            <option value="Cash Deposit">Cash Deposit</option>
+                            <option value="Check Deposit">Check Deposit</option>
+                            <option value="External Transfer">External Transfer</option>
+                        </select>
+                    </div>
+
                     <div>
                         <label for="depositAmount" class="block text-sm font-medium text-bank-text-muted dark:text-slate-400 mb-2">Amount (₹)</label>
                         <input type="number" id="depositAmount" class="w-full px-4 py-3 bg-bank-input-bg dark:bg-bank-input-bg-dark border border-bank-input-border dark:border-bank-input-border-dark rounded-xl text-bank-input-text dark:text-bank-input-text-dark placeholder-bank-text-muted dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow" min="0.01" step="0.01" placeholder="1000.00" required>

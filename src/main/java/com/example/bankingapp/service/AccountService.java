@@ -16,13 +16,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.bankingapp.dto.AccountDto;
-import com.example.bankingapp.dto.ProfileUpdateRequest; // Import DTO
+import com.example.bankingapp.dto.DebitCardDto; // Import DTO
+import com.example.bankingapp.dto.ProfileUpdateRequest;
 import com.example.bankingapp.dto.TransactionDto;
 import com.example.bankingapp.model.Account;
+import com.example.bankingapp.model.DebitCard;
 import com.example.bankingapp.model.Transaction;
 import com.example.bankingapp.model.TransactionType;
 import com.example.bankingapp.model.User;
-import com.example.bankingapp.repository.AccountRepository;
+import com.example.bankingapp.repository.AccountRepository; // <-- ADD THIS
+import com.example.bankingapp.repository.DebitCardRepository;  // <-- ADD THIS
 import com.example.bankingapp.repository.TransactionRepository;
 import com.example.bankingapp.repository.UserRepository;
 
@@ -36,6 +39,7 @@ public class AccountService {
     @Autowired private UserRepository userRepository;
     @Autowired private AuthenticationManager authenticationManager;
     @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private DebitCardRepository debitCardRepository;
 
     @Transactional
     public User updateUserProfile(String username, ProfileUpdateRequest request) { // Use DTO
@@ -83,11 +87,16 @@ public class AccountService {
 
     // --- Transaction methods are now account-specific ---
     @Transactional
-    public void deposit(String username, Long accountId, BigDecimal amount) {
+    public void deposit(String username, Long accountId, BigDecimal amount, String source) { // <-- 1. Added 'source'
         Account account = findAccountByIdAndUsername(accountId, username);
         account.setBalance(account.getBalance().add(amount));
         accountRepository.save(account);
-        Transaction transaction = new Transaction(TransactionType.DEPOSIT, amount, "Deposit to account", account);
+        
+        // --- MODIFIED ---
+        // 2. Use the 'source' as the transaction description
+        Transaction transaction = new Transaction(TransactionType.DEPOSIT, amount, source, account); 
+        // ------------------
+        
         transactionRepository.save(transaction);
     }
 
@@ -199,5 +208,29 @@ public class AccountService {
             logger.warn("Invalid PIN attempt for user '{}'.", username);
             throw new BadCredentialsException("Invalid PIN. Transaction authorization failed.");
         }
+    }
+
+@Transactional(readOnly = true)
+    public DebitCardDto getDebitCardDetails(Long accountId, String username) {
+        Account account = findAccountByIdAndUsername(accountId, username);
+        if (account.getDebitCard() == null) {
+            throw new RuntimeException("No debit card found for this account.");
+        }
+        return new DebitCardDto(account.getDebitCard());
+    }
+
+    @Transactional
+    public DebitCardDto toggleDebitCardStatus(Long accountId, String username) {
+        Account account = findAccountByIdAndUsername(accountId, username);
+        DebitCard card = account.getDebitCard();
+        if (card == null) {
+            throw new RuntimeException("No debit card found for this account.");
+        }
+        
+        // Toggle the 'active' status
+        card.setActive(!card.isActive());
+        debitCardRepository.save(card);
+        
+        return new DebitCardDto(card);
     }
 }

@@ -359,6 +359,7 @@ async function fetchUserDetails() {
 }
 
 // --- MODIFIED: populateProfileForm ---
+// --- REPLACE your old function with this one ---
 function populateProfileForm() {
     const userData = JSON.parse(localStorage.getItem('currentUser'));
     if (userData) {
@@ -379,7 +380,6 @@ function populateProfileForm() {
         document.getElementById('profileNominee').value = userData.nomineeName || '';
     }
 }
-
 async function fetchBalance() {
     const accountId = document.body.dataset.accountId;
     if (!accountId) return;
@@ -604,19 +604,41 @@ async function handleAddBank(event, bankId, bankName) {
 async function handleDepositSubmit(event) {
     event.preventDefault();
     const accountId = document.body.dataset.accountId; if (!accountId) return;
+    
     const amount = parseFloat(document.getElementById('depositAmount').value);
+    const source = document.getElementById('depositSource').value; // <-- Get the source
     const errorDiv = document.getElementById('depositError');
     const submitButton = document.getElementById('submitDeposit');
     hideModalError(errorDiv);
-    if (isNaN(amount) || amount <= 0) { showModalError(errorDiv, "Invalid amount."); return; }
+
+    if (!source) { // <-- Check the source
+        showModalError(errorDiv, "Please select a deposit source."); 
+        return; 
+    }
+    if (isNaN(amount) || amount <= 0) { 
+        showModalError(errorDiv, "Invalid amount."); 
+        return; 
+    }
+
     toggleSpinner(submitButton, true);
     try {
-        const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/deposit`, { method: 'POST', body: JSON.stringify({ amount }) });
+        // --- MODIFIED ---
+        // Send 'amount' AND 'source' in the body
+        const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/deposit`, { 
+            method: 'POST', 
+            body: JSON.stringify({ amount, source }) // <-- Send both
+        });
+        // -----------------
         if (!response.ok) throw new Error(await response.text() || 'Deposit failed.');
+        
         await refreshDashboardData();
         hideModal('depositModal');
         showToast("Deposit successful!");
-    } catch (error) { console.error("Deposit error:", error); showModalError(errorDiv, error.message); }
+
+    } catch (error) { 
+        console.error("Deposit error:", error); 
+        showModalError(errorDiv, error.message); 
+    }
     finally { toggleSpinner(submitButton, false); }
 }
 async function handleVerifyRecipient() {
@@ -701,8 +723,65 @@ async function handlePayBillSubmit(event) {
     } catch (error) { console.error("Pay bill error:", error); showModalError(errorDiv, error.message); }
     finally { toggleSpinner(submitButton, false); }
 }
+async function fetchDashboardSummary() {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${ACCOUNT_API_URL}/dashboard`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Dashboard fetch failed');
+    const data = await res.json();
+    document.getElementById('userName').textContent = data.userName;
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// --- Fix #2: Card details stuck on loading ---
+async function loadCardDetails() {
+  const loading = document.getElementById('card-status-loading');
+  const controls = document.getElementById('card-controls');
+  loading.classList.remove('hidden');
+  controls.classList.add('hidden');
+
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${ACCOUNT_API_URL}/card`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Card fetch failed');
+    const card = await res.json();
+
+    document.getElementById('card-status-text').textContent = card.active ? 'ACTIVE' : 'FROZEN';
+    document.getElementById('card-toggle-btn').textContent = card.active ? 'Freeze Card' : 'Unfreeze Card';
+
+    loading.classList.add('hidden');
+    controls.classList.remove('hidden');
+  } catch (err) {
+    console.error(err);
+    loading.textContent = 'Failed to load card details.';
+  }
+}
+
+// --- Fix #1: Portal settings visible and populated ---
+async function loadPortalSettings() {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${AUTH_API_URL}/me`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Profile fetch failed');
+    const user = await res.json();
+
+    document.getElementById('profile-name').value = user.name || '';
+    document.getElementById('profile-email').value = user.email || '';
+  } catch (err) {
+    console.error(err);
+  }
+}
 
 // --- MODIFIED: handleProfileUpdateSubmit ---
+// --- REPLACE your old function with this one ---
 async function handleProfileUpdateSubmit(event) {
     event.preventDefault();
     
