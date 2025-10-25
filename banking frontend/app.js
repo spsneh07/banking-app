@@ -136,9 +136,12 @@ function setupAccountDashboard() {
     document.getElementById('changePasswordForm')?.addEventListener('submit', handleChangePasswordSubmit);
     document.getElementById('setPinForm')?.addEventListener('submit', handleSetPinSubmit);
     document.getElementById('download-csv-btn')?.addEventListener('click', handleDownloadCsv);
-
+    // Inside setupAccountDashboard function...
+document.getElementById('loanApplicationForm')?.addEventListener('submit', handleLoanApplicationSubmit);
+    
     // Transfer Form Specifics
     document.getElementById('verifyRecipientBtn')?.addEventListener('click', handleVerifyRecipient);
+    
 
     // Initial Data Fetch
     fetchUserDetails(); // This will now call populateProfileForm()
@@ -926,7 +929,84 @@ async function handleToggleCardStatus(event, type) {
         else element.disabled = false;
     }
 }
+// --- NEW LOAN APPLICATION HANDLER ---
+// --- LOAN APPLICATION HANDLER (with Confirmation Display) ---
+async function handleLoanApplicationSubmit(event) {
+    event.preventDefault(); // <-- Prevents the page reload
 
+    // Get form elements
+    const amountInput = document.getElementById('loanAmount');
+    const purposeInput = document.getElementById('loanPurpose');
+    const incomeInput = document.getElementById('monthlyIncome');
+    const errorDiv = document.getElementById('loanError');
+    const submitButton = document.getElementById('submitLoanApplication');
+    const confirmationDiv = document.getElementById('loanConfirmationDetails'); // Get confirmation div
+
+    // Clear previous errors and hide any previous confirmation message
+    hideModalError(errorDiv); 
+    if (confirmationDiv) {
+        confirmationDiv.classList.add('hidden'); 
+        confirmationDiv.innerHTML = ''; // Clear previous content just in case
+    }
+
+    // Basic Validation
+    const amount = parseFloat(amountInput.value);
+    const purpose = purposeInput.value;
+    const income = parseFloat(incomeInput.value);
+
+    if (isNaN(amount) || amount <= 0) {
+        showModalError(errorDiv, "Please enter a valid loan amount.");
+        if (amountInput) amountInput.focus(); // Add check if element exists
+        return;
+    }
+    if (!purpose) {
+        showModalError(errorDiv, "Please select the purpose of the loan.");
+        if (purposeInput) purposeInput.focus(); // Add check if element exists
+        return;
+    }
+    if (isNaN(income) || income < 0) {
+         showModalError(errorDiv, "Please enter a valid monthly income.");
+         if (incomeInput) incomeInput.focus(); // Add check if element exists
+         return;
+    }
+
+    toggleSpinner(submitButton, true); // Disable button
+
+    // --- Simulate Backend Processing ---
+    console.log('Loan Application Submitted:', { amount, purpose, income });
+
+    // Simulate a short delay
+    setTimeout(() => {
+        // --- Show Success Toast ---
+        showToast("Your loan application has been received!");
+
+        // --- Display Submission Details ---
+        if (confirmationDiv) { // Check if the div exists before updating
+            confirmationDiv.innerHTML = `
+                <p class="font-semibold mb-2"><i class="bi bi-check-circle-fill mr-2"></i>Application Submitted Successfully:</p>
+                <ul class="list-disc list-inside ml-4 space-y-1">
+                    <li><strong>Loan Amount:</strong> ${formatCurrency(amount)}</li>
+                    <li><strong>Purpose:</strong> ${purpose}</li>
+                    <li><strong>Reported Monthly Income:</strong> ${formatCurrency(income)}</li>
+                </ul>
+                <p class="mt-3 text-xs">We will review your application and contact you soon if further information is required.</p>
+            `;
+            confirmationDiv.classList.remove('hidden'); // Show the details
+        }
+        // ---------------------------------
+
+        // Reset the form AFTER showing confirmation
+        // Check if event.target exists and has a reset method
+        if (event.target && typeof event.target.reset === 'function') {
+           event.target.reset(); 
+        }
+        
+        toggleSpinner(submitButton, false); // Re-enable button
+
+    }, 1000); // Simulate 1 second processing time
+}
+// --- END OF LOAN HANDLER ---
+// --- END OF LOAN HANDLER ---
 // --- MODIFIED: handleProfileUpdateSubmit ---
 async function handleProfileUpdateSubmit(event) {
     event.preventDefault();
