@@ -25,9 +25,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.bankingapp.dto.AccountDto;
+import com.example.bankingapp.dto.ActivityLogDto;
 import com.example.bankingapp.dto.CreateAccountRequest;
 import com.example.bankingapp.dto.DebitCardDto;
 import com.example.bankingapp.dto.DepositRequest;
+import com.example.bankingapp.dto.LoanApplicationRequest;
 import com.example.bankingapp.dto.PasswordChangeRequest;
 import com.example.bankingapp.dto.PaymentRequest;
 import com.example.bankingapp.dto.PinSetupRequest;
@@ -281,6 +283,31 @@ public class AccountController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    // Inside AccountController.java
+
+// (Make sure AccountService is injected via @Autowired)
+
+@GetMapping("/activity-log") // Defines the endpoint URL: GET /api/account/activity-log
+public ResponseEntity<?> getUserActivityLog() {
+    try {
+        // Get the username of the currently authenticated user
+        String username = getAuthenticatedUsername(); 
+        
+        // Call the service method to get the logs as DTOs
+        List<ActivityLogDto> logs = accountService.getActivityLogsForUser(username);
+        
+        // Return the list of logs with an OK (200) status
+        return ResponseEntity.ok(logs);
+        
+    } catch (Exception e) {
+        // Log the error on the server for debugging
+        // logger.error("Error fetching activity log for user {}: {}", getAuthenticatedUsername(), e.getMessage(), e); 
+        
+        // Return a generic error response to the client
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                             .body("Error retrieving activity log.");
+    }
+}
 
  @PostMapping("/{accountId}/card/toggle")
     public ResponseEntity<?> toggleCardStatus(@PathVariable Long accountId) {
@@ -362,4 +389,15 @@ public ResponseEntity<?> getCardCvv(@PathVariable Long accountId) {
         int cvv = 100 + random.nextInt(900); // 3-digit CVV
         return String.valueOf(cvv);
     }
+    @PostMapping("/loans/apply") // Example endpoint
+public ResponseEntity<?> applyForLoan(@Valid @RequestBody LoanApplicationRequest request) {
+    try {
+        String username = getAuthenticatedUsername();
+        accountService.submitLoanApplication(username, request); // Call the service method
+        // Return only a success message, no need to return application details usually
+        return ResponseEntity.ok("Loan application submitted successfully."); 
+    } catch (Exception e) {
+        return ResponseEntity.badRequest().body("Error submitting loan application: " + e.getMessage());
+    }
+}
 }

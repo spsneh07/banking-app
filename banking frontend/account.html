@@ -336,6 +336,12 @@
         <span>Apply for Loan</span>
     </button>
 </li>
+<li>
+    <button class="nav-tab-btn" id="activity-log-tab" type="button">
+        <i class="bi bi-list-check"></i> 
+        <span>Activity Log</span>
+    </button>
+</li>
                 <li>
                     <button class="nav-tab-btn" id="profile-tab" type="button">
                         <i class="bi bi-gear-fill"></i>
@@ -519,6 +525,29 @@
                     </div>
             </div>
         </div>
+        <div id="activity-log-pane" class="nav-tab-content hidden">
+        <div class="glass-card rounded-3xl p-8">
+            <h5 class="text-2xl font-bold text-bank-text-main dark:text-white mb-6">Recent Account Activity</h5>
+
+            <!-- Placeholder for where logs will be displayed -->
+            <div id="activityLogList" class="space-y-4">
+                <p class="text-bank-text-muted dark:text-slate-400 text-center py-6">
+                    Loading activity log...
+                </p>
+                <!-- Log entries will be added here by JavaScript -->
+
+                <!-- Example Log Entry Structure (for later use)
+                <div class="p-4 bg-bank-input-bg dark:bg-bank-input-bg-dark rounded-xl border border-bank-border dark:border-bank-border-dark flex justify-between items-center">
+                    <div>
+                        <p class="font-semibold text-bank-text-main dark:text-bank-text-main-dark">Password Changed</p>
+                        <p class="text-xs text-bank-text-muted dark:text-slate-400">Security Update</p>
+                    </div>
+                    <p class="text-xs text-bank-text-muted dark:text-slate-500">Oct 25, 2025, 6:00 PM</p>
+                </div> 
+                -->
+            </div>
+        </div>
+    </div>
 
             <div id="profile-pane" class="nav-tab-content hidden">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

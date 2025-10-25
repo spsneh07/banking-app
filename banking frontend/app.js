@@ -109,8 +109,11 @@ function setupAccountDashboard() {
             if (paneId === 'transactions-pane') fetchTransactions(true);
             if (paneId === 'overview-pane') fetchTransactions(false);
             if (paneId === 'card-pane') loadCardDetails(); // <-- Card Loader
-        });
+            if (paneId === 'activity-log-pane') { 
+                fetchActivityLogs(); // <-- CALL THE NEW FUNCTION HERE
+            }
     });
+});
 
     // --- CARD FLIP LISTENER ---
     // This is correctly placed here to attach the click listener to the card area
@@ -932,7 +935,7 @@ async function handleToggleCardStatus(event, type) {
 // --- NEW LOAN APPLICATION HANDLER ---
 // --- LOAN APPLICATION HANDLER (with Confirmation Display) ---
 async function handleLoanApplicationSubmit(event) {
-    event.preventDefault(); // <-- Prevents the page reload
+    event.preventDefault(); // Prevent default form submission
 
     // Get form elements
     const amountInput = document.getElementById('loanAmount');
@@ -940,48 +943,65 @@ async function handleLoanApplicationSubmit(event) {
     const incomeInput = document.getElementById('monthlyIncome');
     const errorDiv = document.getElementById('loanError');
     const submitButton = document.getElementById('submitLoanApplication');
-    const confirmationDiv = document.getElementById('loanConfirmationDetails'); // Get confirmation div
+    const confirmationDiv = document.getElementById('loanConfirmationDetails'); 
 
-    // Clear previous errors and hide any previous confirmation message
+    // Clear previous errors and hide confirmation
     hideModalError(errorDiv); 
     if (confirmationDiv) {
         confirmationDiv.classList.add('hidden'); 
-        confirmationDiv.innerHTML = ''; // Clear previous content just in case
+        confirmationDiv.innerHTML = ''; 
     }
 
     // Basic Validation
     const amount = parseFloat(amountInput.value);
     const purpose = purposeInput.value;
-    const income = parseFloat(incomeInput.value);
+    const income = parseFloat(incomeInput.value); // Renamed for clarity
 
     if (isNaN(amount) || amount <= 0) {
         showModalError(errorDiv, "Please enter a valid loan amount.");
-        if (amountInput) amountInput.focus(); // Add check if element exists
+        if (amountInput) amountInput.focus();
         return;
     }
     if (!purpose) {
         showModalError(errorDiv, "Please select the purpose of the loan.");
-        if (purposeInput) purposeInput.focus(); // Add check if element exists
+        if (purposeInput) purposeInput.focus();
         return;
     }
-    if (isNaN(income) || income < 0) {
+    if (isNaN(income) || income < 0) { // Changed variable name here
          showModalError(errorDiv, "Please enter a valid monthly income.");
-         if (incomeInput) incomeInput.focus(); // Add check if element exists
+         if (incomeInput) incomeInput.focus();
          return;
     }
 
     toggleSpinner(submitButton, true); // Disable button
 
-    // --- Simulate Backend Processing ---
-    console.log('Loan Application Submitted:', { amount, purpose, income });
+    try {
+        // --- Call Backend API ---
+        const response = await fetchSecure(`${ACCOUNT_API_URL}/loans/apply`, {
+            method: 'POST',
+            body: JSON.stringify({ 
+                amount: amount,          // Send the numeric amount
+                purpose: purpose,        // Send the selected purpose string
+                monthlyIncome: income    // Send the numeric income (corrected variable name)
+            }) 
+        });
 
-    // Simulate a short delay
-    setTimeout(() => {
+        if (!response.ok) {
+            // Try to get error message from backend response text
+            let errorMsg = 'Loan application submission failed.';
+            try { 
+                const backendErrorText = await response.text();
+                if (backendErrorText) errorMsg = backendErrorText;
+            } catch (_) {} // Ignore if reading text fails
+            throw new Error(errorMsg);
+        }
+        // --- End API Call ---
+
         // --- Show Success Toast ---
         showToast("Your loan application has been received!");
 
         // --- Display Submission Details ---
-        if (confirmationDiv) { // Check if the div exists before updating
+        if (confirmationDiv) { 
             confirmationDiv.innerHTML = `
                 <p class="font-semibold mb-2"><i class="bi bi-check-circle-fill mr-2"></i>Application Submitted Successfully:</p>
                 <ul class="list-disc list-inside ml-4 space-y-1">
@@ -993,18 +1013,95 @@ async function handleLoanApplicationSubmit(event) {
             `;
             confirmationDiv.classList.remove('hidden'); // Show the details
         }
-        // ---------------------------------
-
+        
         // Reset the form AFTER showing confirmation
-        // Check if event.target exists and has a reset method
         if (event.target && typeof event.target.reset === 'function') {
            event.target.reset(); 
         }
-        
-        toggleSpinner(submitButton, false); // Re-enable button
 
-    }, 1000); // Simulate 1 second processing time
+    } catch (error) {
+        console.error("Loan application error:", error);
+        showModalError(errorDiv, error.message); // Show error in the form's error div
+        showToast(`Error: ${error.message}`, true); // Also show error toast
+    } finally {
+        toggleSpinner(submitButton, false); // Re-enable button regardless of success/failure
+    }
 }
+// --- END OF LOAN HANDLER ----
+async function fetchActivityLogs() {
+    const logListDiv = document.getElementById('activityLogList');
+    if (!logListDiv) return;
+
+    // Show loading state
+    logListDiv.innerHTML = `
+        <div class="text-center text-bank-text-muted dark:text-slate-400 py-6">
+            <svg class="animate-spin h-6 w-6 text-bank-primary dark:text-indigo-500 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Loading activity log...
+        </div>`;
+
+    try {
+        const response = await fetchSecure(`${ACCOUNT_API_URL}/activity-log`); // Call the backend endpoint
+
+        if (!response.ok) {
+            throw new Error(await response.text() || 'Failed to fetch activity log.');
+        }
+
+        const logs = await response.json(); // Get the array of log DTOs
+
+        logListDiv.innerHTML = ''; // Clear loading state
+
+        if (logs.length === 0) {
+            logListDiv.innerHTML = '<p class="text-bank-text-muted dark:text-slate-400 text-center py-6">No recent account activity found.</p>';
+            return;
+        }
+
+        // Loop through logs and create HTML for each entry
+        logs.forEach(log => {
+            const timestamp = new Date(log.timestamp).toLocaleString(); // Format the date/time
+
+            // --- Determine Icon and Color based on activityType (Optional but nice) ---
+            let iconClass = 'bi-info-circle-fill text-blue-400'; // Default
+            let typeText = log.activityType.replace(/_/g, ' '); // Replace underscores
+            
+            if (log.activityType.includes('PASSWORD') || log.activityType.includes('PIN')) {
+                iconClass = 'bi-shield-lock-fill text-orange-400';
+                typeText = 'Security Update';
+            } else if (log.activityType.includes('PROFILE')) {
+                iconClass = 'bi-person-fill-gear text-purple-400';
+                 typeText = 'Profile Update';
+            } else if (log.activityType.includes('CARD')) {
+                iconClass = 'bi-credit-card-fill text-red-400';
+                 typeText = 'Card Settings';
+            } else if (log.activityType.includes('LOAN')) {
+                 iconClass = 'bi-cash-coin text-green-400';
+                 typeText = 'Loan Application';
+            }
+            // --- End Icon/Color Logic ---
+
+            const logEntryHtml = `
+                <div class="p-4 bg-bank-input-bg dark:bg-bank-input-bg-dark rounded-xl border border-bank-border dark:border-bank-border-dark flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                    <div class="flex items-center gap-3">
+                         <i class="bi ${iconClass} text-xl"></i> 
+                         <div>
+                            <p class="font-semibold text-bank-text-main dark:text-bank-text-main-dark">${log.description}</p>
+                            <p class="text-xs text-bank-text-muted dark:text-slate-400">${typeText}</p>
+                        </div>
+                    </div>
+                    <p class="text-xs text-bank-text-muted dark:text-slate-500 text-right sm:text-left flex-shrink-0">${timestamp}</p>
+                </div>
+            `;
+            logListDiv.insertAdjacentHTML('beforeend', logEntryHtml); // Add the entry to the list
+        });
+
+    } catch (error) {
+        console.error("Error fetching activity log:", error);
+        logListDiv.innerHTML = `<p class="text-red-500 text-center py-6">Error loading activity log: ${error.message}</p>`;
+    }
+}
+// --- END ACTIVITY LOG FUNCTION ---
 // --- END OF LOAN HANDLER ---
 // --- END OF LOAN HANDLER ---
 // --- MODIFIED: handleProfileUpdateSubmit ---
