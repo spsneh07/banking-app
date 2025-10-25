@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import jakarta.persistence.CascadeType; // <-- Make sure this is imported
+import jakarta.persistence.CascadeType; 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -16,12 +16,12 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
-import lombok.NoArgsConstructor; // <-- 1. ADD THIS IMPORT
+import lombok.NoArgsConstructor; 
 
 @Entity
 @Table(name = "accounts")
 @Data
-@NoArgsConstructor // <-- 2. ADD THIS ANNOTATION
+@NoArgsConstructor 
 public class Account {
 
     @Id
@@ -39,34 +39,42 @@ public class Account {
     @JsonIgnore
     private User user;
 
-    @Column(name = "bank_name")
-     private String bankName;
+    // REMOVED redundant bankName field
+    // @Column(name = "bank_name")
+    // private String bankName;
 
     @OneToOne(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private DebitCard debitCard;
     
-    @ManyToOne(fetch = FetchType.LAZY)
+    // REMOVED incorrect self-referencing Account relationship
+    // @ManyToOne(fetch = FetchType.LAZY) 
+    // @JoinColumn(name = "account_id", nullable = true) 
+    // private Account account;
+    
+    @ManyToOne(fetch = FetchType.LAZY) // Relationship with Bank entity (Correct)
     @JoinColumn(name = "bank_id", nullable = false)
     @JsonIgnore
     private Bank bank;
 
-    // This constructor is fine, it will be used by your service
+    // REMOVED ActivityLog constructors - they belong in ActivityLog.java
+    /* public ActivityLog(User user, Account account, String activityType, String description) { ... } */
+    /* public ActivityLog(User user, String activityType, String description) { ... } */
+
+    // Constructor for creating new accounts
     public Account(User user, Bank bank) {
         this.balance = BigDecimal.ZERO;
-        long number = 1_000_000_000L + (long) (Math.random() * 9_000_000_000L);
+        // Consider using a more robust way to generate unique account numbers
+        long number = 1_000_000_000L + (long) (Math.random() * 9_000_000_000L); 
         this.accountNumber = String.valueOf(number);
         this.user = user;
-        this.bank = bank;
-    }
-    public String getBankName() {
-    return bankName;
+        this.bank = bank; // Set the Bank entity relationship
     }
 
-    public void setBankName(String bankName) {
-    this.bankName = bankName;
-   }
-    // --- 3. ADD THIS HELPER METHOD ---
-    // This correctly links the card to the account
+    // REMOVED redundant bankName getter/setter
+    /* public String getBankName() { ... } */
+    /* public void setBankName(String bankName) { ... } */
+
+    // Helper method to correctly link the card to the account
     public void setDebitCard(DebitCard debitCard) {
         if (debitCard == null) {
             if (this.debitCard != null) {
@@ -77,5 +85,4 @@ public class Account {
         }
         this.debitCard = debitCard;
     }
-    // ---------------------------------
 }

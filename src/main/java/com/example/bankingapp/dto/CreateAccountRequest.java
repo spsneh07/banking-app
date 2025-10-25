@@ -1,19 +1,15 @@
 package com.example.bankingapp.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data; // Using Lombok for getters/setters is easier
 
+@Data // Includes getters and setters for bankId
 public class CreateAccountRequest {
 
-    @NotBlank(message = "Bank name is required")
-    private String bankName;
+    // Removed bankName field
 
-    // Getter
-    public String getBankName() {
-        return bankName;
-    }
+    @NotNull(message = "Bank ID must be provided") // Use ID instead of name
+    private Long bankId; 
 
-    // Setter
-    public void setBankName(String bankName) {
-        this.bankName = bankName;
-    }
+    // No explicit getters/setters needed if using @Data
 }

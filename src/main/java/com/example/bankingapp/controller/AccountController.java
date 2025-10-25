@@ -56,7 +56,9 @@ public class AccountController {
     @Autowired private UserRepository userRepository;
     @Autowired private DebitCardRepository debitCardRepository;
     @Autowired private com.example.bankingapp.repository.AccountRepository accountRepository;
-
+    // Inside AccountController.java
+// ... other @Autowired fields ...
+@Autowired private com.example.bankingapp.repository.BankRepository bankRepository; // <-- ADD THIS
     @Autowired private CsvExportService csvExportService; 
 
     private String getAuthenticatedUsername() {
@@ -85,21 +87,35 @@ public class AccountController {
             return ResponseEntity.status(500).body("Error fetching accounts");
         }
     }
-    @PostMapping("/create")
+@PostMapping("/create")
     public ResponseEntity<?> createAccount(@Valid @RequestBody CreateAccountRequest request) {
         try {
             // 1. Find the logged-in user
             String username = getAuthenticatedUsername();
             User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
-            // 2. Create the new Account
-            Account newAccount = new Account();
-            newAccount.setUser(user);
-            newAccount.setBankName(request.getBankName());
-            newAccount.setAccountNumber(generateRandomAccountNumber());
-            newAccount.setBalance(new BigDecimal("50.00")); // Initial bonus
+            // --- FIND THE BANK ENTITY ---
+            // Assuming CreateAccountRequest has a method like getBankId()
+            Long requestedBankId = request.getBankId(); // Get the ID from the request
+            if (requestedBankId == null) {
+                 throw new IllegalArgumentException("Bank ID must be provided to create an account.");
+            }
+            com.example.bankingapp.model.Bank bankEntity = bankRepository.findById(requestedBankId)
+                 .orElseThrow(() -> new RuntimeException("Bank not found with ID: " + requestedBankId));
+            // --- END FIND BANK ---
+
+            // 2. Create the new Account using the constructor
+            // Ensure your Account constructor `Account(User user, Bank bank)` exists
+            Account newAccount = new Account(user, bankEntity); 
             
+            // Set fields NOT handled by the constructor (if any)
+            newAccount.setAccountNumber(generateRandomAccountNumber()); // Set account number
+            newAccount.setBalance(new BigDecimal("50.00")); // Set initial bonus if constructor doesn't
+
+            // --- REMOVED: newAccount.setBankName(...) --- 
+            
+            // Save the account to get its generated ID before creating the card
             Account savedAccount = accountRepository.save(newAccount);
 
             // 3. Create the initial deposit transaction
@@ -107,22 +123,32 @@ public class AccountController {
 
             // 4. Create the new Debit Card
             DebitCard newCard = new DebitCard();
-            newCard.setCardHolderName(user.getFullName());
-            newCard.setAccount(savedAccount); // <-- Link to the new account
+            newCard.setCardHolderName(user.getFullName().toUpperCase()); // Use uppercase for consistency
+            newCard.setAccount(savedAccount); // Link card to the SAVED account
             newCard.setActive(true);
+            newCard.setOnlineTransactionsEnabled(true); // Default value
+            newCard.setInternationalTransactionsEnabled(false); // Default value
             newCard.setCardNumber(generateRandomCardNumber());
             newCard.setCvv(generateRandomCvv());
-            newCard.setExpiryDate(LocalDate.now().plusYears(5)); 
+            newCard.setExpiryDate(LocalDate.now().plusYears(4)); // Use a standard expiry (e.g., 4 years)
             
-            debitCardRepository.save(newCard); // Save the card!
+            // Save the Debit Card
+            DebitCard savedCard = debitCardRepository.save(newCard); 
 
+            // 5. Explicitly link the saved card back to the account and save again
+            // This ensures the relationship is correctly persisted if cascade settings are tricky
+            savedAccount.setDebitCard(savedCard); 
+            accountRepository.save(savedAccount); // Save account again with card link
+
+            // Return the DTO of the fully created and linked account
             return ResponseEntity.ok(new AccountDto(savedAccount));
         
        } catch (Exception e) {
+            // Log the detailed error on the server side for easier debugging
+            // Consider adding: logger.error("Error creating account for user {}: {}", getAuthenticatedUsername(), e.getMessage(), e);
             return ResponseEntity.badRequest().body("Error creating account: " + e.getMessage());
        }
     }
-
 @PostMapping("/{accountId}/deposit")
     public ResponseEntity<?> makeDeposit(@PathVariable Long accountId, @Valid @RequestBody DepositRequest depositRequest) {
         try {
@@ -287,27 +313,22 @@ public class AccountController {
 
 // (Make sure AccountService is injected via @Autowired)
 
-@GetMapping("/activity-log") // Defines the endpoint URL: GET /api/account/activity-log
-public ResponseEntity<?> getUserActivityLog() {
-    try {
-        // Get the username of the currently authenticated user
-        String username = getAuthenticatedUsername(); 
-        
-        // Call the service method to get the logs as DTOs
-        List<ActivityLogDto> logs = accountService.getActivityLogsForUser(username);
-        
-        // Return the list of logs with an OK (200) status
-        return ResponseEntity.ok(logs);
-        
-    } catch (Exception e) {
-        // Log the error on the server for debugging
-        // logger.error("Error fetching activity log for user {}: {}", getAuthenticatedUsername(), e.getMessage(), e); 
-        
-        // Return a generic error response to the client
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                             .body("Error retrieving activity log.");
+// --- MODIFY THIS ENDPOINT ---
+    @GetMapping("/{accountId}/activity-log") // Path now includes accountId
+    public ResponseEntity<?> getAccountActivityLog(@PathVariable Long accountId) { // Added @PathVariable
+        try {
+            String username = getAuthenticatedUsername(); 
+            // Call the updated service method that takes accountId
+            List<ActivityLogDto> logs = accountService.getActivityLogsForAccount(accountId, username); 
+            return ResponseEntity.ok(logs);
+        } catch (Exception e) {
+            // Log the server error (using a logger is better)
+            System.err.println("Error fetching activity log for account " + accountId + ": " + e.getMessage()); 
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                 .body("Error retrieving activity log.");
+        }
     }
-}
+    // --- END MODIFICATION ---
 
  @PostMapping("/{accountId}/card/toggle")
     public ResponseEntity<?> toggleCardStatus(@PathVariable Long accountId) {
@@ -389,15 +410,20 @@ public ResponseEntity<?> getCardCvv(@PathVariable Long accountId) {
         int cvv = 100 + random.nextInt(900); // 3-digit CVV
         return String.valueOf(cvv);
     }
-    @PostMapping("/loans/apply") // Example endpoint
-public ResponseEntity<?> applyForLoan(@Valid @RequestBody LoanApplicationRequest request) {
-    try {
-        String username = getAuthenticatedUsername();
-        accountService.submitLoanApplication(username, request); // Call the service method
-        // Return only a success message, no need to return application details usually
-        return ResponseEntity.ok("Loan application submitted successfully."); 
-    } catch (Exception e) {
-        return ResponseEntity.badRequest().body("Error submitting loan application: " + e.getMessage());
+   // --- MODIFY THIS CONCEPTUAL ENDPOINT ---
+    @PostMapping("/{accountId}/loans/apply") // Added accountId to the path
+    public ResponseEntity<?> applyForLoan(
+            @PathVariable Long accountId, // Get accountId from path
+            @Valid @RequestBody LoanApplicationRequest request
+    ) {
+        try {
+            String username = getAuthenticatedUsername();
+            // Pass accountId to the service method
+            accountService.submitLoanApplication(username, accountId, request); 
+            return ResponseEntity.ok("Loan application submitted successfully."); 
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error submitting loan application: " + e.getMessage());
+        }
     }
-}
+    // --- END MODIFICATION ---
 }

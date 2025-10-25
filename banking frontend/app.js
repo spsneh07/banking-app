@@ -977,14 +977,23 @@ async function handleLoanApplicationSubmit(event) {
 
     try {
         // --- Call Backend API ---
-        const response = await fetchSecure(`${ACCOUNT_API_URL}/loans/apply`, {
-            method: 'POST',
-            body: JSON.stringify({ 
-                amount: amount,          // Send the numeric amount
-                purpose: purpose,        // Send the selected purpose string
-                monthlyIncome: income    // Send the numeric income (corrected variable name)
-            }) 
-        });
+    // Inside handleLoanApplicationSubmit -> try block
+const accountId = document.body.dataset.accountId; // Get the current account ID
+if (!accountId) { 
+    showModalError(errorDiv, "Could not determine the account ID for this application.");
+    toggleSpinner(submitButton, false); // Re-enable button
+    return; // Stop if no account ID
+}
+
+// Construct the URL WITH the accountId
+const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/loans/apply`, { // <<< CORRECT URL
+    method: 'POST',
+    body: JSON.stringify({ 
+        amount: amount,          
+        purpose: purpose,        
+        monthlyIncome: income    
+    }) 
+});
 
         if (!response.ok) {
             // Try to get error message from backend response text
@@ -1043,8 +1052,14 @@ async function fetchActivityLogs() {
         </div>`;
 
     try {
-        const response = await fetchSecure(`${ACCOUNT_API_URL}/activity-log`); // Call the backend endpoint
-
+      // Inside fetchActivityLogs function
+const accountId = document.body.dataset.accountId; // Get the current account ID
+if (!accountId) { 
+    logListDiv.innerHTML = '<p class="text-red-500 text-center py-6">Error: Could not determine account ID.</p>';
+    return; // Stop if no account ID is found
+}
+// Use the accountId in the URL
+const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/activity-log`); // <<< CORRECT URL
         if (!response.ok) {
             throw new Error(await response.text() || 'Failed to fetch activity log.');
         }

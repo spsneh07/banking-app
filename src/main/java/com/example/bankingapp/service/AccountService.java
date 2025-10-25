@@ -1,10 +1,13 @@
 package com.example.bankingapp.service;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Comparator; // Import Comparator if combining logs (optional)
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
+import org.slf4j.Logger; // For null-safe comparisons
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -21,13 +24,13 @@ import com.example.bankingapp.dto.DebitCardDto;
 import com.example.bankingapp.dto.LoanApplicationRequest;
 import com.example.bankingapp.dto.ProfileUpdateRequest;
 import com.example.bankingapp.dto.TransactionDto;
-import com.example.bankingapp.model.Account; // Import ActivityLog
+import com.example.bankingapp.model.Account;
 import com.example.bankingapp.model.ActivityLog;
 import com.example.bankingapp.model.DebitCard;
 import com.example.bankingapp.model.Transaction;
 import com.example.bankingapp.model.TransactionType;
 import com.example.bankingapp.model.User;
-import com.example.bankingapp.repository.AccountRepository; // Import ActivityLogRepository
+import com.example.bankingapp.repository.AccountRepository;
 import com.example.bankingapp.repository.ActivityLogRepository;
 import com.example.bankingapp.repository.DebitCardRepository;
 import com.example.bankingapp.repository.TransactionRepository;
@@ -44,45 +47,97 @@ public class AccountService {
     @Autowired private AuthenticationManager authenticationManager;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private DebitCardRepository debitCardRepository;
-    @Autowired private ActivityLogRepository activityLogRepository; // Injected repository
+    @Autowired private ActivityLogRepository activityLogRepository;
 
- @Transactional
+    // --- Methods that log USER-ONLY activity ---
+    // (updateUserProfile, changeUserPassword, setPin remain the same - they correctly use the user-only ActivityLog constructor)
+  @Transactional
     public User updateUserProfile(String username, ProfileUpdateRequest request) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
         
+        // --- Check for existing email ---
         userRepository.findByEmail(request.getEmail()).ifPresent(existingUser -> {
             if (!existingUser.getUsername().equals(username)) {
                 throw new IllegalArgumentException("Email is already in use by another account.");
             }
         });
 
-        // Set all new fields
-        user.setFullName(request.getFullName());
-        user.setEmail(request.getEmail());
-        user.setPhoneNumber(request.getPhoneNumber());
-        user.setDateOfBirth(request.getDateOfBirth());
-        user.setAddress(request.getAddress());
-        user.setNomineeName(request.getNomineeName());
+        // --- DETAILED CHANGE DETECTION ---
+        List<String> changes = new ArrayList<>(); // List to store descriptions of changes
         
-        User savedUser = userRepository.save(user); // Save the user first
-
-        // --- UPDATED LOGGING BLOCK (Always logs) ---
-        try {
-            logger.info("Attempting to save profile update activity log for user: {}", username); // Log before save
-            ActivityLog logEntry = new ActivityLog(savedUser, "PROFILE_UPDATE", "Updated profile details (Name/Email/Phone/etc.)");
-            activityLogRepository.save(logEntry);
-            logger.info("Successfully saved profile update activity log for user: {}", username); // Log after save
-        } catch (Exception e) {
-            // Log any error that occurs specifically during the activity log saving
-            logger.error("Error saving profile update activity log for user {}: {}", username, e.getMessage(), e);
-            // Optionally re-throw or handle the error, but for now, just log it.
-            // The profile update itself was already saved successfully before this block.
+        // Check Full Name
+        if (!Objects.equals(user.getFullName(), request.getFullName())) {
+            changes.add("Full Name");
         }
-        // --- END LOGGING BLOCK ---
+        // Check Email
+        if (!Objects.equals(user.getEmail(), request.getEmail())) {
+            changes.add("Email");
+        }
+        // Check Phone Number
+        if (!Objects.equals(user.getPhoneNumber(), request.getPhoneNumber())) {
+            changes.add("Phone Number");
+        }
+        // Check Address
+        if (!Objects.equals(user.getAddress(), request.getAddress())) {
+            changes.add("Address");
+        }
+        // Check Nominee Name
+        if (!Objects.equals(user.getNomineeName(), request.getNomineeName())) {
+            changes.add("Nominee Name");
+        }
+        // Check Date of Birth
+        if (!Objects.equals(user.getDateOfBirth(), request.getDateOfBirth())) {
+            changes.add("Date of Birth");
+        }
+        // --- End Change Detection ---
 
-        return savedUser; // Return the saved user
+        // Only proceed if changes were detected
+        if (!changes.isEmpty()) {
+            logger.info("Profile changes detected for user {}: {}", username, changes);
+            
+            // Set all new fields (only save operation needed)
+            user.setFullName(request.getFullName());
+            user.setEmail(request.getEmail());
+            user.setPhoneNumber(request.getPhoneNumber());
+            user.setDateOfBirth(request.getDateOfBirth());
+            user.setAddress(request.getAddress());
+            user.setNomineeName(request.getNomineeName());
+            
+            User savedUser = userRepository.save(user); // Save the updated user
+
+            // --- CREATE DETAILED LOG DESCRIPTION ---
+            String logDescription;
+            if (changes.size() == 1) {
+                logDescription = "Updated " + changes.get(0); // e.g., "Updated Email"
+            } else {
+                // Join multiple changes, e.g., "Updated Full Name, Address, and Nominee Name"
+                logDescription = "Updated " + String.join(", ", changes.subList(0, changes.size() - 1)) 
+                                 + ", and " + changes.get(changes.size() - 1); 
+            }
+            // --- END DESCRIPTION CREATION ---
+
+            // --- LOGGING BLOCK ---
+            try {
+                logger.info("Attempting to save profile update activity log for user: {}", username); 
+                ActivityLog logEntry = new ActivityLog(savedUser, "PROFILE_UPDATE", logDescription); // Use detailed description
+                activityLogRepository.save(logEntry);
+                logger.info("Successfully saved profile update activity log for user: {}", username); 
+            } catch (Exception e) {
+                logger.error("Error saving profile update activity log for user {}: {}", username, e.getMessage(), e);
+            }
+            // --- END LOGGING BLOCK ---
+            
+            return savedUser; // Return the saved user
+        } else {
+            logger.info("No profile changes detected for user: {}", username);
+            return user; // No changes, return original user object
+        }
     }
+
+    // ... (rest of AccountService.java) ...
+
+    // ... (rest of AccountService.java) ...
 
     @Transactional
     public void changeUserPassword(String username, String currentPassword, String newPassword) {
@@ -92,10 +147,9 @@ public class AccountService {
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
-        // --- ADD LOGGING ---
+        // Logging (Uses user-only constructor)
         ActivityLog logEntry = new ActivityLog(user, "PASSWORD_CHANGE", "Changed account password");
         activityLogRepository.save(logEntry);
-        // --- END LOGGING ---
     }
 
     @Transactional
@@ -104,20 +158,19 @@ public class AccountService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
-        // Check if PIN was previously null to adjust log message
         boolean wasPinSet = user.getPin() != null;
         user.setPin(passwordEncoder.encode(newPin));
         userRepository.save(user);
 
-        // --- ADD LOGGING ---
+        // Logging (Uses user-only constructor)
         String description = wasPinSet ? "Updated security PIN" : "Set initial security PIN";
         ActivityLog logEntry = new ActivityLog(user, "PIN_CHANGE", description);
         activityLogRepository.save(logEntry);
-        // --- END LOGGING ---
     }
 
     // --- Transaction methods (No logging added here as per request) ---
-    @Transactional
+    // (deposit, transfer, payBill remain unchanged)
+     @Transactional
     public void deposit(String username, Long accountId, BigDecimal amount, String source) {
         Account account = findAccountByIdAndUsername(accountId, username);
         account.setBalance(account.getBalance().add(amount));
@@ -163,6 +216,7 @@ public class AccountService {
     }
 
     // --- Read-only methods ---
+    // (getBalance, getRecentTransactions, verifyRecipient, createInitialDepositTransaction, getAccountsForUser remain unchanged)
     @Transactional(readOnly = true)
     public BigDecimal getBalance(Long accountId) {
          return accountRepository.findById(accountId)
@@ -201,11 +255,12 @@ public class AccountService {
                        .map(AccountDto::new)
                        .collect(Collectors.toList());
     }
-    
+
     // --- Helper methods ---
+    // (findAccountByIdAndUsername, verifyUserPassword, verifyUserPin remain unchanged)
     private Account findAccountByIdAndUsername(Long accountId, String username) {
         return accountRepository.findById(accountId)
-                .filter(account -> account.getUser().getUsername().equals(username))
+                .filter(acc -> acc.getUser().getUsername().equals(username))
                 .orElseThrow(() -> new RuntimeException("Account not found or user does not own this account."));
     }
     
@@ -231,14 +286,17 @@ public class AccountService {
             throw new BadCredentialsException("Invalid PIN. Transaction authorization failed.");
         }
     }
+     private String formatCurrencyForLog(BigDecimal amount) {
+         if (amount == null) return "N/A";
+         return "₹" + String.format("%,.2f", amount); 
+    }
 
     // --- Card related methods ---
-    @Transactional(readOnly = true)
+    // (getDebitCardDetails, getDebitCardCvv remain unchanged)
+     @Transactional(readOnly = true)
     public DebitCardDto getDebitCardDetails(Long accountId, String username) {
         Account account = findAccountByIdAndUsername(accountId, username);
         if (account.getDebitCard() == null) {
-            // Consider returning an empty DTO or a specific response instead of throwing an exception
-            // depending on how the frontend should handle accounts without cards.
             throw new RuntimeException("No debit card found for this account."); 
         }
         return new DebitCardDto(account.getDebitCard());
@@ -253,9 +311,10 @@ public class AccountService {
         return account.getDebitCard().getCvv(); 
     }
 
+    // --- CORRECTED toggleDebitCardOption ---
     @Transactional
     public DebitCardDto toggleDebitCardOption(Long accountId, String username, String option) {
-        Account account = findAccountByIdAndUsername(accountId, username);
+        Account account = findAccountByIdAndUsername(accountId, username); 
         DebitCard card = account.getDebitCard();
         if (card == null) {
             throw new RuntimeException("No debit card found for this account.");
@@ -265,89 +324,108 @@ public class AccountService {
         boolean previousStatus; 
         String activityType = "CARD_SETTINGS_UPDATE";
 
+        // (Switch statement remains the same)
         switch (option.toLowerCase()) {
             case "master":
                 previousStatus = card.isActive(); 
                 card.setActive(!previousStatus);
                 description = previousStatus ? "Froze Debit Card (Master)" : "Unfroze Debit Card (Master)"; 
-                logger.info("Toggled master status for card linked to account {}. New status: {}", accountId, card.isActive());
+                logger.info("Toggled master status...");
                 break;
             case "online":
                 previousStatus = card.isOnlineTransactionsEnabled(); 
                 card.setOnlineTransactionsEnabled(!previousStatus);
                 description = previousStatus ? "Disabled Online Transactions" : "Enabled Online Transactions"; 
-                logger.info("Toggled online transactions for card linked to account {}. New status: {}", accountId, card.isOnlineTransactionsEnabled());
-                break;
+                logger.info("Toggled online transactions...");
+               break;
             case "international":
                 previousStatus = card.isInternationalTransactionsEnabled(); 
                 card.setInternationalTransactionsEnabled(!previousStatus);
                 description = previousStatus ? "Disabled International Transactions" : "Enabled International Transactions"; 
-                logger.info("Toggled international transactions for card linked to account {}. New status: {}", accountId, card.isInternationalTransactionsEnabled());
+                logger.info("Toggled international transactions...");
                 break;
             default:
                 logger.warn("Invalid card toggle option received: {}", option);
                 throw new IllegalArgumentException("Invalid card option specified: " + option);
         }
         
-        // --- ADD LOGGING ---
+        // --- CORRECTED LOGGING (Uses constructor with Account) ---
         String accNumSuffix = account.getAccountNumber() != null && account.getAccountNumber().length() >= 4 ? account.getAccountNumber().substring(account.getAccountNumber().length() - 4) : "N/A";
-        ActivityLog logEntry = new ActivityLog(
+        // Use the constructor WITH the 'account' object
+        ActivityLog logEntry = new ActivityLog( 
             account.getUser(),               
+            account, // <<< PASS THE ACCOUNT OBJECT HERE
             activityType,          
             description + " for Account ending in " + accNumSuffix
         );
-        activityLogRepository.save(logEntry); // Save the log entry
-        // --- END LOGGING ---
+        activityLogRepository.save(logEntry); 
+        // --- END CORRECTION ---
 
-        debitCardRepository.save(card); // Save the updated card
-        return new DebitCardDto(card);  // Return the updated card state
+        debitCardRepository.save(card); 
+        return new DebitCardDto(card);  
     }
+    // --- END CORRECTION ---
     
-    // --- Activity Log Fetching ---
+    // --- Loan Application Method (Conceptual, but logging corrected) ---
+     @Transactional
+     public void submitLoanApplication(String username, Long accountId, LoanApplicationRequest request) { // Assume accountId is passed
+         User user = userRepository.findByUsername(username)
+                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
+         Account account = findAccountByIdAndUsername(accountId, username); // Get account & verify ownership
+
+         // --- HERE: Add logic to save the loan application details ---
+         logger.info("Processing loan application for user {} on account {}", username, accountId);
+         // Example: 
+         // LoanApplication newApp = new LoanApplication(user, account, request.getAmount(), request.getPurpose(), request.getMonthlyIncome());
+         // loanApplicationRepository.save(newApp); 
+         // --- End of saving logic ---
+
+         // --- CORRECTED LOGGING (Passes the 'account' object) ---
+         try {
+             logger.info("Attempting to save loan application activity log for user: {}", username); 
+             String formattedAmount = formatCurrencyForLog(request.getAmount()); 
+             String accNumSuffix = account.getAccountNumber() != null && account.getAccountNumber().length() >= 4 ? account.getAccountNumber().substring(account.getAccountNumber().length() - 4) : "N/A";
+             // Use the constructor WITH the 'account' object
+             ActivityLog logEntry = new ActivityLog(
+                 user, 
+                 account, // Pass the relevant account
+                 "LOAN_APPLICATION", 
+                 "Submitted loan application for " + formattedAmount + " (Purpose: " + request.getPurpose() + ")" + " on Account ending in " + accNumSuffix
+             );
+             activityLogRepository.save(logEntry);
+             logger.info("Successfully saved loan application activity log for user: {}", username); 
+         } catch (Exception e) {
+             logger.error("Error saving loan application activity log for user {}: {}", username, e.getMessage(), e);
+         }
+         // --- END LOGGING ---
+     }
+    
+    // --- CORRECTED Activity Log Fetching Method ---
+// Inside AccountService.java
+
     @Transactional(readOnly = true) 
-    public List<ActivityLogDto> getActivityLogsForUser(String username) {
-        List<ActivityLog> logs = activityLogRepository.findByUserUsernameOrderByTimestampDesc(username);
-        return logs.stream()
-                   .map(ActivityLogDto::new) 
-                   .collect(Collectors.toList());
+    public List<ActivityLogDto> getActivityLogsForAccount(Long accountId, String username) {
+        Account account = findAccountByIdAndUsername(accountId, username); 
+        
+        // 1. Fetch account-specific logs
+        List<ActivityLog> accountLogs = activityLogRepository.findByAccountIdOrderByTimestampDesc(accountId);
+        logger.info("Fetched {} logs specific to accountId: {}", accountLogs.size(), accountId); // <-- ADD LOG
+
+        // 2. Fetch user-only logs
+        List<ActivityLog> userOnlyLogs = activityLogRepository.findByUserUsernameAndAccountIsNullOrderByTimestampDesc(username);
+        logger.info("Fetched {} user-only logs for username: {}", userOnlyLogs.size(), username); // <-- ADD LOG
+        
+        // 3. Combine
+        List<ActivityLog> combinedLogs = new ArrayList<>(accountLogs);
+        combinedLogs.addAll(userOnlyLogs);
+        logger.info("Total combined logs before sorting: {}", combinedLogs.size()); // <-- ADD LOG
+
+        // 4. Sort
+        combinedLogs.sort(Comparator.comparing(ActivityLog::getTimestamp).reversed());
+
+        // 5. Convert to DTOs
+        return combinedLogs.stream()
+                           .map(ActivityLogDto::new) 
+                           .collect(Collectors.toList());
     }
-    // --- THIS IS A CONCEPTUAL METHOD - You would build this later ---
-@Transactional
-public void submitLoanApplication(String username, LoanApplicationRequest request) {
-    User user = userRepository.findByUsername(username)
-            .orElseThrow(() -> new RuntimeException("User not found: " + username));
-
-    // --- HERE: You would add logic to validate and save the loan application details ---
-    // For example:
-    // LoanApplication newApp = new LoanApplication(user, request.getAmount(), request.getPurpose(), request.getMonthlyIncome());
-    // loanApplicationRepository.save(newApp); 
-    // --- End of saving logic ---
-
-    // --- ADD LOGGING BLOCK HERE ---
-    try {
-        logger.info("Attempting to save loan application activity log for user: {}", username); 
-        // Format the amount nicely for the log description
-        String formattedAmount = formatCurrencyForLog(request.getAmount()); // You might need a simple helper for this
-        ActivityLog logEntry = new ActivityLog(
-            user, 
-            "LOAN_APPLICATION", 
-            "Submitted loan application for " + formattedAmount + " (Purpose: " + request.getPurpose() + ")"
-        );
-        activityLogRepository.save(logEntry);
-        logger.info("Successfully saved loan application activity log for user: {}", username); 
-    } catch (Exception e) {
-        logger.error("Error saving loan application activity log for user {}: {}", username, e.getMessage(), e);
-    }
-    // --- END LOGGING BLOCK ---
-
-    // Potentially return something, like the application ID
-}
-
-// Helper to format currency for logs (avoids complex locale formatting if not needed)
-private String formatCurrencyForLog(BigDecimal amount) {
-     if (amount == null) return "N/A";
-     // Simple INR formatting for logs
-     return "₹" + String.format("%,.2f", amount); 
-}
-// --- END OF CONCEPTUAL METHOD ---
 }

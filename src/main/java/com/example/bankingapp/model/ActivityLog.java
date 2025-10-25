@@ -30,6 +30,13 @@ public class ActivityLog {
     @JoinColumn(name = "user_id", nullable = false) // Specifies the foreign key column ("user_id") linking to the User's primary key
     private User user;
 
+    // --- MISSING RELATIONSHIP ---
+    // You need to add the @ManyToOne relationship to Account here
+    @ManyToOne(fetch = FetchType.LAZY) 
+    @JoinColumn(name = "account_id", nullable = true) // Nullable because some logs are user-only
+    private Account account;
+    // --- END MISSING RELATIONSHIP ---
+
     @Column(nullable = false) // Ensures the timestamp cannot be null in the database
     private LocalDateTime timestamp; // Records when the activity occurred
 
@@ -39,11 +46,19 @@ public class ActivityLog {
     @Column(nullable = false, length = 255) // Ensures description isn't null and sets a max length
     private String description; // A user-friendly description of the activity
 
-    // Constructor to easily create new log entries
-    public ActivityLog(User user, String activityType, String description) {
+    // --- MISSING CONSTRUCTOR ---
+    // You need the constructor that accepts the Account object
+    public ActivityLog(User user, Account account, String activityType, String description) {
         this.user = user;
+        this.account = account; // Links to the specific account
         this.activityType = activityType;
         this.description = description;
-        this.timestamp = LocalDateTime.now(); // Automatically sets the timestamp to the current time
+        this.timestamp = LocalDateTime.now(); // Sets timestamp automatically
+    }
+    // --- END MISSING CONSTRUCTOR ---
+
+    // Constructor for user-only logs (This one is correct)
+    public ActivityLog(User user, String activityType, String description) {
+         this(user, null, activityType, description); // Calls the main constructor with null account
     }
 }
