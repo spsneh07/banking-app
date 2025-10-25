@@ -30,11 +30,19 @@ This project demonstrates a **secure, modern, and scalable banking system** buil
 
 ### 🏦 **Core Banking Functionalities**
 
-* 💸 **Deposit, Transfer & Bill Payment** workflows with validations.
-* 🔁 **Real-Time Transactions Feed** on dashboard and account pages.
-* 📁 **Profile & Settings:** Update name, email, and securely change password.
-* ✅ **Bank Account Linking & Management.**
-
+* 💸 **Transactions:** Deposit, Transfer (with PIN), Bill Payment (with PIN).
+* 💳 **Debit Card Management:**
+    * View Card Details (Number, Holder, Expiry).
+    * Interactive Card Flip to reveal CVV (fetched securely on demand).
+    * Freeze / Unfreeze Card (Master Toggle).
+    * Enable / Disable Online Transactions.
+    * Enable / Disable International Transactions.
+* 💰 **Loan Application:** Simple form within account view to submit basic loan requests (frontend simulation).
+* 📊 **Real-Time Feeds:** View recent transactions on account pages.
+* 📝 **Activity Log:** Track important account-specific changes (card settings) and user-level changes (profile updates, password/PIN changes) with timestamps.
+* ⚙️ **Profile & Settings:** Update personal details (name, email, phone, DOB, address, nominee) and securely change password/PIN.
+* 🔗 **Account Linking:** Add accounts from available banks via the dashboard.
+* 📄 **Statement Download:** Export account transactions as a CSV file.
 ---
 
 ## 📂 Project Structure
@@ -71,7 +79,7 @@ This project demonstrates a **secure, modern, and scalable banking system** buil
 
 | Layer           | Technology                                                     |
 | --------------- | -------------------------------------------------------------- |
-| **Backend**     | Spring Boot 3, Java 17, Spring Security (JWT), Spring Data JPA |
+| **Backend**     | Spring Boot 3, Java 17, Spring Security (JWT), Spring Data JPA ,Lombok|
 | **Frontend**    | Tailwind CSS, HTML5, Vanilla JS (ES6), Bootstrap Icons         |
 | **Database**    | MySQL                                                          |
 | **Other Tools** | Chart.js, Maven, Google Fonts (Inter)                          |
@@ -82,11 +90,11 @@ This project demonstrates a **secure, modern, and scalable banking system** buil
 
 ### ✅ **Prerequisites**
 
-* Java 17+
-* Maven
-* MySQL Server
-* Git
-
+* Java JDK 17+ installed and configured (check `java -version`).
+* Maven installed and configured (check `mvn -v`).
+* MySQL Server running.
+* Git installed.
+* IDE with Lombok plugin support recommended (e.g., IntelliJ IDEA, VS Code with extensions).
 ---
 
 ### 📌 **1. Clone the Repository**
@@ -147,7 +155,6 @@ Start by clicking **Register → Login → Dashboard.**
 ## 🧠 Future Enhancements
 
 * 💰 AI-based expense categorization
-* 🧾 Downloadable transaction statements (PDF/CSV)
 * 🔔 Email & SMS notifications
 * 🌍 Integration with real bank APIs (e.g., Razorpay Sandbox)
 
