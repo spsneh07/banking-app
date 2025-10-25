@@ -12,6 +12,17 @@ public class DebitCardDto {
     // 1. These fields are correct
     private String cardHolderName;
     private boolean active;
+    private boolean onlineTransactionsEnabled;
+    private boolean internationalTransactionsEnabled;
+    
+// Add these methods if not using Lombok @Getter/@Data
+public boolean isOnlineTransactionsEnabled() {
+    return onlineTransactionsEnabled;
+}
+
+public boolean isInternationalTransactionsEnabled() {
+    return internationalTransactionsEnabled;
+}
 
     // 2. Add the full cardNumber (this is what your JS expects)
     private String cardNumber;
@@ -26,6 +37,8 @@ public class DebitCardDto {
         
         // This line will now work
         this.cardNumber = card.getCardNumber(); 
+        this.onlineTransactionsEnabled = card.isOnlineTransactionsEnabled(); 
+    this.internationalTransactionsEnabled = card.isInternationalTransactionsEnabled();
         
         // Format the Expiry Date from LocalDate to "MM/YY" string
         if (card.getExpiryDate() != null) {

@@ -238,10 +238,45 @@
             font-weight: 600;
             text-transform: uppercase;
         }
+        /* --- ADDED CARD FLIP STYLES --- */
+        .debit-card-container {
+            perspective: 1000px; /* Establishes the 3D context */
+            width: 100%;
+            max-width: 400px; /* Matches the max-width of the debit-card */
+            height: 250px; /* Matches the height of the debit-card */
+            cursor: pointer;
+        }
+
+        .debit-card-flipper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+
+        .debit-card-flipper.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .debit-card, .debit-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden; /* Crucial for the flip effect */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .debit-card-back {
+            transform: rotateY(180deg);
+            /* Styling for the back is applied via .debit-card and specific elements inside */
+        }
         /* --- END OF DEBIT CARD STYLES --- */
     </style>
 </head>
-<body class="font-sans text-bank-text-main bg-bank-bg dark:text-bank-dark-text dark:bg-bank-bg-dark relative min-h-screen">
+<body class="font-sans text-bank-text-main bg-bank-bg dark:text-bank-text-main-dark dark:bg-bank-bg-dark relative min-h-screen">
 
     <div class="glow-orb orb-1"></div>
     <div class="glow-orb orb-2"></div>
@@ -259,7 +294,7 @@
                     <i id="theme-toggle-icon" class="bi text-xl"></i>
                 </button>
                 <button id="logoutButton" type="button" class="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl font-semibold text-white transition-all duration-300 transform hover:scale-105 shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50">
-                     <i class="bi bi-box-arrow-right mr-2"></i>Logout
+                    <i class="bi bi-box-arrow-right mr-2"></i>Logout
                 </button>
             </div>
         </div>
@@ -355,55 +390,90 @@
             </div>
             
             <div id="card-pane" class="nav-tab-content hidden">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="md:col-span-2 glass-card rounded-3xl p-8 transform hover:scale-[1.02] transition-all duration-300 flex items-center justify-center">
-                        
-                        <div class="debit-card mx-auto">
-                            <div class="flex justify-between items-center mb-4">
-                                <div class="debit-card-chip"></div>
-                                <div id="card-bank-name" class="debit-card-logo">Bank Name</div>
-                            </div>
-                            <div class="mb-6">
-                                <p id="card-number" class="debit-card-number">XXXX XXXX XXXX XXXX</p>
-                            </div>
-                            <div class="flex justify-between items-end">
-                                <div>
-                                    <p class="debit-card-details">Card Holder</p>
-                                    <p id="card-holder-name" class="debit-card-holder">Your Name</p>
+                <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    
+                    <div class="glass-card rounded-3xl p-8 transform hover:scale-[1.02] transition-all duration-300 flex items-center justify-center">
+                        <div class="debit-card-container mx-auto">
+                            <div id="debitCardFlipper" class="debit-card-flipper">
+                                <div id="card-front" class="debit-card">
+                                    <div class="flex justify-between items-center mb-4">
+                                        <div class="debit-card-chip"></div>
+                                        <div id="card-bank-name" class="debit-card-logo">Bank Name</div>
+                                    </div>
+                                    <div class="mb-6">
+                                        <p id="card-number" class="debit-card-number">XXXX XXXX XXXX XXXX</p>
+                                    </div>
+                                    <div class="flex justify-between items-end">
+                                        <div>
+                                            <p class="debit-card-details">Card Holder</p>
+                                            <p id="card-holder-name" class="debit-card-holder">Your Name</p>
+                                        </div>
+                                        <div>
+                                            <p class="debit-card-details">Expires</p>
+                                            <p id="card-expiry-date" class="font-semibold">MM/YY</p>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p class="debit-card-details">Expires</p>
-                                    <p id="card-expiry-date" class="font-semibold">MM/YY</p>
+                                <div id="card-back" class="debit-card debit-card-back">
+                                    <div class="h-10 w-full bg-black mt-8"></div>
+                                    <div class="p-4 flex flex-col items-end">
+                                        <p class="text-xs text-right mb-1 text-white opacity-70">CVV</p>
+                                        <div id="card-cvv-display" class="bg-white text-bank-text-main text-xl font-bold rounded-md px-3 py-1 w-20 text-center">
+                                            ***
+                                        </div>
+                                    </div>
+                                    <p class="text-xs p-4 text-center mt-auto opacity-70 text-white">For security, the CVV is not permanently stored here.</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="glass-card rounded-3xl p-8 transform hover:scale-[1.02] transition-all duration-300">
-                        <h5 class="text-2xl font-bold text-bank-text-main dark:text-white mb-6">Card Settings</h5>
-                        <div classs="space-y-4">
-                            <div id="card-status-loading" class="text-center text-bank-text-muted dark:text-bank-dark-text-muted">
-                                <svg class="animate-spin h-8 w-8 text-bank-primary dark:text-indigo-500 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Loading card status...
-                            </div>
+                    <div class="lg:col-span-1 xl:col-span-2 space-y-6">
+                        <div class="glass-card rounded-3xl p-8 transform hover:scale-[1.02] transition-all duration-300">
+                            <h5 class="text-2xl font-bold text-bank-text-main dark:text-white mb-6">Card Settings & Controls</h5>
                             
-                            <div id="card-controls" class="hidden space-y-4">
-                                <div class="flex items-center justify-between p-4 bg-bank-input-bg dark:bg-bank-input-bg-dark rounded-xl border border-bank-border dark:border-bank-border-dark">
-                                    <div>
-                                        <p class="font-semibold text-bank-text-main dark:text-bank-text-main-dark">Card Status</p>
-                                        <p id="card-status-text" class="text-sm font-bold">ACTIVE</p>
+                            <div class="space-y-4">
+                                <div id="card-status-loading" class="text-center text-bank-text-muted dark:text-bank-text-muted-dark">
+                                    <svg class="animate-spin h-8 w-8 text-bank-primary dark:text-indigo-500 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <p>Loading card status...</p>
+                                </div>
+
+                                <div id="card-controls" class="hidden space-y-4">
+                                    <div class="flex items-center justify-between p-4 bg-bank-input-bg dark:bg-bank-input-bg-dark rounded-xl border border-bank-border dark:border-bank-border-dark">
+                                        <div>
+                                            <p class="font-semibold text-bank-text-main dark:text-bank-text-main-dark">Master Card Status</p>
+                                            <p id="card-status-text" class="text-sm font-bold">ACTIVE</p>
+                                        </div>
+                                        <button id="card-toggle-btn" onclick="handleToggleCardStatus(event, 'master')"
+                                            class="px-6 py-3 font-semibold rounded-xl text-sm transform hover:scale-105 transition-all duration-300">
+                                            </button>
                                     </div>
-                                    <button id="card-toggle-btn" class="px-6 py-3 font-semibold rounded-xl text-sm transform hover:scale-105 transition-all duration-300">
-                                        </button>
+                                    
+                                    <div class="flex items-center justify-between p-4 bg-bank-input-bg dark:bg-bank-input-bg-dark rounded-xl border border-bank-border dark:border-bank-border-dark">
+                                        <p class="font-semibold text-bank-text-main dark:text-bank-text-main-dark">Online Transactions</p>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" id="online-toggle-input" class="sr-only peer" onclick="handleToggleCardStatus(event, 'online')">
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="flex items-center justify-between p-4 bg-bank-input-bg dark:bg-bank-input-bg-dark rounded-xl border border-bank-border dark:border-bank-border-dark">
+                                        <p class="font-semibold text-bank-text-main dark:text-bank-text-main-dark">International Transactions</p>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" id="international-toggle-input" class="sr-only peer" onclick="handleToggleCardStatus(event, 'international')">
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
+                                        </label>
+                                    </div>
                                 </div>
-                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+
             <div id="profile-pane" class="nav-tab-content hidden">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="glass-card rounded-3xl p-8 transform hover:scale-[1.02] transition-all duration-300">
@@ -421,25 +491,8 @@
                             <div>
                                 <label for="profilePhone" class="block text-sm font-medium text-bank-text-muted dark:text-slate-400 mb-2">Phone Number</label>
                                 <div class="flex mt-2">
-                                    <span class="inline-flex items-center px-3 rounded-l-xl 
-                                                 border border-r-0 border-bank-input-border dark:border-bank-input-border-dark 
-                                                 bg-gray-200 dark:bg-slate-800 
-                                                 text-bank-text-muted dark:text-bank-dark-text-muted 
-                                                 text-sm">
-                                        +91
-                                    </span>
-                                    <input type="tel" 
-                                           id="profilePhone" 
-                                           inputmode="numeric"
-                                           placeholder="9876543210"
-                                           maxlength="10"
-                                           pattern="\d{10}" 
-                                           title="Please enter exactly 10 digits."
-                                           class="w-full px-4 py-3 rounded-r-xl bg-bank-input-bg dark:bg-bank-input-bg-dark 
-                                                  border border-bank-input-border dark:border-bank-input-border-dark 
-                                                  text-bank-input-text dark:text-bank-input-text-dark 
-                                                  placeholder-bank-text-muted dark:placeholder-slate-500 
-                                                  focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200">
+                                    <span class="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-bank-input-border dark:border-bank-input-border-dark bg-gray-200 dark:bg-slate-800 text-bank-text-muted dark:text-bank-text-muted-dark text-sm">+91</span>
+                                    <input type="tel" id="profilePhone" inputmode="numeric" placeholder="9876543210" maxlength="10" pattern="\d{10}" title="Please enter exactly 10 digits." class="w-full px-4 py-3 rounded-r-xl bg-bank-input-bg dark:bg-bank-input-bg-dark border border-bank-input-border dark:border-bank-input-border-dark text-bank-input-text dark:text-bank-input-text-dark placeholder-bank-text-muted dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200">
                                 </div>
                             </div>
                             <div>
@@ -492,8 +545,7 @@
                                 </div>
                                 <div>
                                     <label for="newPin" class="block text-sm font-medium text-bank-text-muted dark:text-slate-400 mb-2">New 4-Digit PIN</label>
-                                    <input type="password" id="newPin" placeholder="••••" class="w-full px-4 py-3 bg-bank-input-bg dark:bg-bank-input-bg-dark border border-bank-input-border dark:border-bank-input-border-dark rounded-xl text-bank-input-text dark:text-bank-input-text-dark placeholder-bank-text-muted dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200"
-                                           required maxlength="4" pattern="\d{4}" title="PIN must be 4 digits." inputmode="numeric">
+                                    <input type="password" id="newPin" placeholder="••••" class="w-full px-4 py-3 bg-bank-input-bg dark:bg-bank-input-bg-dark border border-bank-input-border dark:border-bank-input-border-dark rounded-xl text-bank-input-text dark:text-bank-input-text-dark placeholder-bank-text-muted dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow transition-all duration-200" required maxlength="4" pattern="\d{4}" title="PIN must be 4 digits." inputmode="numeric">
                                 </div>
                                 <button id="submitSetPin" type="submit" class="w-full text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 font-semibold rounded-xl text-sm px-6 py-4 transform hover:scale-105 transition-all duration-300 shadow-lg shadow-emerald-500/30">
                                     <i class="bi bi-shield-lock mr-2"></i>Set/Update PIN
@@ -518,7 +570,6 @@
                 <div class="p-6 space-y-4">
                     <div id="depositError" class="hidden p-4 text-sm text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900/30 border border-red-500/30 rounded-xl"></div>
                     <p class="text-bank-text-muted dark:text-slate-300">Enter the amount you wish to deposit.</p>
-                    
                     <div>
                         <label for="depositSource" class="block text-sm font-medium text-bank-text-muted dark:text-slate-400 mb-2">Source</label>
                         <select id="depositSource" class="w-full px-4 py-3 bg-bank-input-bg dark:bg-bank-input-bg-dark border border-bank-input-border dark:border-bank-input-border-dark rounded-xl text-bank-input-text dark:text-bank-input-text-dark placeholder-bank-text-muted dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow" required>
@@ -528,7 +579,6 @@
                             <option value="External Transfer">External Transfer</option>
                         </select>
                     </div>
-
                     <div>
                         <label for="depositAmount" class="block text-sm font-medium text-bank-text-muted dark:text-slate-400 mb-2">Amount (₹)</label>
                         <input type="number" id="depositAmount" class="w-full px-4 py-3 bg-bank-input-bg dark:bg-bank-input-bg-dark border border-bank-input-border dark:border-bank-input-border-dark rounded-xl text-bank-input-text dark:text-bank-input-text-dark placeholder-bank-text-muted dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow" min="0.01" step="0.01" placeholder="1000.00" required>
@@ -551,7 +601,6 @@
                 </div>
                 <div class="p-6 space-y-4">
                     <div id="transferError" class="hidden p-4 text-sm text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900/30 border border-red-500/30 rounded-xl"></div>
-                    
                     <div>
                         <label for="transferAccountNumber" class="block text-sm font-medium text-bank-text-muted dark:text-slate-400 mb-2">Recipient's Account Number</label>
                         <div class="flex mt-2">
@@ -559,9 +608,7 @@
                             <button type="button" id="verifyRecipientBtn" class="px-6 py-3 text-sm font-medium text-white bg-slate-600 dark:bg-slate-700 rounded-r-xl border border-slate-600 dark:border-slate-700 hover:bg-slate-700 dark:hover:bg-slate-600 transition-colors">Verify</button>
                         </div>
                     </div>
-                    
                     <div id="recipientVerifiedInfo" class="hidden p-3 text-sm text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900/30 border border-green-500/30 rounded-xl">Recipient: <strong id="verifiedRecipientName"></strong></div>
-                    
                     <fieldset id="transferDetails" disabled class="space-y-4 pt-4 border-t border-bank-border dark:border-slate-700">
                         <div>
                             <label for="transferAmount" class="block text-sm font-medium text-bank-text-muted dark:text-slate-400 mb-2">Amount (₹)</label>
@@ -570,8 +617,7 @@
                         <p class="text-sm text-bank-text-muted dark:text-slate-400 pt-2">For security, confirm your 4-digit PIN.</p>
                         <div>
                             <label for="transferPin" class="block text-sm font-medium text-bank-text-muted dark:text-slate-400 mb-2">Your 4-Digit PIN</label>
-                            <input type="password" id="transferPin" class="w-full px-4 py-3 bg-bank-input-bg dark:bg-bank-input-bg-dark border border-bank-input-border dark:border-bank-input-border-dark rounded-xl text-bank-input-text dark:text-bank-input-text-dark placeholder-bank-text-muted dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow"
-                                   required maxlength="4" pattern="\d{4}" title="PIN must be 4 digits." inputmode="numeric">
+                            <input type="password" id="transferPin" class="w-full px-4 py-3 bg-bank-input-bg dark:bg-bank-input-bg-dark border border-bank-input-border dark:border-bank-input-border-dark rounded-xl text-bank-input-text dark:text-bank-input-text-dark placeholder-bank-text-muted dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow" required maxlength="4" pattern="\d{4}" title="PIN must be 4 digits." inputmode="numeric">
                         </div>
                     </fieldset>
                 </div>
@@ -604,8 +650,7 @@
                     <p class="text-sm text-bank-text-muted dark:text-slate-400 pt-2">For security, confirm your 4-digit PIN.</p>
                     <div>
                         <label for="payBillPin" class="block text-sm font-medium text-bank-text-muted dark:text-slate-400 mb-2">Your 4-Digit PIN</label>
-                        <input type="password" id="payBillPin" class="w-full px-4 py-3 bg-bank-input-bg dark:bg-bank-input-bg-dark border border-bank-input-border dark:border-bank-input-border-dark rounded-xl text-bank-input-text dark:text-bank-input-text-dark placeholder-bank-text-muted dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow"
-                               required maxlength="4" pattern="\d{4}" title="PIN must be 4 digits." inputmode="numeric">
+                        <input type="password" id="payBillPin" class="w-full px-4 py-3 bg-bank-input-bg dark:bg-bank-input-bg-dark border border-bank-input-border dark:border-bank-input-border-dark rounded-xl text-bank-input-text dark:text-bank-input-text-dark placeholder-bank-text-muted dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 input-glow" required maxlength="4" pattern="\d{4}" title="PIN must be 4 digits." inputmode="numeric">
                     </div>
                 </div>
                 <div class="flex items-center justify-end p-6 space-x-3 border-t border-bank-border dark:border-slate-700">

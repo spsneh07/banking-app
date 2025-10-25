@@ -6,6 +6,9 @@ const BANK_API_URL = 'http://localhost:8080/api/banks';
 // Global variable to hold the chart instance
 window.myTransactionChart = null;
 
+// State variable for CVV to avoid re-fetching on every card flip
+let cardCvv = '***'; 
+
 /**
  * Utility function to get the current page name (e.g., "login.html")
  */
@@ -43,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (page === 'register.html') {
         document.getElementById('registerForm')?.addEventListener('submit', handleRegister);
     } else if (page === 'create-pin.html') {
-         document.getElementById('pinSetupForm')?.addEventListener('submit', handlePinSetup);
+        document.getElementById('pinSetupForm')?.addEventListener('submit', handlePinSetup);
     } else if (page === 'dashboard.html') {
         checkAuth(); // Redirect if not logged in
         if (localStorage.getItem('authToken')) { // Proceed if logged in
@@ -105,9 +108,13 @@ function setupAccountDashboard() {
             if (paneId === 'profile-pane') populateProfileForm();
             if (paneId === 'transactions-pane') fetchTransactions(true);
             if (paneId === 'overview-pane') fetchTransactions(false);
-            if (paneId === 'card-pane') loadCardDetails();
+            if (paneId === 'card-pane') loadCardDetails(); // <-- Card Loader
         });
     });
+
+    // --- CARD FLIP LISTENER ---
+    // This is correctly placed here to attach the click listener to the card area
+    document.getElementById('debitCardFlipper')?.addEventListener('click', handleCardFlip);
 
     // Modal Triggers & Closers
     document.getElementById('depositBtn')?.addEventListener('click', () => showModal('depositModal'));
@@ -121,7 +128,7 @@ function setupAccountDashboard() {
         });
     });
 
-    // Form Event Listeners
+    // Form Event Listeners (Toggles are handled via inline onclick in HTML)
     document.getElementById('depositForm')?.addEventListener('submit', handleDepositSubmit);
     document.getElementById('transferForm')?.addEventListener('submit', handleTransferSubmit);
     document.getElementById('payBillForm')?.addEventListener('submit', handlePayBillSubmit);
@@ -129,14 +136,9 @@ function setupAccountDashboard() {
     document.getElementById('changePasswordForm')?.addEventListener('submit', handleChangePasswordSubmit);
     document.getElementById('setPinForm')?.addEventListener('submit', handleSetPinSubmit);
     document.getElementById('download-csv-btn')?.addEventListener('click', handleDownloadCsv);
-    // Inside setupAccountDashboard()
-document.getElementById('card-toggle-btn')?.addEventListener('click', handleCardToggle);
 
     // Transfer Form Specifics
     document.getElementById('verifyRecipientBtn')?.addEventListener('click', handleVerifyRecipient);
-    
-    // Removed the line that was causing the input to clear
-    // document.getElementById('transferAccountNumber')?.addEventListener('input', resetTransferForm);
 
     // Initial Data Fetch
     fetchUserDetails(); // This will now call populateProfileForm()
@@ -144,7 +146,7 @@ document.getElementById('card-toggle-btn')?.addEventListener('click', handleCard
     fetchTransactions(false);
 }
 
-// --- Theme & Modal UI Functions ---
+// --- Theme & Modal UI Functions (Rest of the file is here) ---
 function setupThemeToggle() {
     console.log("setupThemeToggle function started");
     const toggleButton = document.getElementById('theme-toggle');
@@ -183,11 +185,11 @@ function setupThemeToggle() {
         if (window.myTransactionChart && typeof window.myTransactionChart.destroy === 'function') {
             const currentPage = getPageName();
             if (currentPage === 'account.html' || currentPage === 'dashboard.html') {
-                 console.log("Destroying and re-rendering chart for theme change.");
-                 window.myTransactionChart.destroy();
-                 if(typeof fetchTransactions === 'function') {
+                console.log("Destroying and re-rendering chart for theme change.");
+                window.myTransactionChart.destroy();
+                if(typeof fetchTransactions === 'function') {
                     fetchTransactions(false);
-                 }
+                }
             }
         }
     }
@@ -348,12 +350,10 @@ async function fetchUserDetails() {
             console.warn("Account number not found.");
         }
         
-        // --- THIS IS THE FIX ---
         // Call populateProfileForm *after* fetching details
         if (getPageName() === 'account.html') {
-             populateProfileForm();
+            populateProfileForm();
         }
-        // ----------------------
 
     } catch (error) {
         console.error('Error fetching user details:', error);
@@ -361,21 +361,16 @@ async function fetchUserDetails() {
     }
 }
 
-// --- MODIFIED: populateProfileForm ---
-// --- REPLACE your old function with this one ---
 function populateProfileForm() {
     const userData = JSON.parse(localStorage.getItem('currentUser'));
     if (userData) {
         document.getElementById('profileFullName').value = userData.fullName || '';
         document.getElementById('profileEmail').value = userData.email || '';
         
-        // Check if phone number exists and starts with +91.
-        // If so, strip the +91 and show only the 10 digits.
         let phoneDisplay = '';
         if (userData.phoneNumber && userData.phoneNumber.startsWith('+91')) {
-            phoneDisplay = userData.phoneNumber.substring(3); // Get only the 10 digits
+            phoneDisplay = userData.phoneNumber.substring(3);
         }
-        // Set the 10-digit number to the input field
         document.getElementById('profilePhone').value = phoneDisplay;
         
         document.getElementById('profileDob').value = userData.dateOfBirth || '';
@@ -558,21 +553,21 @@ async function fetchAllBanks() {
         listEl.innerHTML = '';
 
         if (banks.length === 0) {
-             listEl.innerHTML = `<div class="col-span-full text-center text-bank-text-muted dark:text-slate-400 glass-card rounded-3xl p-12">No banks available to add right now.</div>`;
-             return;
+            listEl.innerHTML = `<div class="col-span-full text-center text-bank-text-muted dark:text-slate-400 glass-card rounded-3xl p-12">No banks available to add right now.</div>`;
+            return;
         }
 
         banks.forEach(bank => {
             const cardHTML = `
                 <div class="bank-card rounded-3xl p-6 flex flex-col justify-between transition-all duration-300 ease-in-out">
-                     <div class="relative z-10">
+                    <div class="relative z-10">
                         <h5 class="mb-2 text-2xl font-bold tracking-tight text-bank-text-main dark:text-white">${bank.name}</h5>
                         <p class="font-normal text-bank-text-muted dark:text-slate-400 mb-4">Link this bank to your portal.</p>
-                     </div>
-                     <button onclick="handleAddBank(event, ${bank.id}, '${bank.name}')"
-                             class="add-bank-btn mt-4 w-full text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 font-medium rounded-xl text-sm px-5 py-3 text-center transform hover:scale-105 transition-transform duration-300 shadow-lg shadow-indigo-500/30 relative z-10">
+                    </div>
+                    <button onclick="handleAddBank(event, ${bank.id}, '${bank.name}')"
+                            class="add-bank-btn mt-4 w-full text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 font-medium rounded-xl text-sm px-5 py-3 text-center transform hover:scale-105 transition-transform duration-300 shadow-lg shadow-indigo-500/30 relative z-10">
                         Add Bank
-                     </button>
+                    </button>
                 </div>`;
             listEl.insertAdjacentHTML('beforeend', cardHTML);
         });
@@ -625,13 +620,12 @@ async function handleDepositSubmit(event) {
 
     toggleSpinner(submitButton, true);
     try {
-        // --- MODIFIED ---
         // Send 'amount' AND 'source' in the body
         const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/deposit`, { 
             method: 'POST', 
-            body: JSON.stringify({ amount, source }) // <-- Send both
+            body: JSON.stringify({ amount, source })
         });
-        // -----------------
+        
         if (!response.ok) throw new Error(await response.text() || 'Deposit failed.');
         
         await refreshDashboardData();
@@ -727,137 +721,213 @@ async function handlePayBillSubmit(event) {
     finally { toggleSpinner(submitButton, false); }
 }
 async function fetchDashboardSummary() {
-  try {
-    const token = localStorage.getItem('token');
-    const res = await fetch(`${ACCOUNT_API_URL}/dashboard`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (!res.ok) throw new Error('Dashboard fetch failed');
-    const data = await res.json();
-    document.getElementById('userName').textContent = data.userName;
-  } catch (err) {
-    console.error(err);
-  }
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${ACCOUNT_API_URL}/dashboard`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Dashboard fetch failed');
+        const data = await res.json();
+        document.getElementById('userName').textContent = data.userName;
+    } catch (err) {
+        console.error(err);
+    }
 }
 
-// --- Fix #2: Card details stuck on loading ---
-// --- Fix #2: Card details stuck on loading (REVISED) ---
-// --- Fix #2: Card details stuck on loading (REVISED) ---
-async function loadCardDetails() {
-    const accountId = document.body.dataset.accountId;
-    if (!accountId) {
-        console.error("No accountId found for loadCardDetails");
-        return;
-    }
 
-    const loading = document.getElementById('card-status-loading');
-    const controls = document.getElementById('card-controls');
-    // Get the <p> tag inside the loading div
-    const loadingTextElement = loading.querySelector('p'); 
-    const defaultLoadingText = 'Loading card status...';
+// --- CARD FLIP LOGIC ---
+async function handleCardFlip() {
+    const flipper = document.getElementById('debitCardFlipper');
+    const display = document.getElementById('card-cvv-display');
+    const accountId = document.body.dataset.accountId;
 
-    // Reset UI to loading state
-    loading.classList.remove('hidden');
-    controls.classList.add('hidden');
-    // Reset loading text
-    if (loadingTextElement) loadingTextElement.textContent = defaultLoadingText;
+    if (!flipper || !accountId) return;
 
-    try {
-        // Use fetchSecure and the correct URL that includes the accountId
-        const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/card`);
-        
-        if (!response.ok) {
-            const errorMsg = await response.text();
-            throw new Error(errorMsg || 'Failed to fetch card details');
-        }
-        
-        const card = await response.json();
+    // 1. Flip the card
+    flipper.classList.toggle('flipped');
 
-        // --- Populate the Visual Debit Card ---
-        document.getElementById('card-bank-name').textContent = document.getElementById('bankNameDisplay').textContent; // Re-use bank name
-        document.getElementById('card-number').textContent = card.cardNumber.replace(/(\d{4})/g, '$1 ').trim(); // Format as XXXX XXXX ...
-        document.getElementById('card-holder-name').textContent = card.cardHolderName;
-        document.getElementById('card-expiry-date').textContent = card.expiryDate; // Assumes MM/YY format
+    // 2. If flipped to back side, fetch the CVV
+    if (flipper.classList.contains('flipped') && cardCvv === '***') {
+        display.textContent = '...'; // Show loading state
+        
+        try {
+            const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/card/cvv`);
 
-        // --- Populate the Card Settings Box ---
-        const statusText = document.getElementById('card-status-text');
-        const toggleBtn = document.getElementById('card-toggle-btn');
-        
-        if (card.active) {
-            statusText.textContent = 'ACTIVE';
-            statusText.className = "text-sm font-bold text-green-500"; // Green text
-            toggleBtn.textContent = 'Freeze Card';
-            // Add classes for 'Freeze' button
-            toggleBtn.className = 'px-6 py-3 font-semibold rounded-xl text-sm transform hover:scale-105 transition-all duration-300 text-white bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 shadow-lg shadow-orange-500/30';
-        } else {
-            statusText.textContent = 'FROZEN';
-            statusText.className = "text-sm font-bold text-red-500"; // Red text
-            toggleBtn.textContent = 'Unfreeze Card';
-            // Add classes for 'Unfreeze' button
-            toggleBtn.className = 'px-6 py-3 font-semibold rounded-xl text-sm transform hover:scale-105 transition-all duration-300 text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/30';
-        }
+            if (!response.ok) {
+                throw new Error(await response.text() || 'Failed to fetch CVV.');
+            }
+            
+            const data = await response.json();
+            cardCvv = data.cvv; // Store the fetched CVV
+            display.textContent = cardCvv;
 
-        // Show the card controls
-        loading.classList.add('hidden');
-        controls.classList.remove('hidden');
+            // Clear the CVV after 15 seconds for security
+            setTimeout(() => {
+                display.textContent = '***';
+                cardCvv = '***';
+                // Automatically flip back if still on the back (optional)
+                if (flipper.classList.contains('flipped')) {
+                    flipper.classList.remove('flipped');
+                }
+            }, 15000); 
 
-    } catch (err) {
-        console.error("Error in loadCardDetails:", err);
-        // Show the error message in the loading area
-        if (loadingTextElement) {
-            loadingTextElement.textContent = `Error: ${err.message}`;
-            loadingTextElement.classList.add('text-red-400'); // Make error red
+        } catch (error) {
+            console.error("CVV fetch error:", error);
+            display.textContent = 'Error';
+            showToast("Failed to retrieve CVV.", true);
         }
-    }
+    } else if (!flipper.classList.contains('flipped')) {
+        // If flipped back to the front, reset the display
+        display.textContent = '***'; 
+    }
 }
-async function handleCardToggle() {
+
+// --- CARD DETAILS LOADER (Updated with new toggles) ---
+async function loadCardDetails() {
     const accountId = document.body.dataset.accountId;
     if (!accountId) return;
 
-    // Show the loading spinner and hide controls for instant feedback
-    document.getElementById('card-status-loading').classList.remove('hidden');
-    document.getElementById('card-controls').classList.add('hidden');
+    const loading = document.getElementById('card-status-loading');
+    const controls = document.getElementById('card-controls');
+    const loadingTextElement = loading.querySelector('p'); 
+    const defaultLoadingText = 'Loading card status...';
+
+    // Reset UI to loading state
+    loading.classList.remove('hidden');
+    controls.classList.add('hidden');
+    if (loadingTextElement) loadingTextElement.textContent = defaultLoadingText;
 
     try {
-        const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/card/toggle`, {
-            method: 'POST'
-        });
-
+        const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/card`);
         if (!response.ok) {
-            throw new Error(await response.text() || 'Failed to toggle card status.');
+            const errorMsg = await response.text();
+            throw new Error(errorMsg || 'Failed to fetch card details');
+        }
+        
+        const card = await response.json();
+        // Inside loadCardDetails, right after const card = await response.json();
+console.log('Card data received AFTER toggle:', JSON.stringify(card, null, 2));
+        console.log('Expiry Date from API:', card.expiryDate);
+
+        // --- 1. Populate the Visual Debit Card (FRONT) ---
+        document.getElementById('card-bank-name').textContent = document.getElementById('bankNameDisplay').textContent;
+        const formattedNumber = card.cardNumber.replace(/(\d{4})/g, '$1 ').trim();
+        document.getElementById('card-number').textContent = formattedNumber; 
+        document.getElementById('card-holder-name').textContent = card.cardHolderName.toUpperCase();
+      // CORRECTED LOGIC: Extracts MM and YY, then formats as MM/YY
+       // USE THE DATE STRING DIRECTLY:
+document.getElementById('card-expiry-date').textContent = card.expiryDate; // Use the MM/YY string from the API
+
+        // --- 2. Populate the Card Settings Box (Master Toggle) ---
+        const statusText = document.getElementById('card-status-text');
+        const toggleBtn = document.getElementById('card-toggle-btn');
+        
+        if (card.active) {
+            statusText.textContent = 'ACTIVE';
+            statusText.className = "text-sm font-bold text-green-500"; 
+            toggleBtn.textContent = 'Freeze Card';
+            toggleBtn.className = 'px-6 py-3 font-semibold rounded-xl text-sm transform hover:scale-105 transition-all duration-300 text-white bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 shadow-lg shadow-orange-500/30';
+        } else {
+            statusText.textContent = 'FROZEN';
+            statusText.className = "text-sm font-bold text-red-500"; 
+            toggleBtn.textContent = 'Unfreeze Card';
+            toggleBtn.className = 'px-6 py-3 font-semibold rounded-xl text-sm transform hover:scale-105 transition-all duration-300 text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/30';
         }
 
-        // Success! Now just reload the card details.
-        // loadCardDetails will fetch the new state and show the controls again.
-        await loadCardDetails(); 
-        showToast("Card status updated!");
+        // --- 3. Set the state of NEW Toggles ---
+        // Ensure the input elements exist and update their 'checked' property
+       const onlineToggle = document.getElementById('online-toggle-input');
+        const internationalToggle = document.getElementById('international-toggle-input');
 
-    } catch (error) {
-        console.error('Error toggling card:', error);
-        showToast(error.message, true); 
-        // If the toggle fails, still reload the card details to show the original state
-        await loadCardDetails();
+      if (onlineToggle) {
+            onlineToggle.checked = card.onlineTransactionsEnabled; // Read the boolean directly
+        }
+        if (internationalToggle) {
+            internationalToggle.checked = card.internationalTransactionsEnabled; // Read the boolean directly
+        }
+        // Final UI visibility
+      loading.classList.add('hidden');
+        controls.classList.remove('hidden');
+
+    } catch (err) {
+        console.error("Error in loadCardDetails:", err);
+        if (loadingTextElement) {
+            loadingTextElement.textContent = `Error: ${err.message}`;
+            loadingTextElement.classList.add('text-red-400');
+        }
     }
 }
-// --- Fix #1: Portal settings visible and populated ---
-async function loadPortalSettings() {
-  try {
-    const token = localStorage.getItem('token');
-    const res = await fetch(`${AUTH_API_URL}/me`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (!res.ok) throw new Error('Profile fetch failed');
-    const user = await res.json();
 
-    document.getElementById('profile-name').value = user.name || '';
-    document.getElementById('profile-email').value = user.email || '';
-  } catch (err) {
-    console.error(err);
-  }
+// --- NEW CARD STATUS TOGGLE FUNCTION (Master, Online, International) ---
+async function handleToggleCardStatus(event, type) {
+    const accountId = document.body.dataset.accountId;
+    if (!accountId) return;
+
+    // Use a unique ID for the button/input being clicked
+    let elementId = '';
+    let apiPath = '';
+    let successAction = '';
+
+    if (type === 'master') {
+        elementId = 'card-toggle-btn';
+        apiPath = `/card/toggle`;
+        successAction = 'Master Card Status';
+   // ... inside handleToggleCardStatus ...
+    } else if (type === 'online') {
+        elementId = 'online-toggle-input';
+        apiPath = `/card/online-toggle`;
+        successAction = 'Online Transactions'; // <<< FIXED
+    } else if (type === 'international') {
+        elementId = 'international-toggle-input';
+        apiPath = `/card/international-toggle`;
+        successAction = 'International Transactions';
+    }
+    
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    // Disable the element during the API call
+    const isButton = (type === 'master');
+    if (isButton) toggleSpinner(element, true);
+    else element.disabled = true;
+
+    try {
+        const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}${apiPath}`, { method: 'POST' });
+        
+        if (!response.ok) {
+            // Revert state if API fails
+            if (!isButton) element.checked = !element.checked; 
+            throw new Error(await response.text() || `${type} toggle failed.`);
+        }
+        
+        const updatedCard = await response.json();
+        
+        // Re-run the load function to update the UI based on the new state
+        await loadCardDetails(); 
+        
+        // --- ADDED SUCCESS MESSAGE LOGIC HERE ---
+        let status = '';
+        if (type === 'master') {
+            status = updatedCard.active ? 'Unfrozen (Active)' : 'Frozen (Inactive)';
+        } else if (type === 'online') {
+            status = updatedCard.onlineTransactionsEnabled ? 'Enabled' : 'Disabled';
+        } else if (type === 'international') {
+            status = updatedCard.internationalTransactionsEnabled ? 'Enabled' : 'Disabled';
+        }
+        
+        showToast(`${successAction} updated to: ${status}`);
+        // ----------------------------------------
+
+    } catch (error) {
+        console.error(`${type} toggle error:`, error);
+        showToast(`Error: ${error.message}`, true);
+    } finally {
+        if (isButton) toggleSpinner(element, false);
+        else element.disabled = false;
+    }
 }
 
 // --- MODIFIED: handleProfileUpdateSubmit ---
-// --- REPLACE your old function with this one ---
 async function handleProfileUpdateSubmit(event) {
     event.preventDefault();
     
@@ -877,7 +947,7 @@ async function handleProfileUpdateSubmit(event) {
         showModalError(errorDiv, "Full name and email are required."); return;
     }
     if (!/\S+@\S+\.\S+/.test(email)) { // Basic email validation
-         showModalError(errorDiv, "Please enter a valid email address."); return;
+        showModalError(errorDiv, "Please enter a valid email address."); return;
     }
     
     // Added phone validation
@@ -890,8 +960,6 @@ async function handleProfileUpdateSubmit(event) {
         // If it is 10 digits, prepend "+91" to send to backend
         phoneToSend = `+91${phoneDigits}`;
     }
-    // If phoneDigits is empty, phoneToSend remains null
-    // -------------------------------------
 
     toggleSpinner(submitButton, true);
     try {
@@ -942,7 +1010,7 @@ async function handleChangePasswordSubmit(event) {
         if (!response.ok) {
             let errorText = await response.text() || 'Password change failed.';
             if (response.status === 400 || response.status === 401 || errorText.toLowerCase().includes("invalid")) {
-                 errorText = "Incorrect current password.";
+                errorText = "Incorrect current password.";
             }
             showModalError(errorDiv, errorText); throw new Error(errorText);
         }
@@ -964,11 +1032,11 @@ async function handleSetPinSubmit(event) { // For updating PIN on account.html
     try {
         const response = await fetchSecure(`${ACCOUNT_API_URL}/set-pin`, { method: 'POST', body: JSON.stringify({ password: currentPassword, pin: newPin }) });
         if (!response.ok) {
-             let errorText = await response.text() || 'Failed to update PIN.';
+            let errorText = await response.text() || 'Failed to update PIN.';
             if (response.status === 401 || errorText.toLowerCase().includes("invalid")) {
-                 errorText = "Invalid current password.";
+                errorText = "Invalid current password.";
             }
-             showModalError(errorDiv, errorText); throw new Error(errorText);
+            showModalError(errorDiv, errorText); throw new Error(errorText);
         }
         form.reset(); showToast("Security PIN updated!");
     } catch (error) { console.error("Error setting/updating PIN:", error.message); }

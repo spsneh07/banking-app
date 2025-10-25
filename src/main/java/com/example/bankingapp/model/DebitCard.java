@@ -41,6 +41,13 @@ public class DebitCard {
     @Column(nullable = false)
     private boolean active = true; // Card is active by default
 
+    // Inside DebitCard.java - VERIFY THESE LINES
+     @Column(nullable = false)
+     private boolean onlineTransactionsEnabled = true;
+
+     @Column(nullable = false)
+     private boolean internationalTransactionsEnabled = false;
+
     // --- This is the link ---
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", nullable = false)

@@ -4,7 +4,8 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Random;
+import java.util.Map;
+import java.util.Random; // <-- ADD THIS LINE
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -281,17 +282,64 @@ public class AccountController {
         }
     }
 
-    @PostMapping("/{accountId}/card/toggle")
+ @PostMapping("/{accountId}/card/toggle")
     public ResponseEntity<?> toggleCardStatus(@PathVariable Long accountId) {
         try {
             verifyAccountOwner(accountId);
             String username = getAuthenticatedUsername();
-            DebitCardDto updatedCardDto = accountService.toggleDebitCardStatus(accountId, username);
+            // --- CHANGE THIS LINE ---
+            DebitCardDto updatedCardDto = accountService.toggleDebitCardOption(accountId, username, "master"); // Use new method and add "master"
+            // ----------------------
             return ResponseEntity.ok(updatedCardDto);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    // Inside AccountController.java
+
+// ... (other methods like /card/cvv, /card/toggle etc.)
+
+@PostMapping("/{accountId}/card/online-toggle") // CHECK THIS PATH
+public ResponseEntity<?> toggleOnlineStatus(@PathVariable Long accountId) {
+    try {
+        verifyAccountOwner(accountId);
+        String username = getAuthenticatedUsername();
+        DebitCardDto updatedCardDto = accountService.toggleDebitCardOption(accountId, username, "online");
+        return ResponseEntity.ok(updatedCardDto);
+    } catch (Exception e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+}
+
+@PostMapping("/{accountId}/card/international-toggle") // CHECK THIS PATH
+public ResponseEntity<?> toggleInternationalStatus(@PathVariable Long accountId) {
+    try {
+        verifyAccountOwner(accountId);
+        String username = getAuthenticatedUsername();
+        DebitCardDto updatedCardDto = accountService.toggleDebitCardOption(accountId, username, "international");
+        return ResponseEntity.ok(updatedCardDto);
+    } catch (Exception e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+}
+    // Inside AccountController.java (around line 250)
+
+// --- NEW CVV ENDPOINT ---
+@GetMapping("/{accountId}/card/cvv")
+public ResponseEntity<?> getCardCvv(@PathVariable Long accountId) {
+    try {
+        verifyAccountOwner(accountId);
+        String username = getAuthenticatedUsername();
+        // Call service method to get CVV (string or DTO)
+        String cvv = accountService.getDebitCardCvv(accountId, username); 
+        // NOTE: We don't send the full CardDTO, only the CVV as an object.
+        return ResponseEntity.ok(Map.of("cvv", cvv)); 
+    } catch (Exception e) {
+        // Log sensitive error details, but send generic bad request to frontend
+        return ResponseEntity.badRequest().body("CVV retrieval failed.");
+    }
+}
+// -------------------------
     // ---------------------------------
     private String generateRandomAccountNumber() {
         Random random = new Random();

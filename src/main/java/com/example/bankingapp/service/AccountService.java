@@ -220,18 +220,62 @@ public class AccountService {
         return new DebitCardDto(account.getDebitCard());
     }
 
-    @Transactional
-    public DebitCardDto toggleDebitCardStatus(Long accountId, String username) {
-        Account account = findAccountByIdAndUsername(accountId, username);
-        DebitCard card = account.getDebitCard();
-        if (card == null) {
-            throw new RuntimeException("No debit card found for this account.");
-        }
-        
-        // Toggle the 'active' status
-        card.setActive(!card.isActive());
-        debitCardRepository.save(card);
-        
-        return new DebitCardDto(card);
+    // Inside AccountService.java (around line 280)
+
+// --- NEW CVV RETRIEVAL METHOD ---
+@Transactional(readOnly = true)
+public String getDebitCardCvv(Long accountId, String username) {
+    Account account = findAccountByIdAndUsername(accountId, username);
+
+    if (account.getDebitCard() == null) {
+        throw new RuntimeException("No debit card found for this account.");
     }
+    
+    // WARNING: Returning sensitive data. Ensure this endpoint is secured by Spring Security.
+    return account.getDebitCard().getCvv(); 
+}
+// ---------------------------------
+
+// Inside AccountService.java (replace the old toggleDebitCardStatus method with this)
+
+@Transactional
+public DebitCardDto toggleDebitCardOption(Long accountId, String username, String option) {
+    // Find the account and ensure the user owns it
+    Account account = findAccountByIdAndUsername(accountId, username);
+    
+    // Get the associated debit card
+    DebitCard card = account.getDebitCard();
+    if (card == null) {
+        throw new RuntimeException("No debit card found for this account.");
+    }
+    
+    // Check which option needs to be toggled based on the 'option' string
+    switch (option.toLowerCase()) {
+        case "master":
+            // Toggle the main active status
+            card.setActive(!card.isActive());
+            logger.info("Toggled master status for card linked to account {}. New status: {}", accountId, card.isActive());
+            break;
+        case "online":
+            // Toggle the online transactions enabled status
+            card.setOnlineTransactionsEnabled(!card.isOnlineTransactionsEnabled());
+             logger.info("Toggled online transactions for card linked to account {}. New status: {}", accountId, card.isOnlineTransactionsEnabled());
+           break;
+        case "international":
+            // Toggle the international transactions enabled status
+            card.setInternationalTransactionsEnabled(!card.isInternationalTransactionsEnabled());
+            logger.info("Toggled international transactions for card linked to account {}. New status: {}", accountId, card.isInternationalTransactionsEnabled());
+            break;
+        default:
+            // If the 'option' string is something unexpected, throw an error
+             logger.warn("Invalid card toggle option received: {}", option);
+            throw new IllegalArgumentException("Invalid card option specified: " + option);
+    }
+    
+    // Save the updated card entity back to the database
+    debitCardRepository.save(card);
+    
+    // Return a DTO representing the updated state of the card
+    return new DebitCardDto(card);
+}
 }
