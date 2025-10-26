@@ -3,8 +3,11 @@ const AUTH_API_URL = 'http://localhost:8080/api/auth';
 const ACCOUNT_API_URL = 'http://localhost:8080/api/account';
 const BANK_API_URL = 'http://localhost:8080/api/banks';
 
-// Global variable to hold the chart instance
+// Global chart instances
 window.myTransactionChart = null;
+
+// Global cache for user accounts (used for self-transfer dropdowns)
+let userAccountsCache = [];
 
 // State variable for CVV to avoid re-fetching on every card flip
 let cardCvv = '***'; 
@@ -71,6 +74,14 @@ function setupPortalDashboard() {
     }
     fetchUserAccounts(); // Fetches accounts and updates stats
     fetchAllBanks();
+
+    // --- Self Transfer Modal Listeners ---
+    document.getElementById('showSelfTransferModalBtn')?.addEventListener('click', () => {
+        populateSelfTransferAccounts(); // Populate dropdowns before showing
+        showModal('selfTransferModal');
+    });
+    document.getElementById('selfTransferForm')?.addEventListener('submit', handleSelfTransferSubmit);
+    document.querySelector('#selfTransferModal .modal-close-btn')?.addEventListener('click', () => hideModal('selfTransferModal'));
 }
 
 // --- Account Dashboard Setup ---
@@ -110,13 +121,13 @@ function setupAccountDashboard() {
             if (paneId === 'overview-pane') fetchTransactions(false);
             if (paneId === 'card-pane') loadCardDetails(); // <-- Card Loader
             if (paneId === 'activity-log-pane') { 
-                fetchActivityLogs(); // <-- CALL THE NEW FUNCTION HERE
+                fetchActivityLogs(); 
             }
+            // No specific function for 'loan-pane' on click
+        });
     });
-});
 
     // --- CARD FLIP LISTENER ---
-    // This is correctly placed here to attach the click listener to the card area
     document.getElementById('debitCardFlipper')?.addEventListener('click', handleCardFlip);
 
     // Modal Triggers & Closers
@@ -139,42 +150,34 @@ function setupAccountDashboard() {
     document.getElementById('changePasswordForm')?.addEventListener('submit', handleChangePasswordSubmit);
     document.getElementById('setPinForm')?.addEventListener('submit', handleSetPinSubmit);
     document.getElementById('download-csv-btn')?.addEventListener('click', handleDownloadCsv);
-    // Inside setupAccountDashboard function...
-document.getElementById('loanApplicationForm')?.addEventListener('submit', handleLoanApplicationSubmit);
+    document.getElementById('loanApplicationForm')?.addEventListener('submit', handleLoanApplicationSubmit);
     
     // Transfer Form Specifics
     document.getElementById('verifyRecipientBtn')?.addEventListener('click', handleVerifyRecipient);
     
-
     // Initial Data Fetch
     fetchUserDetails(); // This will now call populateProfileForm()
     fetchBalance();
     fetchTransactions(false);
 }
 
-// --- Theme & Modal UI Functions (Rest of the file is here) ---
+// --- Theme & Modal UI Functions ---
 function setupThemeToggle() {
-    console.log("setupThemeToggle function started");
     const toggleButton = document.getElementById('theme-toggle');
     const toggleIcon = document.getElementById('theme-toggle-icon');
 
     if (!toggleButton || !toggleIcon) {
         console.error("Theme toggle button or icon not found!");
         return;
-    } else {
-        console.log("Theme toggle elements found.");
     }
 
     let currentTheme = localStorage.getItem('theme') || 'system';
-    console.log("Initial theme from localStorage:", currentTheme);
 
     function applyTheme(theme) {
-        console.log("Applying theme:", theme);
         const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         const isDark = (theme === 'dark') || (theme === 'system' && systemPrefersDark);
 
         document.documentElement.classList.toggle('dark', isDark);
-        console.log("<html> classList after toggle:", document.documentElement.classList.toString());
 
         let iconClass = 'bi bi-display-fill text-xl';
         if (theme === 'dark') {
@@ -183,38 +186,32 @@ function setupThemeToggle() {
             iconClass = 'bi bi-sun-fill text-xl';
         }
         toggleIcon.className = iconClass;
-        console.log("Set icon class to:", toggleIcon.className);
 
         currentTheme = theme;
         localStorage.setItem('theme', theme);
 
+        // Re-render chart on theme change
         if (window.myTransactionChart && typeof window.myTransactionChart.destroy === 'function') {
             const currentPage = getPageName();
-            if (currentPage === 'account.html' || currentPage === 'dashboard.html') {
+            if (currentPage === 'account.html') {
                 console.log("Destroying and re-rendering chart for theme change.");
                 window.myTransactionChart.destroy();
                 if(typeof fetchTransactions === 'function') {
-                    fetchTransactions(false);
+                    fetchTransactions(false); // This will call renderTransactionChart
                 }
             }
         }
     }
 
     toggleButton.addEventListener('click', () => {
-        console.log("Theme toggle button clicked!");
         let nextTheme;
-        if (currentTheme === 'system') {
-            nextTheme = 'light';
-        } else if (currentTheme === 'light') {
-            nextTheme = 'dark';
-        } else {
-            nextTheme = 'system';
-        }
+        if (currentTheme === 'system') nextTheme = 'light';
+        else if (currentTheme === 'light') nextTheme = 'dark';
+        else nextTheme = 'system';
         applyTheme(nextTheme);
     });
 
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-        console.log("OS theme changed, current theme selection is:", currentTheme);
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
         if (currentTheme === 'system') {
             applyTheme('system');
         }
@@ -222,7 +219,6 @@ function setupThemeToggle() {
 
     applyTheme(currentTheme);
 }
-
 
 function showModal(modalId) {
     document.getElementById(modalId)?.classList.remove('hidden');
@@ -236,7 +232,24 @@ function hideModal(modalId) {
         document.getElementById('modalBackdrop')?.classList.add('hidden');
         const form = modal.querySelector('form');
         if (form) form.reset();
+        
         if (modalId === 'transferModal') resetTransferForm();
+
+        // --- ADDED: Reset for Self-Transfer Modal ---
+        if (modalId === 'selfTransferModal') {
+             const sourceSelect = document.getElementById('sourceAccount');
+             const destSelect = document.getElementById('destinationAccount');
+             if (sourceSelect) sourceSelect.selectedIndex = 0;
+             if (destSelect) destSelect.selectedIndex = 0;
+             // Re-enable all options
+             if (sourceSelect && destSelect) {
+                 filterDestinationAccounts(sourceSelect, destSelect); 
+                 filterDestinationAccounts(destSelect, sourceSelect);
+             }
+             hideModalError(document.getElementById('selfTransferError'));
+        }
+        // --- END ADDITION ---
+
         modal.querySelectorAll('[id$="Error"]').forEach(hideModalError);
     }
 }
@@ -344,7 +357,7 @@ async function fetchUserDetails() {
         const response = await fetchSecure(`${ACCOUNT_API_URL}/me`);
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const user = await response.json();
-        localStorage.setItem('currentUser', JSON.stringify(user)); // Update user data
+        localStorage.setItem('currentUser', JSON.stringify(user)); 
 
         const currentAccount = user.accounts?.find(acc => acc.id == pageAccountId);
         if (currentAccount?.accountNumber) {
@@ -356,14 +369,13 @@ async function fetchUserDetails() {
             console.warn("Account number not found.");
         }
         
-        // Call populateProfileForm *after* fetching details
         if (getPageName() === 'account.html') {
             populateProfileForm();
         }
 
     } catch (error) {
         console.error('Error fetching user details:', error);
-        accountNumberDisplay.textContent = "Error";
+        if(accountNumberDisplay) accountNumberDisplay.textContent = "Error";
     }
 }
 
@@ -432,11 +444,12 @@ async function fetchTransactions(tableOnly = false) {
         }
 
         if (!tableOnly && (getPageName() === 'account.html')) {
-            renderTransactionChart(transactions);
+            renderTransactionChart(transactions); // Render Income/Expense Doughnut
         }
     } catch (error) {
         console.error('Error fetching transactions:', error);
         if (tableBody) tableBody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-red-400">Error loading transactions.</td></tr>';
+        if (window.myTransactionChart) window.myTransactionChart.destroy();
     }
 }
 
@@ -504,7 +517,9 @@ async function fetchUserAccounts() {
     try {
         const response = await fetchSecure(`${ACCOUNT_API_URL}/all`);
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        
         const accounts = await response.json();
+        userAccountsCache = accounts; // <-- STORE accounts globally
 
         if (spinner) spinner.classList.add('hidden');
         listEl.innerHTML = '';
@@ -516,13 +531,16 @@ async function fetchUserAccounts() {
             listEl.innerHTML = `<div class="col-span-full text-center text-bank-text-muted dark:text-slate-400 glass-card rounded-3xl p-12">You haven't added any bank accounts yet.</div>`;
             totalAccountsEl.textContent = '0';
             totalBalanceEl.textContent = formatCurrency(0);
+            userAccountsCache = []; // Ensure cache is empty
             return;
         }
 
         accounts.forEach(account => {
             calculatedTotalBalance += parseFloat(account.balance || 0);
             const formattedBalance = formatCurrency(account.balance);
-            const formattedAccountNumber = account.accountNumber.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+            const accNumStr = String(account.accountNumber || 'XXXX'); // Ensure string
+            const formattedAccountNumber = accNumStr.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+            
             const cardHTML = `
                 <a href="account.html?id=${account.id}&name=${encodeURIComponent(account.bank.name)}"
                    class="bank-card rounded-3xl p-6 block transition-all duration-300 ease-in-out relative group animate-slide-up">
@@ -547,6 +565,7 @@ async function fetchUserAccounts() {
         listEl.innerHTML = `<div class="col-span-full text-center text-red-500 glass-card rounded-3xl p-12">Error loading accounts. Please try again later.</div>`;
         totalAccountsEl.textContent = 'Error';
         totalBalanceEl.textContent = 'Error';
+        userAccountsCache = []; // Clear cache on error
     }
 }
 async function fetchAllBanks() {
@@ -587,14 +606,23 @@ async function handleAddBank(event, bankId, bankName) {
     if(!btn) return;
     toggleSpinner(btn, true);
     try {
-        const response = await fetchSecure(`${BANK_API_URL}/add/${bankId}`, { method: 'POST' });
+        // --- MODIFIED: Send bankId in the request body for /api/account/create ---
+        const response = await fetchSecure(`${ACCOUNT_API_URL}/create`, { 
+            method: 'POST',
+            body: JSON.stringify({ bankId: bankId }) 
+        });
+        // --- END MODIFICATION ---
+
         if (!response.ok) {
             let errorText = `Failed to add account. Status: ${response.status}`;
-            try { const backendError = await response.text(); if (backendError) errorText = backendError; } catch (e) {}
+            try { 
+                const backendError = await response.text(); 
+                if (backendError) errorText = backendError; 
+            } catch (e) {}
             throw new Error(errorText);
         }
         showToast(`Successfully opened an account at ${bankName}!`);
-        await fetchUserAccounts();
+        await fetchUserAccounts(); // Refresh the list of user's accounts
 
     } catch (error) {
         showToast(error.message, true);
@@ -610,12 +638,12 @@ async function handleDepositSubmit(event) {
     const accountId = document.body.dataset.accountId; if (!accountId) return;
     
     const amount = parseFloat(document.getElementById('depositAmount').value);
-    const source = document.getElementById('depositSource').value; // <-- Get the source
+    const source = document.getElementById('depositSource').value; 
     const errorDiv = document.getElementById('depositError');
     const submitButton = document.getElementById('submitDeposit');
     hideModalError(errorDiv);
 
-    if (!source) { // <-- Check the source
+    if (!source) { 
         showModalError(errorDiv, "Please select a deposit source."); 
         return; 
     }
@@ -626,7 +654,6 @@ async function handleDepositSubmit(event) {
 
     toggleSpinner(submitButton, true);
     try {
-        // Send 'amount' AND 'source' in the body
         const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/deposit`, { 
             method: 'POST', 
             body: JSON.stringify({ amount, source })
@@ -679,8 +706,6 @@ function resetTransferForm() {
         verifyBtn.disabled = false;
         toggleSpinner(verifyBtn, false);
     }
-    // DO NOT CLEAR THE INPUT VALUE
-    // const accountInput = document.getElementById('transferAccountNumber'); if(accountInput) accountInput.value = '';
     hideModalError(document.getElementById('transferError'));
 }
 
@@ -726,20 +751,6 @@ async function handlePayBillSubmit(event) {
     } catch (error) { console.error("Pay bill error:", error); showModalError(errorDiv, error.message); }
     finally { toggleSpinner(submitButton, false); }
 }
-async function fetchDashboardSummary() {
-    try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${ACCOUNT_API_URL}/dashboard`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        if (!res.ok) throw new Error('Dashboard fetch failed');
-        const data = await res.json();
-        document.getElementById('userName').textContent = data.userName;
-    } catch (err) {
-        console.error(err);
-    }
-}
-
 
 // --- CARD FLIP LOGIC ---
 async function handleCardFlip() {
@@ -754,7 +765,7 @@ async function handleCardFlip() {
 
     // 2. If flipped to back side, fetch the CVV
     if (flipper.classList.contains('flipped') && cardCvv === '***') {
-        display.textContent = '...'; // Show loading state
+        display.textContent = '...'; 
         
         try {
             const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/card/cvv`);
@@ -767,11 +778,10 @@ async function handleCardFlip() {
             cardCvv = data.cvv; // Store the fetched CVV
             display.textContent = cardCvv;
 
-            // Clear the CVV after 15 seconds for security
+            // Clear the CVV after 15 seconds
             setTimeout(() => {
                 display.textContent = '***';
                 cardCvv = '***';
-                // Automatically flip back if still on the back (optional)
                 if (flipper.classList.contains('flipped')) {
                     flipper.classList.remove('flipped');
                 }
@@ -783,12 +793,12 @@ async function handleCardFlip() {
             showToast("Failed to retrieve CVV.", true);
         }
     } else if (!flipper.classList.contains('flipped')) {
-        // If flipped back to the front, reset the display
+        // If flipped back to the front, reset
         display.textContent = '***'; 
     }
 }
 
-// --- CARD DETAILS LOADER (Updated with new toggles) ---
+// --- CARD DETAILS LOADER ---
 async function loadCardDetails() {
     const accountId = document.body.dataset.accountId;
     if (!accountId) return;
@@ -811,18 +821,14 @@ async function loadCardDetails() {
         }
         
         const card = await response.json();
-        // Inside loadCardDetails, right after const card = await response.json();
-console.log('Card data received AFTER toggle:', JSON.stringify(card, null, 2));
-        console.log('Expiry Date from API:', card.expiryDate);
+        console.log('Card data received:', JSON.stringify(card, null, 2));
 
         // --- 1. Populate the Visual Debit Card (FRONT) ---
         document.getElementById('card-bank-name').textContent = document.getElementById('bankNameDisplay').textContent;
         const formattedNumber = card.cardNumber.replace(/(\d{4})/g, '$1 ').trim();
         document.getElementById('card-number').textContent = formattedNumber; 
         document.getElementById('card-holder-name').textContent = card.cardHolderName.toUpperCase();
-      // CORRECTED LOGIC: Extracts MM and YY, then formats as MM/YY
-       // USE THE DATE STRING DIRECTLY:
-document.getElementById('card-expiry-date').textContent = card.expiryDate; // Use the MM/YY string from the API
+        document.getElementById('card-expiry-date').textContent = card.expiryDate; // Use the MM/YY string from the API
 
         // --- 2. Populate the Card Settings Box (Master Toggle) ---
         const statusText = document.getElementById('card-status-text');
@@ -841,18 +847,17 @@ document.getElementById('card-expiry-date').textContent = card.expiryDate; // Us
         }
 
         // --- 3. Set the state of NEW Toggles ---
-        // Ensure the input elements exist and update their 'checked' property
-       const onlineToggle = document.getElementById('online-toggle-input');
+        const onlineToggle = document.getElementById('online-toggle-input');
         const internationalToggle = document.getElementById('international-toggle-input');
 
-      if (onlineToggle) {
-            onlineToggle.checked = card.onlineTransactionsEnabled; // Read the boolean directly
+        if (onlineToggle) {
+            onlineToggle.checked = card.onlineTransactionsEnabled; 
         }
         if (internationalToggle) {
-            internationalToggle.checked = card.internationalTransactionsEnabled; // Read the boolean directly
+            internationalToggle.checked = card.internationalTransactionsEnabled; 
         }
-        // Final UI visibility
-      loading.classList.add('hidden');
+        
+        loading.classList.add('hidden');
         controls.classList.remove('hidden');
 
     } catch (err) {
@@ -864,12 +869,11 @@ document.getElementById('card-expiry-date').textContent = card.expiryDate; // Us
     }
 }
 
-// --- NEW CARD STATUS TOGGLE FUNCTION (Master, Online, International) ---
+// --- CARD STATUS TOGGLE FUNCTION (Master, Online, International) ---
 async function handleToggleCardStatus(event, type) {
     const accountId = document.body.dataset.accountId;
     if (!accountId) return;
 
-    // Use a unique ID for the button/input being clicked
     let elementId = '';
     let apiPath = '';
     let successAction = '';
@@ -878,11 +882,10 @@ async function handleToggleCardStatus(event, type) {
         elementId = 'card-toggle-btn';
         apiPath = `/card/toggle`;
         successAction = 'Master Card Status';
-   // ... inside handleToggleCardStatus ...
     } else if (type === 'online') {
         elementId = 'online-toggle-input';
         apiPath = `/card/online-toggle`;
-        successAction = 'Online Transactions'; // <<< FIXED
+        successAction = 'Online Transactions'; 
     } else if (type === 'international') {
         elementId = 'international-toggle-input';
         apiPath = `/card/international-toggle`;
@@ -892,7 +895,6 @@ async function handleToggleCardStatus(event, type) {
     const element = document.getElementById(elementId);
     if (!element) return;
     
-    // Disable the element during the API call
     const isButton = (type === 'master');
     if (isButton) toggleSpinner(element, true);
     else element.disabled = true;
@@ -901,17 +903,16 @@ async function handleToggleCardStatus(event, type) {
         const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}${apiPath}`, { method: 'POST' });
         
         if (!response.ok) {
-            // Revert state if API fails
             if (!isButton) element.checked = !element.checked; 
             throw new Error(await response.text() || `${type} toggle failed.`);
         }
         
         const updatedCard = await response.json();
         
-        // Re-run the load function to update the UI based on the new state
+        // Re-run the load function to update the UI
         await loadCardDetails(); 
         
-        // --- ADDED SUCCESS MESSAGE LOGIC HERE ---
+        // --- Show Success Message ---
         let status = '';
         if (type === 'master') {
             status = updatedCard.active ? 'Unfrozen (Active)' : 'Frozen (Inactive)';
@@ -920,9 +921,8 @@ async function handleToggleCardStatus(event, type) {
         } else if (type === 'international') {
             status = updatedCard.internationalTransactionsEnabled ? 'Enabled' : 'Disabled';
         }
-        
         showToast(`${successAction} updated to: ${status}`);
-        // ----------------------------------------
+        // -----------------------------
 
     } catch (error) {
         console.error(`${type} toggle error:`, error);
@@ -932,12 +932,10 @@ async function handleToggleCardStatus(event, type) {
         else element.disabled = false;
     }
 }
-// --- NEW LOAN APPLICATION HANDLER ---
+
 // --- LOAN APPLICATION HANDLER (with Confirmation Display) ---
 async function handleLoanApplicationSubmit(event) {
-    event.preventDefault(); // Prevent default form submission
-
-    // Get form elements
+    event.preventDefault(); 
     const amountInput = document.getElementById('loanAmount');
     const purposeInput = document.getElementById('loanPurpose');
     const incomeInput = document.getElementById('monthlyIncome');
@@ -945,17 +943,15 @@ async function handleLoanApplicationSubmit(event) {
     const submitButton = document.getElementById('submitLoanApplication');
     const confirmationDiv = document.getElementById('loanConfirmationDetails'); 
 
-    // Clear previous errors and hide confirmation
     hideModalError(errorDiv); 
     if (confirmationDiv) {
         confirmationDiv.classList.add('hidden'); 
         confirmationDiv.innerHTML = ''; 
     }
 
-    // Basic Validation
     const amount = parseFloat(amountInput.value);
     const purpose = purposeInput.value;
-    const income = parseFloat(incomeInput.value); // Renamed for clarity
+    const income = parseFloat(incomeInput.value); 
 
     if (isNaN(amount) || amount <= 0) {
         showModalError(errorDiv, "Please enter a valid loan amount.");
@@ -967,49 +963,42 @@ async function handleLoanApplicationSubmit(event) {
         if (purposeInput) purposeInput.focus();
         return;
     }
-    if (isNaN(income) || income < 0) { // Changed variable name here
+    if (isNaN(income) || income < 0) { 
          showModalError(errorDiv, "Please enter a valid monthly income.");
          if (incomeInput) incomeInput.focus();
          return;
     }
 
-    toggleSpinner(submitButton, true); // Disable button
+    toggleSpinner(submitButton, true); 
 
     try {
-        // --- Call Backend API ---
-    // Inside handleLoanApplicationSubmit -> try block
-const accountId = document.body.dataset.accountId; // Get the current account ID
-if (!accountId) { 
-    showModalError(errorDiv, "Could not determine the account ID for this application.");
-    toggleSpinner(submitButton, false); // Re-enable button
-    return; // Stop if no account ID
-}
+        const accountId = document.body.dataset.accountId; 
+        if (!accountId) { 
+            showModalError(errorDiv, "Could not determine the account ID for this application.");
+            toggleSpinner(submitButton, false); 
+            return; 
+        }
 
-// Construct the URL WITH the accountId
-const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/loans/apply`, { // <<< CORRECT URL
-    method: 'POST',
-    body: JSON.stringify({ 
-        amount: amount,          
-        purpose: purpose,        
-        monthlyIncome: income    
-    }) 
-});
+        const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/loans/apply`, { 
+            method: 'POST',
+            body: JSON.stringify({ 
+                amount: amount,          
+                purpose: purpose,        
+                monthlyIncome: income    
+            }) 
+        });
 
         if (!response.ok) {
-            // Try to get error message from backend response text
             let errorMsg = 'Loan application submission failed.';
             try { 
                 const backendErrorText = await response.text();
                 if (backendErrorText) errorMsg = backendErrorText;
-            } catch (_) {} // Ignore if reading text fails
+            } catch (_) {} 
             throw new Error(errorMsg);
         }
-        // --- End API Call ---
 
-        // --- Show Success Toast ---
         showToast("Your loan application has been received!");
 
-        // --- Display Submission Details ---
         if (confirmationDiv) { 
             confirmationDiv.innerHTML = `
                 <p class="font-semibold mb-2"><i class="bi bi-check-circle-fill mr-2"></i>Application Submitted Successfully:</p>
@@ -1020,28 +1009,28 @@ const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/loans/apply`
                 </ul>
                 <p class="mt-3 text-xs">We will review your application and contact you soon if further information is required.</p>
             `;
-            confirmationDiv.classList.remove('hidden'); // Show the details
+            confirmationDiv.classList.remove('hidden'); 
         }
         
-        // Reset the form AFTER showing confirmation
         if (event.target && typeof event.target.reset === 'function') {
            event.target.reset(); 
         }
 
     } catch (error) {
         console.error("Loan application error:", error);
-        showModalError(errorDiv, error.message); // Show error in the form's error div
-        showToast(`Error: ${error.message}`, true); // Also show error toast
+        showModalError(errorDiv, error.message); 
+        showToast(`Error: ${error.message}`, true); 
     } finally {
-        toggleSpinner(submitButton, false); // Re-enable button regardless of success/failure
+        toggleSpinner(submitButton, false); 
     }
 }
 // --- END OF LOAN HANDLER ----
+
+// --- ACTIVITY LOG FUNCTION ---
 async function fetchActivityLogs() {
     const logListDiv = document.getElementById('activityLogList');
     if (!logListDiv) return;
 
-    // Show loading state
     logListDiv.innerHTML = `
         <div class="text-center text-bank-text-muted dark:text-slate-400 py-6">
             <svg class="animate-spin h-6 w-6 text-bank-primary dark:text-indigo-500 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -1052,34 +1041,32 @@ async function fetchActivityLogs() {
         </div>`;
 
     try {
-      // Inside fetchActivityLogs function
-const accountId = document.body.dataset.accountId; // Get the current account ID
-if (!accountId) { 
-    logListDiv.innerHTML = '<p class="text-red-500 text-center py-6">Error: Could not determine account ID.</p>';
-    return; // Stop if no account ID is found
-}
-// Use the accountId in the URL
-const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/activity-log`); // <<< CORRECT URL
+        const accountId = document.body.dataset.accountId; 
+        if (!accountId) { 
+            logListDiv.innerHTML = '<p class="text-red-500 text-center py-6">Error: Could not determine account ID.</p>';
+            return; 
+        }
+        
+        const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/activity-log`); 
+
         if (!response.ok) {
             throw new Error(await response.text() || 'Failed to fetch activity log.');
         }
 
-        const logs = await response.json(); // Get the array of log DTOs
+        const logs = await response.json(); 
 
-        logListDiv.innerHTML = ''; // Clear loading state
+        logListDiv.innerHTML = ''; 
 
         if (logs.length === 0) {
             logListDiv.innerHTML = '<p class="text-bank-text-muted dark:text-slate-400 text-center py-6">No recent account activity found.</p>';
             return;
         }
 
-        // Loop through logs and create HTML for each entry
         logs.forEach(log => {
-            const timestamp = new Date(log.timestamp).toLocaleString(); // Format the date/time
+            const timestamp = new Date(log.timestamp).toLocaleString(); 
 
-            // --- Determine Icon and Color based on activityType (Optional but nice) ---
-            let iconClass = 'bi-info-circle-fill text-blue-400'; // Default
-            let typeText = log.activityType.replace(/_/g, ' '); // Replace underscores
+            let iconClass = 'bi-info-circle-fill text-blue-400'; 
+            let typeText = log.activityType.replace(/_/g, ' '); 
             
             if (log.activityType.includes('PASSWORD') || log.activityType.includes('PIN')) {
                 iconClass = 'bi-shield-lock-fill text-orange-400';
@@ -1093,8 +1080,10 @@ const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/activity-log
             } else if (log.activityType.includes('LOAN')) {
                  iconClass = 'bi-cash-coin text-green-400';
                  typeText = 'Loan Application';
+            } else if (log.activityType.includes('SELF_TRANSFER')) {
+                 iconClass = 'bi-arrow-left-right text-cyan-400';
+                 typeText = 'Self Transfer';
             }
-            // --- End Icon/Color Logic ---
 
             const logEntryHtml = `
                 <div class="p-4 bg-bank-input-bg dark:bg-bank-input-bg-dark rounded-xl border border-bank-border dark:border-bank-border-dark flex flex-col sm:flex-row justify-between sm:items-center gap-2">
@@ -1108,7 +1097,7 @@ const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/activity-log
                     <p class="text-xs text-bank-text-muted dark:text-slate-500 text-right sm:text-left flex-shrink-0">${timestamp}</p>
                 </div>
             `;
-            logListDiv.insertAdjacentHTML('beforeend', logEntryHtml); // Add the entry to the list
+            logListDiv.insertAdjacentHTML('beforeend', logEntryHtml); 
         });
 
     } catch (error) {
@@ -1117,16 +1106,14 @@ const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/activity-log
     }
 }
 // --- END ACTIVITY LOG FUNCTION ---
-// --- END OF LOAN HANDLER ---
-// --- END OF LOAN HANDLER ---
-// --- MODIFIED: handleProfileUpdateSubmit ---
+
+// --- PROFILE/PASSWORD/PIN Form Handlers ---
 async function handleProfileUpdateSubmit(event) {
     event.preventDefault();
     
-    // Read all new values
     const fullName = document.getElementById('profileFullName').value;
     const email = document.getElementById('profileEmail').value;
-    const phoneDigits = document.getElementById('profilePhone').value; // This is *only* the 10 digits
+    const phoneDigits = document.getElementById('profilePhone').value; 
     const dateOfBirth = document.getElementById('profileDob').value;
     const address = document.getElementById('profileAddress').value;
     const nomineeName = document.getElementById('profileNominee').value;
@@ -1138,31 +1125,28 @@ async function handleProfileUpdateSubmit(event) {
     if (!fullName || !email) {
         showModalError(errorDiv, "Full name and email are required."); return;
     }
-    if (!/\S+@\S+\.\S+/.test(email)) { // Basic email validation
+    if (!/\S+@\S+\.\S+/.test(email)) { 
         showModalError(errorDiv, "Please enter a valid email address."); return;
     }
     
-    // Added phone validation
-    let phoneToSend = null; // Default to null
-    if (phoneDigits) { // If the field is not empty
-        if (!/^\d{10}$/.test(phoneDigits)) { // Check if it's exactly 10 digits
+    let phoneToSend = null; 
+    if (phoneDigits) { 
+        if (!/^\d{10}$/.test(phoneDigits)) { 
             showModalError(errorDiv, "Phone number must be exactly 10 digits.");
             return;
         }
-        // If it is 10 digits, prepend "+91" to send to backend
         phoneToSend = `+91${phoneDigits}`;
     }
 
     toggleSpinner(submitButton, true);
     try {
-        // Send the full object
         const response = await fetchSecure(`${ACCOUNT_API_URL}/profile`, {
             method: 'PUT',
             body: JSON.stringify({ 
                 fullName, 
                 email, 
-                phoneNumber: phoneToSend, // Send the cleaned-up number
-                dateOfBirth: dateOfBirth || null, // Send null if empty
+                phoneNumber: phoneToSend, 
+                dateOfBirth: dateOfBirth || null, 
                 address, 
                 nomineeName 
             })
@@ -1171,11 +1155,10 @@ async function handleProfileUpdateSubmit(event) {
         if (!response.ok) throw new Error(await response.text() || 'Profile update failed.');
         
         const updatedUser = await response.json();
-        localStorage.setItem('currentUser', JSON.stringify(updatedUser)); // Update stored user
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser)); 
         
         showToast("Profile updated!");
         
-        // Repopulate form with potentially cleaned-up data
         populateProfileForm(); 
 
     } catch (error) { 
@@ -1210,7 +1193,7 @@ async function handleChangePasswordSubmit(event) {
     } catch (error) { console.error("Change password error:", error.message); }
     finally { toggleSpinner(submitButton, false); }
 }
-async function handleSetPinSubmit(event) { // For updating PIN on account.html
+async function handleSetPinSubmit(event) { 
     event.preventDefault();
     const form = event.target;
     const currentPassword = document.getElementById('pinCurrentPassword').value;
@@ -1296,7 +1279,7 @@ async function handleRegister(event) {
         const response = await fetch(`${AUTH_API_URL}/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fullName, username, email, password }) });
         const responseText = await response.text();
         if (response.ok) {
-            localStorage.setItem('tempUser', JSON.stringify({ username, password })); // Save for PIN setup
+            localStorage.setItem('tempUser', JSON.stringify({ username, password })); 
             window.location.href = 'create-pin.html'; // Redirect
         } else { showModalError(errorMessage, responseText || `Registration failed.`); }
     } catch (error) { console.error("Registration error:", error); showModalError(errorMessage, 'Registration failed. Cannot connect.'); }
@@ -1371,7 +1354,140 @@ function handleLogout() {
     window.location.href = 'index.html';
 }
 
-async function refreshDashboardData() {
+async function refreshDashboardData() { // This is for account.html
     await fetchBalance();
     await fetchTransactions(false); // Fetch for table AND chart
 }
+
+// --- ADDED: Self Transfer Functions ---
+
+/**
+ * Populates the "From" and "To" dropdowns in the self-transfer modal
+ * using the globally cached userAccountsCache.
+ */
+function populateSelfTransferAccounts() {
+    const sourceSelect = document.getElementById('sourceAccount');
+    const destSelect = document.getElementById('destinationAccount');
+    if (!sourceSelect || !destSelect) return;
+
+    // Clear existing options (except the placeholder at index 0)
+    sourceSelect.length = 1; 
+    destSelect.length = 1;
+
+    if (userAccountsCache.length === 0) {
+        console.warn("User accounts cache is empty. Cannot populate self-transfer dropdowns.");
+        return;
+    }
+
+    userAccountsCache.forEach(account => {
+        // Use last 4 digits of account number for clarity
+        const accNumStr = String(account.accountNumber || 'XXXX');
+        const lastFour = accNumStr.slice(-4);
+        const optionText = `${account.bank.name} - Acct: ...${lastFour} (${formatCurrency(account.balance)})`;
+        
+        const sourceOption = new Option(optionText, account.id);
+        const destOption = new Option(optionText, account.id);
+        
+        sourceSelect.add(sourceOption);
+        destSelect.add(destOption);
+    });
+
+    // Set up listeners to prevent selecting the same account
+    sourceSelect.onchange = () => filterDestinationAccounts(sourceSelect, destSelect);
+    destSelect.onchange = () => filterDestinationAccounts(destSelect, sourceSelect); // Filter source if dest changes
+}
+
+/**
+ * Helper function to disable the selected account in the *other* dropdown
+ * to prevent transferring to the same account.
+ * @param {HTMLSelectElement} changedSelect - The dropdown that was just changed.
+ *WELCOME: "Welcome, Vedant! 👋"
+ * @param {HTMLSelectElement} targetSelect - The *other* dropdown to update.
+ */
+function filterDestinationAccounts(changedSelect, targetSelect) {
+     if (!changedSelect || !targetSelect) return; // Safety check
+     const selectedValue = changedSelect.value; // The ID of the selected account
+
+     // Loop through all options in the target dropdown
+     for (let i = 0; i < targetSelect.options.length; i++) {
+         // Disable the option if its value matches the selected value (and is not the placeholder)
+         targetSelect.options[i].disabled = (targetSelect.options[i].value === selectedValue && selectedValue !== "");
+     }
+     
+     // If the currently selected option in the target is now disabled, reset it to the placeholder
+     if (targetSelect.options[targetSelect.selectedIndex].disabled) {
+         targetSelect.selectedIndex = 0; 
+     }
+}
+
+/**
+ * Handles the submission of the self-transfer form.
+ * @param {Event} event - The form submission event.
+ */
+async function handleSelfTransferSubmit(event) {
+    event.preventDefault();
+    const errorDiv = document.getElementById('selfTransferError');
+    const submitButton = document.getElementById('submitSelfTransfer');
+    const sourceAccountId = document.getElementById('sourceAccount').value;
+    const destinationAccountId = document.getElementById('destinationAccount').value;
+    const amount = parseFloat(document.getElementById('selfTransferAmount').value);
+    const pin = document.getElementById('selfTransferPin').value;
+
+    hideModalError(errorDiv);
+
+    // --- Frontend Validation ---
+    if (!sourceAccountId || !destinationAccountId) {
+        showModalError(errorDiv, "Please select both source and destination accounts.");
+        return;
+    }
+    if (sourceAccountId === destinationAccountId) {
+        showModalError(errorDiv, "Source and destination accounts cannot be the same.");
+        return;
+    }
+    if (isNaN(amount) || amount <= 0) {
+         showModalError(errorDiv, "Please enter a valid positive amount.");
+         return;
+    }
+    if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+         showModalError(errorDiv, "Please enter your valid 4-digit PIN.");
+         return;
+    }
+    // --- End Validation ---
+
+    toggleSpinner(submitButton, true);
+
+    try {
+        // Call the backend endpoint
+        const response = await fetchSecure(`${ACCOUNT_API_URL}/self-transfer`, {
+            method: 'POST',
+            body: JSON.stringify({ sourceAccountId: Number(sourceAccountId), 
+                                   destinationAccountId: Number(destinationAccountId), 
+                                   amount, 
+                                   pin })
+        });
+
+        if (!response.ok) {
+            let errorMsg = await response.text() || 'Self-transfer failed.';
+            // Customize error messages based on common backend responses
+             if (response.status === 401 || errorMsg.toLowerCase().includes("invalid pin")) {
+                 errorMsg = "Incorrect PIN provided.";
+             } else if (errorMsg.toLowerCase().includes("insufficient funds")) {
+                 errorMsg = "Insufficient funds in the source account.";
+             }
+            throw new Error(errorMsg);
+        }
+
+        // --- Success ---
+        hideModal('selfTransferModal');
+        showToast("Self-transfer completed successfully!");
+        await fetchUserAccounts(); // Refresh dashboard balances and account list
+
+    } catch (error) {
+        console.error("Self-transfer error:", error);
+        showModalError(errorDiv, error.message);
+        // Error toast is not shown here, as the error is displayed inside the modal
+    } finally {
+        toggleSpinner(submitButton, false); // Re-enable button
+    }
+}
+// --- END: Self Transfer Functions ---

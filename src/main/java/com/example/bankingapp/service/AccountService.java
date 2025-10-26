@@ -202,6 +202,55 @@ public class AccountService {
         transactionRepository.save(senderTx);
         transactionRepository.save(recipientTx);
     }
+    // Inside AccountService.java
+
+@Transactional
+public void selfTransfer(String username, Long sourceAccountId, Long destinationAccountId, BigDecimal amount, String providedPin) {
+    // 1. Verify PIN first
+    verifyUserPin(username, providedPin);
+
+    // 2. Prevent transferring to the same account
+    if (sourceAccountId.equals(destinationAccountId)) {
+        throw new IllegalArgumentException("Source and destination accounts cannot be the same.");
+    }
+
+    // 3. Find and verify ownership of BOTH accounts
+    Account sourceAccount = findAccountByIdAndUsername(sourceAccountId, username); // Throws if not found or not owned
+    Account destinationAccount = findAccountByIdAndUsername(destinationAccountId, username); // Throws if not found or not owned
+
+    // 4. Check sufficient funds
+    if (sourceAccount.getBalance().compareTo(amount) < 0) {
+        throw new IllegalArgumentException("Insufficient funds in the source account.");
+    }
+
+    // 5. Perform the transfer
+    sourceAccount.setBalance(sourceAccount.getBalance().subtract(amount));
+    destinationAccount.setBalance(destinationAccount.getBalance().add(amount));
+
+    // 6. Save account changes
+    accountRepository.save(sourceAccount);
+    accountRepository.save(destinationAccount);
+
+    // 7. Record transactions for both accounts
+    String sourceDesc = "Self-transfer to Acc ending " + destinationAccount.getAccountNumber().substring(destinationAccount.getAccountNumber().length() - 4);
+    String destDesc = "Self-transfer from Acc ending " + sourceAccount.getAccountNumber().substring(sourceAccount.getAccountNumber().length() - 4);
+
+    Transaction sourceTx = new Transaction(TransactionType.TRANSFER, amount.negate(), sourceDesc, sourceAccount);
+    Transaction destTx = new Transaction(TransactionType.TRANSFER, amount, destDesc, destinationAccount);
+
+    transactionRepository.save(sourceTx);
+    transactionRepository.save(destTx);
+
+    // 8. Log the activity (User-level log)
+    User user = sourceAccount.getUser(); // Get user from one of the accounts
+    String logDesc = "Transferred " + formatCurrencyForLog(amount) + 
+                     " from Acc ending " + sourceAccount.getAccountNumber().substring(sourceAccount.getAccountNumber().length() - 4) +
+                     " to Acc ending " + destinationAccount.getAccountNumber().substring(destinationAccount.getAccountNumber().length() - 4);
+    ActivityLog logEntry = new ActivityLog(user, "SELF_TRANSFER", logDesc); 
+    activityLogRepository.save(logEntry);
+
+    logger.info("Self-transfer successful for user {}: {} from account {} to account {}", username, amount, sourceAccountId, destinationAccountId);
+}
 
     @Transactional
     public void payBill(String username, Long accountId, String billerName, BigDecimal amount, String providedPin) {
@@ -255,6 +304,8 @@ public class AccountService {
                        .map(AccountDto::new)
                        .collect(Collectors.toList());
     }
+
+
 
     // --- Helper methods ---
     // (findAccountByIdAndUsername, verifyUserPassword, verifyUserPin remain unchanged)

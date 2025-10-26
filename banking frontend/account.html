@@ -274,6 +274,32 @@
             /* Styling for the back is applied via .debit-card and specific elements inside */
         }
         /* --- END OF DEBIT CARD STYLES --- */
+        /* ... (at the end of your existing <style> block) ... */
+
+        /* --- STYLES FOR DROPDOWN MENUS --- */
+/* Dropdown styling for light and dark modes */
+select {
+    background-color: #f9fafb;
+    color: #111827;
+    color-scheme: light;
+}
+
+.dark select {
+    background-color: rgba(55, 65, 81, 0.5);
+    color: #e2e8f0;
+    color-scheme: dark;
+}
+
+select option {
+    background-color: #ffffff;
+    color: #111827;
+}
+
+.dark select option {
+    background-color: #1e293b;
+    color: #e2e8f0;
+}
+
     </style>
 </head>
 <body class="font-sans text-bank-text-main bg-bank-bg dark:text-bank-text-main-dark dark:bg-bank-bg-dark relative min-h-screen">

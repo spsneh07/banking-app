@@ -34,6 +34,7 @@ import com.example.bankingapp.dto.PasswordChangeRequest;
 import com.example.bankingapp.dto.PaymentRequest;
 import com.example.bankingapp.dto.PinSetupRequest;
 import com.example.bankingapp.dto.ProfileUpdateRequest;
+import com.example.bankingapp.dto.SelfTransferRequest;
 import com.example.bankingapp.dto.TransferRequest;
 import com.example.bankingapp.dto.UserDto;
 import com.example.bankingapp.model.Account;
@@ -87,6 +88,32 @@ public class AccountController {
             return ResponseEntity.status(500).body("Error fetching accounts");
         }
     }
+    // Inside AccountController.java
+
+@PostMapping("/self-transfer")
+public ResponseEntity<?> performSelfTransfer(@Valid @RequestBody SelfTransferRequest request) {
+    try {
+        String username = getAuthenticatedUsername();
+        accountService.selfTransfer(
+            username,
+            request.getSourceAccountId(),
+            request.getDestinationAccountId(),
+            request.getAmount(),
+            request.getPin()
+        );
+        return ResponseEntity.ok("Self-transfer successful.");
+    } catch (IllegalArgumentException | IllegalStateException e) {
+        // Bad requests from user input/validation
+        return ResponseEntity.badRequest().body(e.getMessage());
+    } catch (BadCredentialsException e) {
+         // Specific handling for incorrect PIN
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid PIN.");
+    } catch (Exception e) {
+        // Log unexpected errors
+        // logger.error("Error during self-transfer for user {}: {}", getAuthenticatedUsername(), e.getMessage(), e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An internal error occurred during the transfer.");
+    }
+}
 @PostMapping("/create")
     public ResponseEntity<?> createAccount(@Valid @RequestBody CreateAccountRequest request) {
         try {

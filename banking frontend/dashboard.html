@@ -9,42 +9,37 @@
     
     <script>
         tailwind.config = {
-            darkMode: 'class', // Crucial: Enables toggling via <html class="dark">
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
                     colors: {
-                        // Base Palette (Shared)
-                        'bank-primary': '#6366f1', // Indigo-500
-                        'bank-primary-hover': '#4f46e5', // Indigo-600
-                        'bank-success': '#10b981', // Emerald-500
-                        'bank-danger': '#ef4444', // Red-500
-                        'bank-warning': '#f59e0b', // Amber-500
-                        'bank-info': '#06b6d4', // Cyan-500
-
-                        // Light Mode (Default)
-                        'bank-bg': '#f9fafb',        // gray-50 (Page Background)
-                        'bank-card': 'rgba(255, 255, 255, 0.8)', // white glass
+                        'bank-primary': '#6366f1',
+                        'bank-primary-hover': '#4f46e5',
+                        'bank-success': '#10b981',
+                        'bank-danger': '#ef4444',
+                        'bank-warning': '#f59e0b',
+                        'bank-info': '#06b6d4',
+                        'bank-bg': '#f9fafb',
+                        'bank-card': 'rgba(255, 255, 255, 0.8)',
                         'bank-nav': 'rgba(255, 255, 255, 0.8)',
                         'bank-modal': '#ffffff',
-                        'bank-text-main': '#111827', // gray-900 (Main Text)
-                        'bank-text-muted': '#6b7280',// gray-500 (Subtle Text)
-                        'bank-border': '#e5e7eb',    // gray-200 (Borders)
-                        'bank-input-bg': '#f9fafb',   // gray-50
-                        'bank-input-border': '#d1d5db',// gray-300
-                        'bank-input-text': '#111827', // gray-900
-
-                        // Dark Mode (via dark: prefix)
+                        'bank-text-main': '#111827',
+                        'bank-text-muted': '#6b7280',
+                        'bank-border': '#e5e7eb',
+                        'bank-input-bg': '#f9fafb',
+                        'bank-input-border': '#d1d5db',
+                        'bank-input-text': '#111827',
                         'bank-bg-dark': '#0f172a',
                         'bank-card-dark': 'rgba(15, 23, 42, 0.8)',
                         'bank-nav-dark': 'rgba(15, 23, 42, 0.8)',
                         'bank-modal-dark': 'rgba(30, 41, 59, 0.95)',
-                        'bank-text-main-dark': '#e2e8f0',   // slate-200
-                        'bank-text-muted-dark': '#94a3b8', // slate-400
-                        'bank-border-dark': '#374151',   // gray-700
-                        'bank-input-bg-dark': 'rgba(55, 65, 81, 0.5)', // gray-700/50
-                        'bank-input-border-dark': '#4b5563',// gray-600
-                        'bank-input-text-dark': '#e2e8f0', // slate-200
+                        'bank-text-main-dark': '#e2e8f0',
+                        'bank-text-muted-dark': '#94a3b8',
+                        'bank-border-dark': '#374151',
+                        'bank-input-bg-dark': 'rgba(55, 65, 81, 0.5)',
+                        'bank-input-border-dark': '#4b5563',
+                        'bank-input-text-dark': '#e2e8f0',
                     },
                     animation: {
                         'float': 'float 6s ease-in-out infinite',
@@ -62,11 +57,9 @@
             }
         }
 
-        // CORRECTED Initial Theme script
         function applyInitialTheme() {
             const theme = localStorage.getItem('theme') || 'system';
             const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            
             if (theme === 'dark' || (theme === 'system' && systemPrefersDark)) {
                 document.documentElement.classList.add('dark');
             } else {
@@ -77,107 +70,81 @@
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-
-        /* --- Base HTML/Body Styles (Responsive) --- */
-        html {
-            scroll-behavior: smooth;
-            background-color: #f9fafb; /* bank-bg */
-        }
-        html.dark {
-            background-color: #0f172a; /* bank-bg-dark */
-        }
-        body {
-            background: linear-gradient(135deg, #f0f5ff 0%, #e6e9f0 100%);
-            background-attachment: fixed;
-            position: relative;
-        }
-        .dark body {
-            background: linear-gradient(135deg, #0a0e1a 0%, #1e1b4b 50%, #0f172a 100%);
-            background-attachment: fixed;
-        }
-        
-        /* Grid Overlay (dark mode only) */
+        html { scroll-behavior: smooth; background-color: #f9fafb; }
+        html.dark { background-color: #0f172a; }
+        body { background: linear-gradient(135deg, #f0f5ff 0%, #e6e9f0 100%); background-attachment: fixed; position: relative; }
+        .dark body { background: linear-gradient(135deg, #0a0e1a 0%, #1e1b4b 50%, #0f172a 100%); background-attachment: fixed; }
         body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(99, 102, 241, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(99, 102, 241, 0.05) 1px, transparent 1px); background-size: 50px 50px; pointer-events: none; z-index: 0; opacity: 0; transition: opacity 0.3s; }
         .dark body::before { opacity: 1; }
-        
-        /* Orbs (dark mode only) */
         .glow-orb { position: fixed; border-radius: 50%; filter: blur(100px); opacity: 0; pointer-events: none; animation: float 8s ease-in-out infinite; z-index: 0; transition: opacity 0.3s; }
         .dark .glow-orb { opacity: 0.3; }
         .orb-1 { width: 400px; height: 400px; background: radial-gradient(circle, #6366f1, transparent); top: -200px; right: -200px; animation-delay: -2s; }
         .orb-2 { width: 300px; height: 300px; background: radial-gradient(circle, #8b5cf6, transparent); bottom: -150px; left: -150px; animation-delay: -6s; }
         @keyframes float { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-30px) scale(1.1); } }
-        
-        /* Glass Card (responsive) */
-        .glass-card { 
-            background: rgba(255, 255, 255, 0.8); /* bank-card */
-            backdrop-filter: blur(20px) saturate(180%); 
-            border: 1px solid rgba(229, 231, 235, 0.7); /* bank-border */
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.01), 0 2px 4px -2px rgba(0, 0, 0, 0.01); /* Light shadow */
-        }
-        .dark .glass-card { 
-            background: rgba(15, 23, 42, 0.8); /* bank-card-dark */
-            border: 1px solid rgba(148, 163, 184, 0.15);
-            box-shadow: none;
-        }
-        .glass-card:hover {
-             border-color: rgba(99, 102, 241, 0.3); /* bank-primary */
-        }
-        .dark .glass-card:hover {
-             background: rgba(15, 23, 42, 0.85);
-             border-color: rgba(99, 102, 241, 0.3);
-        }
-
-        /* Nav Glass (responsive) */
-        .nav-glass { 
-            background: rgba(255, 255, 255, 0.8); /* bank-nav */
-            backdrop-filter: blur(20px) saturate(180%); 
-            border-bottom: 1px solid #e5e7eb; /* bank-border */
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05); /* Light shadow */
-        }
-        .dark .nav-glass { 
-            background: rgba(15, 23, 42, 0.8); /* bank-nav-dark */
-            border-bottom: 1px solid rgba(148, 163, 184, 0.1); 
-            box-shadow: none;
-        }
-        
-        /* Bank Card (responsive) */
-        .bank-card {
-            background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
-            border: 1px solid #e5e7eb; /* bank-border */
-            position: relative;
-            overflow: hidden;
-            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.03), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
-        }
-        .dark .bank-card {
-            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            box-shadow: none;
-        }
+        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(229, 231, 235, 0.7); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.01), 0 2px 4px -2px rgba(0, 0, 0, 0.01); }
+        .dark .glass-card { background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(148, 163, 184, 0.15); box-shadow: none; }
+        .glass-card:hover { border-color: rgba(99, 102, 241, 0.3); }
+        .dark .glass-card:hover { background: rgba(15, 23, 42, 0.85); border-color: rgba(99, 102, 241, 0.3); }
+        .nav-glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px) saturate(180%); border-bottom: 1px solid #e5e7eb; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05); }
+        .dark .nav-glass { background: rgba(15, 23, 42, 0.8); border-bottom: 1px solid rgba(148, 163, 184, 0.1); box-shadow: none; }
+        .bank-card { background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%); border: 1px solid #e5e7eb; position: relative; overflow: hidden; transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.03), 0 4px 6px -4px rgba(0, 0, 0, 0.03); }
+        .dark .bank-card { background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1px solid rgba(99, 102, 241, 0.2); box-shadow: none; }
         .bank-card::before { content: ''; position: absolute; top: -50%; right: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(99, 102, 241, 0.05), transparent 70%); transition: transform 0.6s ease; z-index: 0; }
         .dark .bank-card::before { background: radial-gradient(circle, rgba(99, 102, 241, 0.15), transparent 70%); }
         .bank-card:hover::before { transform: translate(-25%, -25%); }
-        .bank-card:hover {
-            border-color: #a5b4fc; /* indigo-300 */
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
-        }
-        .dark .bank-card:hover {
-            border-color: rgba(99, 102, 241, 0.5);
-            box-shadow: 0 25px 50px rgba(99, 102, 241, 0.25);
-        }
+        .bank-card:hover { border-color: #a5b4fc; transform: translateY(-8px) scale(1.02); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1); }
+        .dark .bank-card:hover { border-color: rgba(99, 102, 241, 0.5); box-shadow: 0 25px 50px rgba(99, 102, 241, 0.25); }
         .bank-card > * { position: relative; z-index: 1; }
-
-        /* Gradient Text (responsive) */
         .gradient-text { color: #1f2937; }
         .dark .gradient-text { background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #06b6d4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        
         .pulse-glow { animation: glow 2s ease-in-out infinite; }
-        /* Only glow in dark mode */
         html:not(.dark) .pulse-glow { animation: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); }
+
+        select {
+            background-color: #f9fafb;
+            color: #111827;
+            color-scheme: light;
+        }
+
+        .dark select {
+            background-color: rgba(55, 65, 81, 0.5);
+            color: #e2e8f0;
+            color-scheme: dark;
+        }
+
+        select option {
+            background-color: #ffffff;
+            color: #111827;
+        }
+
+        .dark select option {
+            background-color: #1e293b;
+            color: #e2e8f0;
+        }
+
+        .input-glow {
+            transition: all 0.3s ease;
+        }
+
+        .input-glow:focus {
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .dark .input-glow:focus {
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        .modal-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+        }
+
+        .dark .modal-card {
+            background: rgba(30, 41, 59, 0.95);
+        }
     </style>
 </head>
-<body class="font-sans text-bank-text-main bg-bank-bg dark:text-bank-dark-text dark:bg-bank-bg-dark min-h-screen">
+<body class="font-sans text-bank-text-main bg-bank-bg dark:text-bank-text-main-dark dark:bg-bank-bg-dark min-h-screen">
 
     <div class="glow-orb orb-1"></div>
     <div class="glow-orb orb-2"></div>
@@ -187,7 +154,8 @@
             <div class="flex items-center justify-between h-20">
                 <a href="dashboard.html" class="flex items-center space-x-3 group">
                     <div class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center transform group-hover:scale-110 transition-transform duration-300 pulse-glow">
-                        <i class="bi bi-bank2 text-2xl text-white"></i> </div>
+                        <i class="bi bi-bank2 text-2xl text-white"></i>
+                    </div>
                     <span class="text-2xl font-bold gradient-text hidden sm:block">Unified Banking</span>
                 </a>
 
@@ -195,7 +163,6 @@
                     <button id="theme-toggle" type="button" class="p-3 rounded-xl glass-card hover:bg-gray-100 dark:hover:bg-indigo-600/20 transition-all duration-300 transform hover:scale-110 text-bank-text-muted dark:text-slate-300">
                         <i id="theme-toggle-icon" class="bi text-xl"></i>
                     </button>
-                    
                     <button id="logoutButton" type="button" class="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl font-semibold text-white transition-all duration-300 transform hover:scale-105 shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50">
                         <i class="bi bi-box-arrow-right mr-2"></i>Logout
                     </button>
@@ -208,7 +175,7 @@
         <header class="mb-12 animate-slide-down">
             <div class="glass-card rounded-3xl p-8 sm:p-10">
                 <h1 class="text-4xl sm:text-5xl font-black mb-3 text-bank-text-main dark:text-white">
-                    Welcome back, <span id="username-display" class="gradient-text">User</span>! 
+                    Welcome back, <span id="username-display" class="gradient-text">User</span>!
                 </h1>
                 <p class="text-xl text-bank-text-muted dark:text-slate-400">Manage your connected bank accounts seamlessly</p>
                 
@@ -252,6 +219,13 @@
             </div>
         </header>
 
+        <div class="mb-8 text-center sm:text-right">
+             <button id="showSelfTransferModalBtn" type="button" 
+                     class="px-6 py-3 text-white bg-gradient-to-r from-cyan-600 to-sky-600 hover:from-cyan-700 hover:to-sky-700 rounded-xl font-semibold transform hover:scale-105 transition-all duration-300 shadow-lg shadow-cyan-500/30">
+                 <i class="bi bi-arrow-left-right mr-2"></i>Self Transfer
+             </button>
+        </div>
+
         <section class="mb-16">
             <div class="flex items-center justify-between mb-6">
                 <h2 class="text-3xl font-bold flex items-center text-bank-text-main dark:text-white">
@@ -275,7 +249,7 @@
                         <p class="text-xl text-bank-text-muted dark:text-slate-400">Loading your accounts...</p>
                     </div>
                 </div>
-                 </div>
+            </div>
         </section>
 
         <section>
@@ -287,11 +261,54 @@
             </div>
             
             <div id="availableBankList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                </div>
+            </div>
         </section>
     </div>
     
-    <div id="toastContainer" class="fixed top-24 right-5 z-50 space-y-3 max-w-md"></div>
+    <div id="toastContainer" class="fixed top-24 right-5 z-[100] space-y-3 max-w-md"></div>
+    <div id="modalBackdrop" class="fixed inset-0 bg-gray-900/80 dark:bg-black/80 backdrop-blur-sm z-[60] hidden"></div>
+
+    <div id="selfTransferModal" class="fixed inset-0 z-[70] flex items-center justify-center p-4 hidden">
+        <div class="modal-card rounded-3xl shadow-2xl w-full max-w-md animate-slide-up">
+            <form id="selfTransferForm">
+                <div class="flex items-center justify-between p-6 border-b border-bank-border dark:border-slate-700">
+                    <h3 class="text-2xl font-bold text-bank-text-main dark:text-white">Transfer Between Your Accounts</h3>
+                    <button type="button" class="modal-close-btn text-bank-text-muted dark:text-slate-400 hover:text-bank-text-main dark:hover:text-white text-3xl leading-none transition-colors">&times;</button>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div id="selfTransferError" class="hidden p-4 text-sm text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900/30 border border-red-500/30 rounded-xl"></div>
+                    
+                    <div>
+                        <label for="sourceAccount" class="block text-sm font-medium text-bank-text-muted dark:text-slate-400 mb-2">From Account</label>
+                        <select id="sourceAccount" class="w-full px-4 py-3 bg-bank-input-bg dark:bg-bank-input-bg-dark border border-bank-input-border dark:border-bank-input-border-dark rounded-xl text-bank-input-text dark:text-bank-input-text-dark focus:outline-none focus:border-indigo-500 input-glow" required>
+                            <option value="">Select Source Account</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="destinationAccount" class="block text-sm font-medium text-bank-text-muted dark:text-slate-400 mb-2">To Account</label>
+                        <select id="destinationAccount" class="w-full px-4 py-3 bg-bank-input-bg dark:bg-bank-input-bg-dark border border-bank-input-border dark:border-bank-input-border-dark rounded-xl text-bank-input-text dark:text-bank-input-text-dark focus:outline-none focus:border-indigo-500 input-glow" required>
+                             <option value="">Select Destination Account</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="selfTransferAmount" class="block text-sm font-medium text-bank-text-muted dark:text-slate-400 mb-2">Amount (₹)</label>
+                        <input type="number" id="selfTransferAmount" class="w-full px-4 py-3 bg-bank-input-bg dark:bg-bank-input-bg-dark border border-bank-input-border dark:border-bank-input-border-dark rounded-xl text-bank-input-text dark:text-bank-input-text-dark focus:outline-none focus:border-indigo-500 input-glow" min="0.01" step="0.01" placeholder="1000.00" required>
+                    </div>
+
+                    <div>
+                        <label for="selfTransferPin" class="block text-sm font-medium text-bank-text-muted dark:text-slate-400 mb-2">Your 4-Digit PIN</label>
+                        <input type="password" id="selfTransferPin" class="w-full px-4 py-3 bg-bank-input-bg dark:bg-bank-input-bg-dark border border-bank-input-border dark:border-bank-input-border-dark rounded-xl text-bank-input-text dark:text-bank-input-text-dark focus:outline-none focus:border-indigo-500 input-glow" required maxlength="4" pattern="\d{4}" title="PIN must be 4 digits." inputmode="numeric">
+                    </div>
+                </div>
+                <div class="flex items-center justify-end p-6 space-x-3 border-t border-bank-border dark:border-slate-700">
+                    <button type="button" class="modal-close-btn px-6 py-3 text-bank-text-muted dark:text-slate-300 bg-transparent hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl text-sm transition-colors">Close</button>
+                    <button id="submitSelfTransfer" type="submit" class="px-6 py-3 text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 font-semibold rounded-xl text-sm transform hover:scale-105 shadow-lg shadow-indigo-500/30">Confirm Transfer</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script src="app.js"></script>
 </body>
