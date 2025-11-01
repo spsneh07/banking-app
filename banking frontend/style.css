@@ -358,23 +358,7 @@ h1, h2, h3, h4, h5, h6 {
     }
 }
 
-/* 10. Responsive Adjustments */
-@media (max-width: 1024px) {
-    .balance-amount {
-        @apply text-3xl;
-    }
-}
-
-@media (max-width: 640px) {
-    .bank-card {
-        @apply p-4;
-    }
-    
-    .balance-amount {
-        @apply text-2xl;
-    }
-
-    /* --- Add this to your main stylesheet --- */
+/* --- 10. BALANCE TOGGLE STYLES (MOVED HERE) --- */
 
 /* Style the new toggle button */
 #dashboard-balance-toggle {
@@ -396,4 +380,24 @@ body.balances-hidden .real-balance {
 body.balances-hidden .hidden-balance {
     display: inline;
 }
+/* --- END OF TOGGLE STYLES --- */
+
+
+/* 11. Responsive Adjustments */
+@media (max-width: 1024px) {
+    .balance-amount {
+        @apply text-3xl;
+    }
+}
+
+@media (max-width: 640px) {
+    .bank-card {
+        @apply p-4;
+    }
+    
+    .balance-amount {
+        @apply text-2xl;
+    }
+    
+    /* --- REMOVED DUPLICATE STYLES FROM HERE --- */
 }

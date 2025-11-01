@@ -30,6 +30,7 @@ public class UserDto {
         // --- THIS IS THE FIX ---
         // We now call the plural .getAccounts() method
         this.accounts = user.getAccounts();
+        
         // -----------------------
     }
 }

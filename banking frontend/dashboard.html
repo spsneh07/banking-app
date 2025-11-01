@@ -142,9 +142,28 @@
         .dark .modal-card {
             background: rgba(30, 41, 59, 0.95);
         }
+        
+        /* --- BALANCE TOGGLE STYLES --- */
+        #dashboard-balance-toggle {
+            cursor: pointer;
+        }
+        .real-balance {
+            display: inline;
+        }
+        .hidden-balance {
+            display: none;
+        }
+        body.balances-hidden .real-balance {
+            display: none;
+        }
+        body.balances-hidden .hidden-balance {
+            display: inline;
+        }
+        /* --- END TOGGLE STYLES --- */
     </style>
 </head>
-<body class="font-sans text-bank-text-main bg-bank-bg dark:text-bank-text-main-dark dark:bg-bank-bg-dark min-h-screen">
+
+<body class="font-sans text-bank-text-main bg-bank-bg dark:text-bank-text-main-dark dark:bg-bank-bg-dark min-h-screen balances-hidden">
 
     <div class="glow-orb orb-1"></div>
     <div class="glow-orb orb-2"></div>
@@ -196,12 +215,16 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-bank-text-muted dark:text-slate-400 text-sm mb-1">Total Balance</p>
-                                <p class="text-3xl font-bold gradient-text" id="total-balance">...</p>
+                                <p class="text-3xl font-bold gradient-text" id="total-balance">
+                                    </p>
                             </div>
-                            <div class="w-14 h-14 bg-purple-100 dark:bg-purple-600/20 rounded-xl flex items-center justify-center">
-                                <i class="bi bi-currency-rupee text-2xl text-purple-600 dark:text-purple-400"></i>
+
+                            <button id="dashboard-balance-toggle" title="Show Balances" 
+                                    class="w-14 h-14 bg-purple-100 dark:bg-purple-600/20 rounded-xl flex items-center justify-center 
+                                           text-purple-600 dark:text-purple-400 hover:bg-purple-200 dark:hover:bg-purple-600/30 transition-colors">
+                                <i class="bi bi-eye-slash-fill text-2xl"></i>
+                            </button>
                             </div>
-                        </div>
                     </div>
                     
                     <div class="glass-card rounded-2xl p-5 hover:scale-105 transition-transform duration-300">
@@ -261,7 +284,7 @@
             </div>
             
             <div id="availableBankList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            </div>
+                </div>
         </section>
 
         <section class="mt-16">
@@ -278,7 +301,40 @@
         </div> 
     
     <div id="toastContainer" class="fixed top-24 right-5 z-[100] space-y-3 max-w-md"></div>
+    
     <div id="modalBackdrop" class="fixed inset-0 bg-gray-900/80 dark:bg-black/80 backdrop-blur-sm z-[60] hidden"></div>
+
+    <div id="addBankModal" class="fixed inset-0 z-[70] flex items-center justify-center p-4 hidden">
+        <div class="modal-card rounded-3xl shadow-2xl w-full max-w-md animate-slide-up">
+            <form id="addBankForm">
+                <div class="flex items-center justify-between p-6 border-b border-bank-border dark:border-slate-700">
+                    <h3 class="text-2xl font-bold text-bank-text-main dark:text-white">Add Bank Account</h3>
+                    <button type="button" class="modal-close-btn text-bank-text-muted dark:text-slate-400 hover:text-bank-text-main dark:hover:text-white text-3xl leading-none transition-colors">&times;</button>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div id="addBankError" class="hidden p-4 text-sm text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900/30 border border-red-500/30 rounded-xl"></div>
+                    
+                    <input type="hidden" id="addBankId">
+                    <input type="hidden" id="addBankName">
+
+                    <div>
+                        <label class="block text-sm font-medium text-bank-text-muted dark:text-slate-400 mb-2">Bank</label>
+                        <p id="addBankNameDisplay" class="w-full px-4 py-3 bg-gray-100 dark:bg-slate-800 rounded-xl text-bank-text-main dark:text-white font-semibold"></p>
+                    </div>
+
+                    <div>
+                        <label for="addBankNickname" class="block text-sm font-medium text-bank-text-muted dark:text-slate-400 mb-2">Account Nickname</label>
+                        <input type="text" id="addBankNickname" class="w-full px-4 py-3 bg-bank-input-bg dark:bg-bank-input-bg-dark border border-bank-input-border dark:border-bank-input-border-dark rounded-xl text-bank-input-text dark:text-bank-input-text-dark focus:outline-none focus:border-indigo-500 input-glow" required placeholder="e.g., Salary Account, Savings">
+                    </div>
+
+                </div>
+                <div class="flex items-center justify-end p-6 space-x-3 border-t border-bank-border dark:border-slate-700">
+                    <button type="button" class="modal-close-btn px-6 py-3 text-bank-text-muted dark:text-slate-300 bg-transparent hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl text-sm transition-colors">Cancel</button>
+                    <button id="submitAddBank" type="submit" class="px-6 py-3 text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 font-semibold rounded-xl text-sm transform hover:scale-105 shadow-lg shadow-indigo-500/30">Confirm & Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <div id="selfTransferModal" class="fixed inset-0 z-[70] flex items-center justify-center p-4 hidden">
         <div class="modal-card rounded-3xl shadow-2xl w-full max-w-md animate-slide-up">
@@ -315,7 +371,7 @@
                     </div>
                 </div>
                 <div class="flex items-center justify-end p-6 space-x-3 border-t border-bank-border dark:border-slate-700">
-                    <button type="button" class="modal-close-btn px-6 py-3 text-bank-text-muted dark:text-slate-300 bg-transparent hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl text-sm transition-colors">Close</button>
+                    <button type="button" class="modal-close-btn px-6 py-3 text-bank-text-muted dark:text-slate-300 bg-transparent hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl text-sm transition-colors">Cancel</button>
                     <button id="submitSelfTransfer" type="submit" class="px-6 py-3 text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 font-semibold rounded-xl text-sm transform hover:scale-105 shadow-lg shadow-indigo-500/30">Confirm Transfer</button>
                 </div>
             </form>
@@ -351,6 +407,7 @@
             </form>
         </div>
     </div>
+    
     <script src="app.js"></script>
 </body>
 </html>

@@ -44,7 +44,7 @@ function formatCurrency(amount) {
 // --- 1. HELPER FUNCTION MOVED HERE (GLOBAL SCOPE) ---
 /**
  * Updates the balance display and eye icon based on the 
- * 'isBalanceVisible' state.
+ * 'isBalanceVisible' state. (For account.html)
  */
 function updateBalanceDisplay() {
     const balanceDisplay = document.getElementById('accountBalanceDisplay');
@@ -69,7 +69,8 @@ function updateBalanceDisplay() {
 
 
 // --- Main execution logic ---
-document.addEventListener('DOMContentLoaded', () => {
+// --- === FIX #1: Make the event listener ASYNC === ---
+document.addEventListener('DOMContentLoaded', async () => {
     const page = getPageName();
 
     // Attach event listeners based on the current page
@@ -87,7 +88,8 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (page === 'account.html') {
         checkAuth(); // Redirect if not logged in
         if (localStorage.getItem('authToken')) { // Proceed if logged in
-            setupAccountDashboard();
+            // --- === FIX #2: AWAIT the setup function === ---
+            await setupAccountDashboard(); // This ensures localStorage is set before tabs are clicked
         }
     }
 
@@ -112,22 +114,43 @@ function setupPortalDashboard() {
     document.getElementById('selfTransferForm')?.addEventListener('submit', handleSelfTransferSubmit);
     document.querySelector('#selfTransferModal .modal-close-btn')?.addEventListener('click', () => hideModal('selfTransferModal'));
 
-    // --- ADDED: Deactivate Account Modal Listeners ---
+    // --- Deactivate Account Modal Listeners ---
     document.getElementById('showDeactivateModalBtn')?.addEventListener('click', () => {
         showModal('deactivateModal');
     });
     document.getElementById('deactivateForm')?.addEventListener('submit', handleDeactivateSubmit);
     document.querySelector('#deactivateModal .modal-close-btn')?.addEventListener('click', () => hideModal('deactivateModal'));
-    // --- END: Deactivate Account ---
+    
+    // --- ADD BANK MODAL LISTENERS ---
+    document.getElementById('addBankForm')?.addEventListener('submit', handleAddBankSubmit);
+    document.querySelector('#addBankModal .modal-close-btn')?.addEventListener('click', () => hideModal('addBankModal'));
+
+    // --- Dashboard Balance Toggle Listener ---
+    const toggleBtn = document.getElementById('dashboard-balance-toggle');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            document.body.classList.toggle('balances-hidden');
+            const icon = toggleBtn.querySelector('i');
+            const isHidden = document.body.classList.contains('balances-hidden');
+            if (isHidden) {
+                icon.className = 'bi bi-eye-slash-fill text-2xl';
+                toggleBtn.title = 'Show Balances';
+            } else {
+                icon.className = 'bi bi-eye-fill text-2xl';
+                toggleBtn.title = 'Hide Balances';
+            }
+        });
+    }
 }
 
 // --- Account Dashboard Setup ---
-function setupAccountDashboard() {
+// --- === FIX #3: Make this function ASYNC === ---
+async function setupAccountDashboard() {
     document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
 
     const urlParams = new URLSearchParams(window.location.search);
     const accountId = urlParams.get('id');
-    const bankName = urlParams.get('name');
+    const bankName = urlParams.get('name'); // This is the NICKNAME (e.g., "Savings")
 
     if (!accountId) {
         alert("No account selected. Redirecting to portal.");
@@ -135,16 +158,14 @@ function setupAccountDashboard() {
         return;
     }
 
-    // --- 2. LISTENER WAS FIXED HERE ---
-    // This listener is now correct and simple
+    // This listener is for the account.html page's balance toggle
     document.getElementById('toggleBalance')?.addEventListener('click', () => {
         isBalanceVisible = !isBalanceVisible; // Flip the state
         updateBalanceDisplay(); // Call the global helper
     });
-    // --- END OF FIX ---
 
     document.body.dataset.accountId = accountId; // Store accountId for later use
-    document.getElementById('bankNameDisplay').textContent = bankName || "Account Details";
+    document.getElementById('bankNameDisplay').textContent = bankName || "Account Details"; // Sets title to "Savings"
     const username = localStorage.getItem('username');
     if (username) {
         document.getElementById('username-display').textContent = username;
@@ -164,16 +185,12 @@ function setupAccountDashboard() {
             if (paneId === 'profile-pane') populateProfileForm();
             if (paneId === 'transactions-pane') fetchTransactions(true);
             if (paneId === 'overview-pane') fetchTransactions(false);
-            if (paneId === 'card-pane') loadCardDetails(); // <-- Card Loader
+            if (paneId === 'card-pane') loadCardDetails(); 
             if (paneId === 'activity-log-pane') { 
                 fetchActivityLogs(); 
             }
-            // No specific function for 'loan-pane' on click
         });
     });
-
-    // --- 3. DUPLICATE FUNCTION WAS DELETED FROM HERE ---
-
 
     // --- CARD FLIP LISTENER ---
     document.getElementById('debitCardFlipper')?.addEventListener('click', handleCardFlip);
@@ -190,7 +207,7 @@ function setupAccountDashboard() {
         });
     });
 
-    // Form Event Listeners (Toggles are handled via inline onclick in HTML)
+    // Form Event Listeners
     document.getElementById('depositForm')?.addEventListener('submit', handleDepositSubmit);
     document.getElementById('transferForm')?.addEventListener('submit', handleTransferSubmit);
     document.getElementById('payBillForm')?.addEventListener('submit', handlePayBillSubmit);
@@ -204,9 +221,10 @@ function setupAccountDashboard() {
     document.getElementById('verifyRecipientBtn')?.addEventListener('click', handleVerifyRecipient);
     
     // Initial Data Fetch
-    fetchUserDetails(); // This will now call populateProfileForm()
-    fetchBalance();
-    fetchTransactions(false);
+    // --- === FIX #4: AWAIT this call === ---
+    await fetchUserDetails(); // This now WAITS for localStorage to be set
+    fetchBalance(); // These can run after
+    fetchTransactions(false); // These can run after
 }
 
 // --- Theme & Modal UI Functions ---
@@ -238,14 +256,13 @@ function setupThemeToggle() {
         currentTheme = theme;
         localStorage.setItem('theme', theme);
 
-        // Re-render chart on theme change
         if (window.myTransactionChart && typeof window.myTransactionChart.destroy === 'function') {
             const currentPage = getPageName();
             if (currentPage === 'account.html') {
                 console.log("Destroying and re-rendering chart for theme change.");
                 window.myTransactionChart.destroy();
                 if(typeof fetchTransactions === 'function') {
-                    fetchTransactions(false); // This will call renderTransactionChart
+                    fetchTransactions(false);
                 }
             }
         }
@@ -283,22 +300,18 @@ function hideModal(modalId) {
         
         if (modalId === 'transferModal') resetTransferForm();
 
-        // --- ADDED: Reset for Self-Transfer Modal ---
         if (modalId === 'selfTransferModal') {
              const sourceSelect = document.getElementById('sourceAccount');
              const destSelect = document.getElementById('destinationAccount');
              if (sourceSelect) sourceSelect.selectedIndex = 0;
              if (destSelect) destSelect.selectedIndex = 0;
-             // Re-enable all options
              if (sourceSelect && destSelect) {
                  filterDestinationAccounts(sourceSelect, destSelect); 
                  filterDestinationAccounts(destSelect, sourceSelect);
              }
              hideModalError(document.getElementById('selfTransferError'));
         }
-        // --- END ADDITION ---
 
-        // --- ADDED: Reset for Deactivate Modal ---
         if (modalId === 'deactivateModal') {
             hideModalError(document.getElementById('deactivateError'));
             const btn = document.getElementById('confirmDeactivateBtn');
@@ -307,7 +320,13 @@ function hideModal(modalId) {
                 btn.textContent = 'Confirm Deactivation';
             }
         }
-        // --- END ADDITION ---
+        
+        if (modalId === 'addBankModal') {
+            hideModalError(document.getElementById('addBankError'));
+            document.getElementById('addBankId').value = '';
+            document.getElementById('addBankName').value = '';
+            document.getElementById('addBankNameDisplay').textContent = '';
+        }
 
         modal.querySelectorAll('[id$="Error"]').forEach(hideModalError);
     }
@@ -391,10 +410,8 @@ async function fetchSecure(url, options = {}) {
         
         if (response.status === 401 || response.status === 403) {
             const isPasswordCheck = url.includes('/set-pin') || url.includes('/change-password');
-            // --- ADDED: Include deactivate check ---
             const isDeactivateCheck = url.includes('/user/deactivate');
             if (isPasswordCheck || isDeactivateCheck) {
-            // --- END ADDITION ---
                 return response; 
             } else {
                 showToast("Session expired or unauthorized. Logging out.", true);
@@ -413,7 +430,10 @@ async function fetchSecure(url, options = {}) {
 async function fetchUserDetails() {
     const accountNumberDisplay = document.getElementById('userAccountNumber');
     const pageAccountId = document.body.dataset.accountId;
-    if (!accountNumberDisplay || !pageAccountId) return;
+    // Only run this if we are on the account.html page
+    if (getPageName() !== 'account.html' || !pageAccountId) {
+        return;
+    }
 
     try {
         const response = await fetchSecure(`${ACCOUNT_API_URL}/me`);
@@ -431,9 +451,8 @@ async function fetchUserDetails() {
             console.warn("Account number not found.");
         }
         
-        if (getPageName() === 'account.html') {
-            populateProfileForm();
-        }
+        // This function is only called from account.html, so we can just populate the form
+        populateProfileForm();
 
     } catch (error) {
         console.error('Error fetching user details:', error);
@@ -470,12 +489,8 @@ async function fetchBalance() {
         
         const balance = await response.json();
         
-        // --- MODIFICATION ---
         currentAccountBalance = balance; // Store the raw number
-        
-        // Call our global helper function to set the text
         updateBalanceDisplay();
-        // --- END MODIFICATION ---
 
     } catch (error) {
         console.error('Error fetching balance:', error);
@@ -514,7 +529,7 @@ async function fetchTransactions(tableOnly = false) {
         }
 
         if (!tableOnly && (getPageName() === 'account.html')) {
-            renderTransactionChart(transactions); // Render Income/Expense Doughnut
+            renderTransactionChart(transactions); 
         }
     } catch (error) {
         console.error('Error fetching transactions:', error);
@@ -576,23 +591,29 @@ function renderTransactionChart(transactions) {
 async function fetchUserAccounts() {
     const listEl = document.getElementById('userAccountList');
     const totalAccountsEl = document.getElementById('total-accounts');
-    const totalBalanceEl = document.getElementById('total-balance');
-    if (!listEl || !totalAccountsEl || !totalBalanceEl) return;
+    const totalBalanceEl = document.getElementById('total-balance'); // This is the p tag
+    
+    if (!listEl || !totalAccountsEl || !totalBalanceEl) {
+        console.error("Dashboard elements not found!");
+        return;
+    }
 
     totalAccountsEl.textContent = '...';
-    totalBalanceEl.textContent = '...';
+    totalBalanceEl.innerHTML = '<span class="real-balance">...</span><span class="hidden-balance">...</span>'; // For toggle
     const spinner = document.getElementById('accountsLoadingSpinner');
     if (spinner) spinner.classList.remove('hidden');
 
     try {
         const response = await fetchSecure(`${ACCOUNT_API_URL}/all`);
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
         
         const accounts = await response.json();
-        userAccountsCache = accounts; // <-- STORE accounts globally
+        userAccountsCache = accounts; // Store accounts globally
 
         if (spinner) spinner.classList.add('hidden');
-        listEl.innerHTML = '';
+        listEl.innerHTML = ''; // Clear the list
 
         let calculatedTotalBalance = 0;
         const numberOfAccounts = accounts.length;
@@ -600,34 +621,56 @@ async function fetchUserAccounts() {
         if (numberOfAccounts === 0) {
             listEl.innerHTML = `<div class="col-span-full text-center text-bank-text-muted dark:text-slate-400 glass-card rounded-3xl p-12">You haven't added any bank accounts yet.</div>`;
             totalAccountsEl.textContent = '0';
-            totalBalanceEl.textContent = formatCurrency(0);
-            userAccountsCache = []; // Ensure cache is empty
+            
+            // --- === "Too many stars" FIX === ---
+            totalBalanceEl.innerHTML = `
+                <span class="real-balance">${formatCurrency(0)}</span>
+                <span class="hidden-balance">₹ ******</span>
+            `;
+            // --- === END OF FIX === ---
+            
+            userAccountsCache = []; 
             return;
         }
 
         accounts.forEach(account => {
             calculatedTotalBalance += parseFloat(account.balance || 0);
             const formattedBalance = formatCurrency(account.balance);
-            const accNumStr = String(account.accountNumber || 'XXXX'); // Ensure string
+            const accNumStr = String(account.accountNumber || 'XXXX');
             const formattedAccountNumber = accNumStr.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
             
+            const displayName = account.nickname || account.bank.name; 
+            const subtitle = account.nickname ? account.bank.name : `Acct: ${formattedAccountNumber}`;
+            
             const cardHTML = `
-                <a href="account.html?id=${account.id}&name=${encodeURIComponent(account.bank.name)}"
+                <a href="account.html?id=${account.id}&name=${encodeURIComponent(displayName)}"
                    class="bank-card rounded-3xl p-6 block transition-all duration-300 ease-in-out relative group animate-slide-up">
                     <div class="relative z-10">
                         <div class="flex justify-between items-center mb-4">
-                            <h5 class="text-2xl font-bold tracking-tight text-bank-text-main dark:text-white group-hover:gradient-text transition-colors duration-300">${account.bank.name}</h5>
+                            <h5 class="text-2xl font-bold tracking-tight text-bank-text-main dark:text-white group-hover:gradient-text transition-colors duration-300">${displayName}</h5>
                             <i class="bi bi-arrow-right-circle text-bank-text-muted dark:text-slate-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 text-2xl transition-colors duration-300"></i>
                         </div>
-                        <p class="font-normal text-bank-text-muted dark:text-slate-400 mb-1">Acct: ${formattedAccountNumber}</p>
-                        <p class="text-4xl font-extrabold text-bank-text-main dark:text-white">${formattedBalance}</p>
+                        <p class="font-normal text-bank-text-muted dark:text-slate-400 mb-1">${subtitle}</p>
+                        
+                        <p class="text-4xl font-extrabold text-bank-text-main dark:text-white">
+                            <span class="real-balance">${formattedBalance}</span>
+                            <span class="hidden-balance">₹ ******</span>
+                        </p>
                     </div>
                 </a>`;
             listEl.insertAdjacentHTML('beforeend', cardHTML);
         });
 
         totalAccountsEl.textContent = numberOfAccounts;
-        totalBalanceEl.textContent = formatCurrency(calculatedTotalBalance);
+        
+        const totalBalanceFormatted = formatCurrency(calculatedTotalBalance);
+        
+        // --- === "Too many stars" FIX === ---
+        totalBalanceEl.innerHTML = `
+            <span class="real-balance">${totalBalanceFormatted}</span>
+            <span class="hidden-balance">₹ ******</span>
+        `;
+        // --- === END OF FIX === ---
 
     } catch (error) {
         console.error("Error fetching user accounts:", error);
@@ -635,9 +678,10 @@ async function fetchUserAccounts() {
         listEl.innerHTML = `<div class="col-span-full text-center text-red-500 glass-card rounded-3xl p-12">Error loading accounts. Please try again later.</div>`;
         totalAccountsEl.textContent = 'Error';
         totalBalanceEl.textContent = 'Error';
-        userAccountsCache = []; // Clear cache on error
+        userAccountsCache = []; 
     }
 }
+
 async function fetchAllBanks() {
     const listEl = document.getElementById('availableBankList');
     if (!listEl) return;
@@ -659,8 +703,8 @@ async function fetchAllBanks() {
                         <h5 class="mb-2 text-2xl font-bold tracking-tight text-bank-text-main dark:text-white">${bank.name}</h5>
                         <p class="font-normal text-bank-text-muted dark:text-slate-400 mb-4">Link this bank to your portal.</p>
                     </div>
-                    <button onclick="handleAddBank(event, ${bank.id}, '${bank.name}')"
-                            class="add-bank-btn mt-4 w-full text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 font-medium rounded-xl text-sm px-5 py-3 text-center transform hover:scale-105 transition-transform duration-300 shadow-lg shadow-indigo-500/30 relative z-10">
+                    <button onclick="openAddBankModal(${bank.id}, '${bank.name}')"
+                            class="add-bank-btn mt-4 w-full text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-7Example-700 font-medium rounded-xl text-sm px-5 py-3 text-center transform hover:scale-105 transition-transform duration-300 shadow-lg shadow-indigo-500/30 relative z-10">
                         Add Bank
                     </button>
                 </div>`;
@@ -671,36 +715,64 @@ async function fetchAllBanks() {
         listEl.innerHTML = `<div class="col-span-full text-center text-red-500 glass-card rounded-3xl p-12">Error loading available banks.</div>`;
     }
 }
-async function handleAddBank(event, bankId, bankName) {
-    const btn = event.target;
-    if(!btn) return;
+
+// --- Function to open the "Add Bank" modal ---
+function openAddBankModal(bankId, bankName) {
+    document.getElementById('addBankId').value = bankId;
+    document.getElementById('addBankName').value = bankName; 
+    document.getElementById('addBankNameDisplay').textContent = bankName;
+    hideModalError(document.getElementById('addBankError'));
+    showModal('addBankModal');
+}
+
+// --- Function to handle the "Add Bank" modal FORM SUBMISSION ---
+async function handleAddBankSubmit(event) {
+    event.preventDefault();
+    const btn = document.getElementById('submitAddBank');
+    const errorDiv = document.getElementById('addBankError');
+    hideModalError(errorDiv);
+
+    const bankId = document.getElementById('addBankId').value;
+    const bankName = document.getElementById('addBankName').value;
+    const nickname = document.getElementById('addBankNickname').value;
+    const placeholder = document.getElementById('addBankNickname').placeholder;
+
+    if (!nickname || nickname.trim() === "" || nickname === placeholder) {
+        showModalError(errorDiv, "Please enter a unique account nickname.");
+        return;
+    }
+
     toggleSpinner(btn, true);
     try {
-        // --- MODIFIED: Send bankId in the request body for /api/account/create ---
-        const response = await fetchSecure(`${ACCOUNT_API_URL}/create`, { 
+        const response = await fetchSecure(`${ACCOUNT_API_URL}/create`, {
             method: 'POST',
-            body: JSON.stringify({ bankId: bankId }) 
+            body: JSON.stringify({
+                bankId: bankId,
+                nickname: nickname
+            })
         });
-        // --- END MODIFICATION ---
 
         if (!response.ok) {
             let errorText = `Failed to add account. Status: ${response.status}`;
-            try { 
-                const backendError = await response.text(); 
-                if (backendError) errorText = backendError; 
+            try {
+                const backendError = await response.text();
+                if (backendError) errorText = backendError;
             } catch (e) {}
             throw new Error(errorText);
         }
-        showToast(`Successfully opened an account at ${bankName}!`);
-        await fetchUserAccounts(); // Refresh the list of user's accounts
+
+        hideModal('addBankModal'); 
+        showToast(`Successfully opened "${nickname}" at ${bankName}!`);
+        await fetchUserAccounts(); // Refresh the list
 
     } catch (error) {
-        showToast(error.message, true);
+        showModalError(errorDiv, error.message); 
         console.error("Error adding bank:", error);
     } finally {
         toggleSpinner(btn, false);
     }
 }
+
 
 // --- Form Handlers ---
 async function handleDepositSubmit(event) {
@@ -822,7 +894,6 @@ async function handlePayBillSubmit(event) {
     finally { toggleSpinner(submitButton, false); }
 }
 
-// --- ADDED: Deactivate Account Form Handler ---
 async function handleDeactivateSubmit(event) {
     event.preventDefault();
     const errorDiv = document.getElementById('deactivateError');
@@ -853,11 +924,9 @@ async function handleDeactivateSubmit(event) {
             throw new Error(errorMsg);
         }
 
-        // --- Success ---
         hideModal('deactivateModal');
-        showToast("Account deactivated. You will be logged out.", "success"); // Use 'success' type
+        showToast("Account deactivated. You will be logged out.", "success");
         
-        // Log out after 2 seconds
         setTimeout(() => {
             handleLogout();
         }, 2000);
@@ -865,12 +934,10 @@ async function handleDeactivateSubmit(event) {
     } catch (error) {
         console.error("Deactivate error:", error);
         showModalError(errorDiv, error.message);
-        toggleSpinner(submitButton, false); // Re-enable button
+        toggleSpinner(submitButton, false);
         submitButton.textContent = 'Confirm Deactivation';
     }
-    // No 'finally' block needed, spinner is handled in success/error
 }
-// --- END: Deactivate Account Handler ---
 
 // --- CARD FLIP LOGIC ---
 async function handleCardFlip() {
@@ -880,10 +947,8 @@ async function handleCardFlip() {
 
     if (!flipper || !accountId) return;
 
-    // 1. Flip the card
     flipper.classList.toggle('flipped');
 
-    // 2. If flipped to back side, fetch the CVV
     if (flipper.classList.contains('flipped') && cardCvv === '***') {
         display.textContent = '...'; 
         
@@ -895,10 +960,9 @@ async function handleCardFlip() {
             }
             
             const data = await response.json();
-            cardCvv = data.cvv; // Store the fetched CVV
+            cardCvv = data.cvv; 
             display.textContent = cardCvv;
 
-            // Clear the CVV after 15 seconds
             setTimeout(() => {
                 display.textContent = '***';
                 cardCvv = '***';
@@ -913,7 +977,6 @@ async function handleCardFlip() {
             showToast("Failed to retrieve CVV.", true);
         }
     } else if (!flipper.classList.contains('flipped')) {
-        // If flipped back to the front, reset
         display.textContent = '***'; 
     }
 }
@@ -928,7 +991,6 @@ async function loadCardDetails() {
     const loadingTextElement = loading.querySelector('p'); 
     const defaultLoadingText = 'Loading card status...';
 
-    // Reset UI to loading state
     loading.classList.remove('hidden');
     controls.classList.add('hidden');
     if (loadingTextElement) loadingTextElement.textContent = defaultLoadingText;
@@ -943,14 +1005,36 @@ async function loadCardDetails() {
         const card = await response.json();
         console.log('Card data received:', JSON.stringify(card, null, 2));
 
-        // --- 1. Populate the Visual Debit Card (FRONT) ---
-        document.getElementById('card-bank-name').textContent = document.getElementById('bankNameDisplay').textContent;
+
+        // --- === THIS IS THE FIX for the Bank Name Bug === ---
+        const pageAccountId = document.body.dataset.accountId;
+        
+        // 1. Try to get the real bank name from localStorage (which fetchUserDetails should have set)
+        let bankNameToDisplay = null; 
+        const userData = JSON.parse(localStorage.getItem('currentUser'));
+        
+        if (userData && userData.accounts) {
+            const currentAccount = userData.accounts.find(acc => acc.id == pageAccountId);
+            if (currentAccount && currentAccount.bank && currentAccount.bank.name) {
+                bankNameToDisplay = currentAccount.bank.name; // SUCCESS: Found "HDFC Bank", etc.
+            }
+        }
+        
+        // 2. If storage failed, fall back to the nickname from the URL (e.g., "Current")
+        if (!bankNameToDisplay) { 
+             const urlParams = new URLSearchParams(window.location.search);
+             bankNameToDisplay = urlParams.get('name') || "My Bank"; // Use "Current" or "Savings"
+        }
+        
+        document.getElementById('card-bank-name').textContent = bankNameToDisplay;
+        // --- === END OF FIX === ---
+
+
         const formattedNumber = card.cardNumber.replace(/(\d{4})/g, '$1 ').trim();
         document.getElementById('card-number').textContent = formattedNumber; 
         document.getElementById('card-holder-name').textContent = card.cardHolderName.toUpperCase();
-        document.getElementById('card-expiry-date').textContent = card.expiryDate; // Use the MM/YY string from the API
+        document.getElementById('card-expiry-date').textContent = card.expiryDate; 
 
-        // --- 2. Populate the Card Settings Box (Master Toggle) ---
         const statusText = document.getElementById('card-status-text');
         const toggleBtn = document.getElementById('card-toggle-btn');
         
@@ -966,7 +1050,6 @@ async function loadCardDetails() {
             toggleBtn.className = 'px-6 py-3 font-semibold rounded-xl text-sm transform hover:scale-105 transition-all duration-300 text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/30';
         }
 
-        // --- 3. Set the state of NEW Toggles ---
         const onlineToggle = document.getElementById('online-toggle-input');
         const internationalToggle = document.getElementById('international-toggle-input');
 
@@ -1029,10 +1112,8 @@ async function handleToggleCardStatus(event, type) {
         
         const updatedCard = await response.json();
         
-        // Re-run the load function to update the UI
         await loadCardDetails(); 
         
-        // --- Show Success Message ---
         let status = '';
         if (type === 'master') {
             status = updatedCard.active ? 'Unfrozen (Active)' : 'Frozen (Inactive)';
@@ -1042,7 +1123,6 @@ async function handleToggleCardStatus(event, type) {
             status = updatedCard.internationalTransactionsEnabled ? 'Enabled' : 'Disabled';
         }
         showToast(`${successAction} updated to: ${status}`);
-        // -----------------------------
 
     } catch (error) {
         console.error(`${type} toggle error:`, error);
@@ -1102,9 +1182,9 @@ async function handleLoanApplicationSubmit(event) {
         const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/loans/apply`, { 
             method: 'POST',
             body: JSON.stringify({ 
-                amount: amount,         
-                purpose: purpose,       
-                monthlyIncome: income   
+                amount: amount,          
+                purpose: purpose,        
+                monthlyIncome: income    
             }) 
         });
 
@@ -1490,7 +1570,6 @@ function populateSelfTransferAccounts() {
     const destSelect = document.getElementById('destinationAccount');
     if (!sourceSelect || !destSelect) return;
 
-    // Clear existing options (except the placeholder at index 0)
     sourceSelect.length = 1; 
     destSelect.length = 1;
 
@@ -1500,10 +1579,10 @@ function populateSelfTransferAccounts() {
     }
 
     userAccountsCache.forEach(account => {
-        // Use last 4 digits of account number for clarity
         const accNumStr = String(account.accountNumber || 'XXXX');
         const lastFour = accNumStr.slice(-4);
-        const optionText = `${account.bank.name} - Acct: ...${lastFour} (${formatCurrency(account.balance)})`;
+        const displayName = account.nickname || account.bank.name;
+        const optionText = `${displayName} (...${lastFour}) - ${formatCurrency(account.balance)}`;
         
         const sourceOption = new Option(optionText, account.id);
         const destOption = new Option(optionText, account.id);
@@ -1512,29 +1591,21 @@ function populateSelfTransferAccounts() {
         destSelect.add(destOption);
     });
 
-    // Set up listeners to prevent selecting the same account
     sourceSelect.onchange = () => filterDestinationAccounts(sourceSelect, destSelect);
-    destSelect.onchange = () => filterDestinationAccounts(destSelect, sourceSelect); // Filter source if dest changes
+    destSelect.onchange = () => filterDestinationAccounts(destSelect, sourceSelect); 
 }
 
 /**
- * Helper function to disable the selected account in the *other* dropdown
- * to prevent transferring to the same account.
- * @param {HTMLSelectElement} changedSelect - The dropdown that was just changed.
- *WELCOME: "Welcome, Vedant! 👋"
- * @param {HTMLSelectElement} targetSelect - The *other* dropdown to update.
+ * Helper function to disable the selected account in the *other* dropdown.
  */
 function filterDestinationAccounts(changedSelect, targetSelect) {
-     if (!changedSelect || !targetSelect) return; // Safety check
-     const selectedValue = changedSelect.value; // The ID of the selected account
+     if (!changedSelect || !targetSelect) return; 
+     const selectedValue = changedSelect.value; 
 
-     // Loop through all options in the target dropdown
      for (let i = 0; i < targetSelect.options.length; i++) {
-         // Disable the option if its value matches the selected value (and is not the placeholder)
          targetSelect.options[i].disabled = (targetSelect.options[i].value === selectedValue && selectedValue !== "");
      }
      
-     // If the currently selected option in the target is now disabled, reset it to the placeholder
      if (targetSelect.options[targetSelect.selectedIndex].disabled) {
          targetSelect.selectedIndex = 0; 
      }
@@ -1542,7 +1613,6 @@ function filterDestinationAccounts(changedSelect, targetSelect) {
 
 /**
  * Handles the submission of the self-transfer form.
- * @param {Event} event - The form submission event.
  */
 async function handleSelfTransferSubmit(event) {
     event.preventDefault();
@@ -1555,7 +1625,6 @@ async function handleSelfTransferSubmit(event) {
 
     hideModalError(errorDiv);
 
-    // --- Frontend Validation ---
     if (!sourceAccountId || !destinationAccountId) {
         showModalError(errorDiv, "Please select both source and destination accounts.");
         return;
@@ -1572,23 +1641,20 @@ async function handleSelfTransferSubmit(event) {
          showModalError(errorDiv, "Please enter your valid 4-digit PIN.");
          return;
     }
-    // --- End Validation ---
 
     toggleSpinner(submitButton, true);
 
     try {
-        // Call the backend endpoint
         const response = await fetchSecure(`${ACCOUNT_API_URL}/self-transfer`, {
             method: 'POST',
             body: JSON.stringify({ sourceAccountId: Number(sourceAccountId), 
-                                  destinationAccountId: Number(destinationAccountId), 
-                                  amount, 
-                                  pin })
+                                   destinationAccountId: Number(destinationAccountId), 
+                                   amount, 
+                                   pin })
         });
 
         if (!response.ok) {
             let errorMsg = await response.text() || 'Self-transfer failed.';
-            // Customize error messages based on common backend responses
              if (response.status === 401 || errorMsg.toLowerCase().includes("invalid pin")) {
                  errorMsg = "Incorrect PIN provided.";
              } else if (errorMsg.toLowerCase().includes("insufficient funds")) {
@@ -1597,7 +1663,6 @@ async function handleSelfTransferSubmit(event) {
             throw new Error(errorMsg);
         }
 
-        // --- Success ---
         hideModal('selfTransferModal');
         showToast("Self-transfer completed successfully!");
         await fetchUserAccounts(); // Refresh dashboard balances and account list
@@ -1605,9 +1670,8 @@ async function handleSelfTransferSubmit(event) {
     } catch (error) {
         console.error("Self-transfer error:", error);
         showModalError(errorDiv, error.message);
-        // Error toast is not shown here, as the error is displayed inside the modal
     } finally {
-        toggleSpinner(submitButton, false); // Re-enable button
+        toggleSpinner(submitButton, false); 
     }
 }
 // --- END: Self Transfer Functions ---

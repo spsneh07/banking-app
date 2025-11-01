@@ -128,7 +128,8 @@ public class AccountController {
             Account newAccount = new Account(user, bankEntity); 
             newAccount.setAccountNumber(generateRandomAccountNumber());
             newAccount.setBalance(new BigDecimal("50.00"));
-
+            
+            newAccount.setAccountNickname(request.getNickname());
             Account savedAccount = accountRepository.save(newAccount);
 
             accountService.createInitialDepositTransaction(savedAccount);
