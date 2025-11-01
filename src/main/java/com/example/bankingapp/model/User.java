@@ -20,7 +20,6 @@ import lombok.Data;
 @Entity
 @Table(name = "users")
 @Data
-// We removed @NoArgsConstructor from here
 public class User {
 
     @Id
@@ -57,18 +56,17 @@ public class User {
     @Column(name = "user_pin", nullable = true)
     private String pin;
     
-    // We removed the broken @ManyToOne relationship from here
-    
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    // --- === THIS IS THE FIX === ---
+    // Changed from FetchType.LAZY to FetchType.EAGER
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    // --- === END OF FIX === ---
     @JsonIgnore
     private List<Account> accounts = new ArrayList<>();
 
-    // This is your no-arg constructor. It is now correct.
     public User() {
         this.accountStatus = "ACTIVE";
     }
 
-    // These are fine (though redundant with @Data, they don't hurt)
     public String getAccountStatus() {
         return accountStatus;
     }
@@ -82,6 +80,6 @@ public class User {
         this.username = username;
         this.email = email;
         this.password = password;
-        this.accountStatus = "ACTIVE"; // Also good to set the default here
+        this.accountStatus = "ACTIVE"; 
     }
 }

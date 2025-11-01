@@ -31,36 +31,26 @@ public class Account {
     @Column(unique = true, nullable = false, updatable = false)
     private String accountNumber;
 
-@Column(nullable = false)
-    private BigDecimal balance = BigDecimal.ZERO; // <-- THIS IS THE FIX
-    @Column(nullable = true) // or false, if you make it mandatory
+    @Column(nullable = false)
+    private BigDecimal balance = BigDecimal.ZERO; 
+    
+    @Column(nullable = true) 
     private String accountNickname;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY) // LAZY is fine here, DTOs handle it.
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     @JsonIgnore
     private User user;
 
-    // REMOVED redundant bankName field
-    // @Column(name = "bank_name")
-    // private String bankName;
-
-    @OneToOne(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    // --- === FIX #1: Changed from LAZY to EAGER === ---
+    @OneToOne(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     private DebitCard debitCard;
     
-    // REMOVED incorrect self-referencing Account relationship
-    // @ManyToOne(fetch = FetchType.LAZY) 
-    // @JoinColumn(name = "account_id", nullable = true) 
-    // private Account account;
-    
-    @ManyToOne(fetch = FetchType.LAZY) // Relationship with Bank entity (Correct)
+    // --- === FIX #2: Changed from LAZY to EAGER === ---
+    @ManyToOne(fetch = FetchType.EAGER) // Relationship with Bank entity (Correct)
     @JoinColumn(name = "bank_id", nullable = false)
-    @JsonIgnore
+    // @JsonIgnore // This isn't needed here, but doesn't hurt
     private Bank bank;
-
-    // REMOVED ActivityLog constructors - they belong in ActivityLog.java
-    /* public ActivityLog(User user, Account account, String activityType, String description) { ... } */
-    /* public ActivityLog(User user, String activityType, String description) { ... } */
 
     // Constructor for creating new accounts
     public Account(User user, Bank bank) {
@@ -71,10 +61,6 @@ public class Account {
         this.user = user;
         this.bank = bank; // Set the Bank entity relationship
     }
-
-    // REMOVED redundant bankName getter/setter
-    /* public String getBankName() { ... } */
-    /* public void setBankName(String bankName) { ... } */
 
     // Helper method to correctly link the card to the account
     public void setDebitCard(DebitCard debitCard) {
