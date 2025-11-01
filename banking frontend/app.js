@@ -12,6 +12,8 @@ let userAccountsCache = [];
 // State variable for CVV to avoid re-fetching on every card flip
 let cardCvv = '***'; 
 
+let currentAccountBalance = 0; // Stores the actual balance number
+let isBalanceVisible = false;
 /**
  * Utility function to get the current page name (e.g., "login.html")
  */
@@ -38,6 +40,33 @@ function formatCurrency(amount) {
         maximumFractionDigits: 2
     }).format(numAmount);
 }
+
+// --- 1. HELPER FUNCTION MOVED HERE (GLOBAL SCOPE) ---
+/**
+ * Updates the balance display and eye icon based on the 
+ * 'isBalanceVisible' state.
+ */
+function updateBalanceDisplay() {
+    const balanceDisplay = document.getElementById('accountBalanceDisplay');
+    const eyeIcon = document.getElementById('balance-eye-icon');
+    
+    // Safety check
+    if (!balanceDisplay || !eyeIcon) {
+        return; 
+    }
+
+    if (isBalanceVisible) {
+        // SHOW the balance
+        balanceDisplay.textContent = formatCurrency(currentAccountBalance);
+        eyeIcon.className = 'bi bi-eye-fill';
+    } else {
+        // HIDE the balance
+        balanceDisplay.textContent = '₹ ******';
+        eyeIcon.className = 'bi bi-eye-slash-fill';
+    }
+}
+// --- END OF MOVED FUNCTION ---
+
 
 // --- Main execution logic ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -106,6 +135,14 @@ function setupAccountDashboard() {
         return;
     }
 
+    // --- 2. LISTENER WAS FIXED HERE ---
+    // This listener is now correct and simple
+    document.getElementById('toggleBalance')?.addEventListener('click', () => {
+        isBalanceVisible = !isBalanceVisible; // Flip the state
+        updateBalanceDisplay(); // Call the global helper
+    });
+    // --- END OF FIX ---
+
     document.body.dataset.accountId = accountId; // Store accountId for later use
     document.getElementById('bankNameDisplay').textContent = bankName || "Account Details";
     const username = localStorage.getItem('username');
@@ -134,6 +171,9 @@ function setupAccountDashboard() {
             // No specific function for 'loan-pane' on click
         });
     });
+
+    // --- 3. DUPLICATE FUNCTION WAS DELETED FROM HERE ---
+
 
     // --- CARD FLIP LISTENER ---
     document.getElementById('debitCardFlipper')?.addEventListener('click', handleCardFlip);
@@ -427,8 +467,16 @@ async function fetchBalance() {
     try {
         const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/balance`);
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        
         const balance = await response.json();
-        balanceDisplay.textContent = formatCurrency(balance);
+        
+        // --- MODIFICATION ---
+        currentAccountBalance = balance; // Store the raw number
+        
+        // Call our global helper function to set the text
+        updateBalanceDisplay();
+        // --- END MODIFICATION ---
+
     } catch (error) {
         console.error('Error fetching balance:', error);
         balanceDisplay.textContent = "₹ Error";

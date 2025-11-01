@@ -30,9 +30,9 @@ public class Account {
 
     @Column(unique = true, nullable = false, updatable = false)
     private String accountNumber;
-
-    @Column(nullable = false)
-    private BigDecimal balance;
+    
+@Column(nullable = false)
+    private BigDecimal balance = BigDecimal.ZERO; // <-- THIS IS THE FIX
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id")

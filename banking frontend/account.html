@@ -382,9 +382,14 @@ select option {
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                     <div class="lg:col-span-2 glass-card rounded-3xl p-8 transform hover:scale-[1.02] transition-all duration-300">
                         <h5 class="text-lg font-semibold text-bank-text-muted dark:text-slate-400 mb-3">Current Balance</h5>
-                        <p class="text-6xl font-black gradient-text" id="accountBalanceDisplay">₹ --.--</p>
-                    </div>
-                    
+                 <div class="flex items-center gap-4">
+        <h1 id="accountBalanceDisplay" class="text-5xl font-extrabold text-bank-text-main dark:text-white">...</h1>
+        
+        <button id="toggleBalance" type="button" class="text-3xl text-bank-text-muted dark:text-slate-400 hover:text-bank-primary dark:hover:text-indigo-400 transition-colors">
+            <i id="balance-eye-icon" class="bi bi-eye-fill"></i>
+        </button>
+    </div>
+</div>
                     <div class="glass-card rounded-3xl p-8 transform hover:scale-[1.02] transition-all duration-300">
                         <h5 class="text-lg font-semibold text-bank-text-muted dark:text-slate-400 mb-6">Quick Actions</h5>
                         <div class="flex flex-col gap-4">

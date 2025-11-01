@@ -13,10 +13,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;// <-- ADD THIS LINE
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.ui.Model;
+import org.springframework.ui.Model; // This import is used by /dashboard
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -60,10 +60,8 @@ public class AccountController {
     @Autowired private UserRepository userRepository;
     @Autowired private DebitCardRepository debitCardRepository;
     @Autowired private com.example.bankingapp.repository.AccountRepository accountRepository;
-    // Inside AccountController.java
-// ... other @Autowired fields ...
-@Autowired private com.example.bankingapp.repository.BankRepository bankRepository; // <-- ADD THIS
-    @Autowired private CsvExportService csvExportService; 
+    @Autowired private com.example.bankingapp.repository.BankRepository bankRepository;
+    @Autowired private CsvExportService csvExportService;
 
     private String getAuthenticatedUsername() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -91,113 +89,121 @@ public class AccountController {
             return ResponseEntity.status(500).body("Error fetching accounts");
         }
     }
-    // Inside AccountController.java
 
-@PostMapping("/self-transfer")
-public ResponseEntity<?> performSelfTransfer(@Valid @RequestBody SelfTransferRequest request) {
-    try {
-        String username = getAuthenticatedUsername();
-        accountService.selfTransfer(
-            username,
-            request.getSourceAccountId(),
-            request.getDestinationAccountId(),
-            request.getAmount(),
-            request.getPin()
-        );
-        return ResponseEntity.ok("Self-transfer successful.");
-    } catch (IllegalArgumentException | IllegalStateException e) {
-        // Bad requests from user input/validation
-        return ResponseEntity.badRequest().body(e.getMessage());
-    } catch (BadCredentialsException e) {
-         // Specific handling for incorrect PIN
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid PIN.");
-    } catch (Exception e) {
-        // Log unexpected errors
-        // logger.error("Error during self-transfer for user {}: {}", getAuthenticatedUsername(), e.getMessage(), e);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An internal error occurred during the transfer.");
+    @PostMapping("/self-transfer")
+    public ResponseEntity<?> performSelfTransfer(@Valid @RequestBody SelfTransferRequest request) {
+        try {
+            String username = getAuthenticatedUsername();
+            accountService.selfTransfer(
+                username,
+                request.getSourceAccountId(),
+                request.getDestinationAccountId(),
+                request.getAmount(),
+                request.getPin()
+            );
+            return ResponseEntity.ok("Self-transfer successful.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (BadCredentialsException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid PIN.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An internal error occurred during the transfer.");
+        }
     }
-}
-@PostMapping("/create")
+
+    @PostMapping("/create")
     public ResponseEntity<?> createAccount(@Valid @RequestBody CreateAccountRequest request) {
         try {
-            // 1. Find the logged-in user
             String username = getAuthenticatedUsername();
             User user = userRepository.findByUsername(username)
                     .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
-            // --- FIND THE BANK ENTITY ---
-            // Assuming CreateAccountRequest has a method like getBankId()
-            Long requestedBankId = request.getBankId(); // Get the ID from the request
+            Long requestedBankId = request.getBankId();
             if (requestedBankId == null) {
-                 throw new IllegalArgumentException("Bank ID must be provided to create an account.");
+                throw new IllegalArgumentException("Bank ID must be provided to create an account.");
             }
             com.example.bankingapp.model.Bank bankEntity = bankRepository.findById(requestedBankId)
-                 .orElseThrow(() -> new RuntimeException("Bank not found with ID: " + requestedBankId));
-            // --- END FIND BANK ---
-
-            // 2. Create the new Account using the constructor
-            // Ensure your Account constructor `Account(User user, Bank bank)` exists
+                   .orElseThrow(() -> new RuntimeException("Bank not found with ID: " + requestedBankId));
+            
             Account newAccount = new Account(user, bankEntity); 
-            
-            // Set fields NOT handled by the constructor (if any)
-            newAccount.setAccountNumber(generateRandomAccountNumber()); // Set account number
-            newAccount.setBalance(new BigDecimal("50.00")); // Set initial bonus if constructor doesn't
+            newAccount.setAccountNumber(generateRandomAccountNumber());
+            newAccount.setBalance(new BigDecimal("50.00"));
 
-            // --- REMOVED: newAccount.setBankName(...) --- 
-            
-            // Save the account to get its generated ID before creating the card
             Account savedAccount = accountRepository.save(newAccount);
 
-            // 3. Create the initial deposit transaction
             accountService.createInitialDepositTransaction(savedAccount);
 
-            // 4. Create the new Debit Card
             DebitCard newCard = new DebitCard();
-            newCard.setCardHolderName(user.getFullName().toUpperCase()); // Use uppercase for consistency
-            newCard.setAccount(savedAccount); // Link card to the SAVED account
+            newCard.setCardHolderName(user.getFullName().toUpperCase());
+            newCard.setAccount(savedAccount);
             newCard.setActive(true);
-            newCard.setOnlineTransactionsEnabled(true); // Default value
-            newCard.setInternationalTransactionsEnabled(false); // Default value
+            newCard.setOnlineTransactionsEnabled(true);
+            newCard.setInternationalTransactionsEnabled(false);
             newCard.setCardNumber(generateRandomCardNumber());
             newCard.setCvv(generateRandomCvv());
-            newCard.setExpiryDate(LocalDate.now().plusYears(4)); // Use a standard expiry (e.g., 4 years)
+            newCard.setExpiryDate(LocalDate.now().plusYears(4));
             
-            // Save the Debit Card
             DebitCard savedCard = debitCardRepository.save(newCard); 
 
-            // 5. Explicitly link the saved card back to the account and save again
-            // This ensures the relationship is correctly persisted if cascade settings are tricky
             savedAccount.setDebitCard(savedCard); 
-            accountRepository.save(savedAccount); // Save account again with card link
+            accountRepository.save(savedAccount);
 
-            // Return the DTO of the fully created and linked account
             return ResponseEntity.ok(new AccountDto(savedAccount));
         
-       } catch (Exception e) {
-            // Log the detailed error on the server side for easier debugging
-            // Consider adding: logger.error("Error creating account for user {}: {}", getAuthenticatedUsername(), e.getMessage(), e);
+        } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error creating account: " + e.getMessage());
-       }
+        }
     }
-@PostMapping("/{accountId}/deposit")
+
+    @PostMapping("/{accountId}/deposit")
     public ResponseEntity<?> makeDeposit(@PathVariable Long accountId, @Valid @RequestBody DepositRequest depositRequest) {
         try {
             verifyAccountOwner(accountId);
-            // --- MODIFIED ---
-            // Now pass the source to the service
             accountService.deposit(
                 getAuthenticatedUsername(), 
                 accountId, 
                 depositRequest.getAmount(), 
                 depositRequest.getSource()
             ); 
-            // ------------------
             return ResponseEntity.ok("Deposit successful");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
     
+
+    // --- THIS IS THE CORRECTED ENDPOINT ---
+    /**
+     * Fetches just the balance for a specific account.
+     * This is the SINGLE correct method for this endpoint.
+     * It includes the security check and returns only the balance (BigDecimal)
+     * to prevent the StackOverflowError.
+     */
+    @GetMapping("/{accountId}/balance")
+    public ResponseEntity<BigDecimal> getAccountBalance(@PathVariable Long accountId) {
+        try {
+            // 1. Verify the authenticated user owns this account
+            verifyAccountOwner(accountId);
+    
+            // 2. Call the service method that returns *only* the balance
+            // (This assumes accountService.getBalance(id) returns BigDecimal)
+            BigDecimal balance = accountService.getBalance(accountId);
+    
+            // 3. Return the balance as a simple number
+            return ResponseEntity.ok(balance);
+    
+        } catch (IllegalStateException e) {
+            // This catches the verifyAccountOwner failure
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
+    
+        } catch (Exception e) {
+            // This catches other errors (e.g., account not found from service)
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+    // --- END OF FIX ---
+    
+
     @PostMapping("/{accountId}/transfer")
     public ResponseEntity<?> makeTransfer(@PathVariable Long accountId, @Valid @RequestBody TransferRequest transferRequest) {
         try {
@@ -232,42 +238,28 @@ public ResponseEntity<?> performSelfTransfer(@Valid @RequestBody SelfTransferReq
         }
     }
     
-    // --- ADD THIS NEW ENDPOINT ---
 
-@PostMapping("/user/deactivate")
-public ResponseEntity<?> deactivateAccount(
-        @AuthenticationPrincipal UserDetails userDetails,
-        @RequestBody Map<String, String> payload) {
+    @PostMapping("/user/deactivate")
+    public ResponseEntity<?> deactivateAccount(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody Map<String, String> payload) {
 
-    String password = payload.get("password");
-    if (password == null || password.isBlank()) {
-        return ResponseEntity.status(400).body(Map.of("message", "Password is required."));
-    }
+        String password = payload.get("password");
+        if (password == null || password.isBlank()) {
+            return ResponseEntity.status(400).body(Map.of("message", "Password is required."));
+        }
 
-    try {
-        // This calls the new, secure method in your service
-        accountService.verifyPasswordAndDeactivate(userDetails.getUsername(), password);
-        return ResponseEntity.ok(Map.of("message", "Account deactivated successfully."));
+        try {
+            accountService.verifyPasswordAndDeactivate(userDetails.getUsername(), password);
+            return ResponseEntity.ok(Map.of("message", "Account deactivated successfully."));
 
-    } catch (BadCredentialsException e) {
-        // This catches if verifyUserPassword fails
-        return ResponseEntity.status(401).body(Map.of("message", "Incorrect password. Deactivation cancelled."));
-    } catch (Exception e) {
-        // This catches any other unexpected errors
-        return ResponseEntity.status(500).body(Map.of("message", "An unexpected error occurred: " + e.getMessage()));
-    }
-} 
+        } catch (BadCredentialsException e) {
+            return ResponseEntity.status(401).body(Map.of("message", "Incorrect password. Deactivation cancelled."));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("message", "An unexpected error occurred: " + e.getMessage()));
+        }
+    } 
 
-    @GetMapping("/{accountId}/balance")
-    public ResponseEntity<?> getAccountBalance(@PathVariable Long accountId) {
-         try {
-             verifyAccountOwner(accountId);
-             return ResponseEntity.ok(accountService.getBalance(accountId));
-         } catch (Exception e) {
-             return ResponseEntity.status(500).body("Error fetching balance");
-         }
-     }
-     
     @GetMapping("/{accountId}/transactions")
     public ResponseEntity<?> getTransactions(@PathVariable Long accountId) {
         try {
@@ -288,17 +280,16 @@ public ResponseEntity<?> deactivateAccount(
         }
     }
     
-    // --- MODIFIED THIS METHOD ---
     @PutMapping("/profile")
     public ResponseEntity<?> updateUserProfile(@Valid @RequestBody ProfileUpdateRequest request) {
         try {
-            // Now we pass the entire 'request' object to the service
             User updatedUser = accountService.updateUserProfile(getAuthenticatedUsername(), request);
             return ResponseEntity.ok(new UserDto(updatedUser));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
     @GetMapping("/dashboard")
     public String viewDashboard(Model model) {
         // THIS IS TEMPORARY: Replace "testuser" with a username you have
@@ -313,7 +304,6 @@ public ResponseEntity<?> deactivateAccount(
         model.addAttribute("user", user);
         return "dashboard";
     }
-    // --- END OF MODIFICATION ---
     
     @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(@Valid @RequestBody PasswordChangeRequest request) {
@@ -368,6 +358,7 @@ public ResponseEntity<?> deactivateAccount(
             response.setStatus(HttpStatus.BAD_REQUEST.value());
         }
     }
+
     @GetMapping("/{accountId}/card")
     public ResponseEntity<?> getDebitCardDetails(@PathVariable Long accountId) {
         try {
@@ -379,35 +370,26 @@ public ResponseEntity<?> deactivateAccount(
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-    // Inside AccountController.java
 
-// (Make sure AccountService is injected via @Autowired)
-
-// --- MODIFY THIS ENDPOINT ---
-    @GetMapping("/{accountId}/activity-log") // Path now includes accountId
-    public ResponseEntity<?> getAccountActivityLog(@PathVariable Long accountId) { // Added @PathVariable
+    @GetMapping("/{accountId}/activity-log")
+    public ResponseEntity<?> getAccountActivityLog(@PathVariable Long accountId) {
         try {
             String username = getAuthenticatedUsername(); 
-            // Call the updated service method that takes accountId
             List<ActivityLogDto> logs = accountService.getActivityLogsForAccount(accountId, username); 
             return ResponseEntity.ok(logs);
         } catch (Exception e) {
-            // Log the server error (using a logger is better)
             System.err.println("Error fetching activity log for account " + accountId + ": " + e.getMessage()); 
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                 .body("Error retrieving activity log.");
+                                    .body("Error retrieving activity log.");
         }
     }
-    // --- END MODIFICATION ---
 
- @PostMapping("/{accountId}/card/toggle")
+    @PostMapping("/{accountId}/card/toggle")
     public ResponseEntity<?> toggleCardStatus(@PathVariable Long accountId) {
         try {
             verifyAccountOwner(accountId);
             String username = getAuthenticatedUsername();
-            // --- CHANGE THIS LINE ---
-            DebitCardDto updatedCardDto = accountService.toggleDebitCardOption(accountId, username, "master"); // Use new method and add "master"
-            // ----------------------
+            DebitCardDto updatedCardDto = accountService.toggleDebitCardOption(accountId, username, "master");
             return ResponseEntity.ok(updatedCardDto);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -416,64 +398,66 @@ public ResponseEntity<?> deactivateAccount(
 
     @PostMapping("/deactivate-account")
     public String deactivateAccount(@RequestParam("id") Long id) {
-        // This calls the method you created in AccountService
         accountService.deactivateUser(id);
-        
-        // Redirect to a new confirmation page
         return "redirect:/account-deactivated";
     }
     
-    // --- 3. ADD THIS NEW MAPPING for the confirmation page ---
     @GetMapping("/account-deactivated")
     public String showDeactivatedPage() {
-        return "account_deactivated"; // This will show the new HTML page
+        return "account_deactivated";
     }
-    // Inside AccountController.java
 
-// ... (other methods like /card/cvv, /card/toggle etc.)
-
-@PostMapping("/{accountId}/card/online-toggle") // CHECK THIS PATH
-public ResponseEntity<?> toggleOnlineStatus(@PathVariable Long accountId) {
-    try {
-        verifyAccountOwner(accountId);
-        String username = getAuthenticatedUsername();
-        DebitCardDto updatedCardDto = accountService.toggleDebitCardOption(accountId, username, "online");
-        return ResponseEntity.ok(updatedCardDto);
-    } catch (Exception e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
+    @PostMapping("/{accountId}/card/online-toggle")
+    public ResponseEntity<?> toggleOnlineStatus(@PathVariable Long accountId) {
+        try {
+            verifyAccountOwner(accountId);
+            String username = getAuthenticatedUsername();
+            DebitCardDto updatedCardDto = accountService.toggleDebitCardOption(accountId, username, "online");
+            return ResponseEntity.ok(updatedCardDto);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
-}
 
-@PostMapping("/{accountId}/card/international-toggle") // CHECK THIS PATH
-public ResponseEntity<?> toggleInternationalStatus(@PathVariable Long accountId) {
-    try {
-        verifyAccountOwner(accountId);
-        String username = getAuthenticatedUsername();
-        DebitCardDto updatedCardDto = accountService.toggleDebitCardOption(accountId, username, "international");
-        return ResponseEntity.ok(updatedCardDto);
-    } catch (Exception e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
+    @PostMapping("/{accountId}/card/international-toggle")
+    public ResponseEntity<?> toggleInternationalStatus(@PathVariable Long accountId) {
+        try {
+            verifyAccountOwner(accountId);
+            String username = getAuthenticatedUsername();
+            DebitCardDto updatedCardDto = accountService.toggleDebitCardOption(accountId, username, "international");
+            return ResponseEntity.ok(updatedCardDto);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
-}
-    // Inside AccountController.java (around line 250)
 
-// --- NEW CVV ENDPOINT ---
-@GetMapping("/{accountId}/card/cvv")
-public ResponseEntity<?> getCardCvv(@PathVariable Long accountId) {
-    try {
-        verifyAccountOwner(accountId);
-        String username = getAuthenticatedUsername();
-        // Call service method to get CVV (string or DTO)
-        String cvv = accountService.getDebitCardCvv(accountId, username); 
-        // NOTE: We don't send the full CardDTO, only the CVV as an object.
-        return ResponseEntity.ok(Map.of("cvv", cvv)); 
-    } catch (Exception e) {
-        // Log sensitive error details, but send generic bad request to frontend
-        return ResponseEntity.badRequest().body("CVV retrieval failed.");
+    @GetMapping("/{accountId}/card/cvv")
+    public ResponseEntity<?> getCardCvv(@PathVariable Long accountId) {
+        try {
+            verifyAccountOwner(accountId);
+            String username = getAuthenticatedUsername();
+            String cvv = accountService.getDebitCardCvv(accountId, username); 
+            return ResponseEntity.ok(Map.of("cvv", cvv)); 
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("CVV retrieval failed.");
+        }
     }
-}
-// -------------------------
-    // ---------------------------------
+
+    @PostMapping("/{accountId}/loans/apply")
+    public ResponseEntity<?> applyForLoan(
+            @PathVariable Long accountId,
+            @Valid @RequestBody LoanApplicationRequest request
+    ) {
+        try {
+            String username = getAuthenticatedUsername();
+            accountService.submitLoanApplication(username, accountId, request); 
+            return ResponseEntity.ok("Loan application submitted successfully."); 
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error submitting loan application: " + e.getMessage());
+        }
+    }
+
+    // --- Private Helper Methods ---
     private String generateRandomAccountNumber() {
         Random random = new Random();
         long number = 1_000_000_000L + random.nextInt(900_000_000); // 10-digit number
@@ -495,20 +479,4 @@ public ResponseEntity<?> getCardCvv(@PathVariable Long accountId) {
         int cvv = 100 + random.nextInt(900); // 3-digit CVV
         return String.valueOf(cvv);
     }
-   // --- MODIFY THIS CONCEPTUAL ENDPOINT ---
-    @PostMapping("/{accountId}/loans/apply") // Added accountId to the path
-    public ResponseEntity<?> applyForLoan(
-            @PathVariable Long accountId, // Get accountId from path
-            @Valid @RequestBody LoanApplicationRequest request
-    ) {
-        try {
-            String username = getAuthenticatedUsername();
-            // Pass accountId to the service method
-            accountService.submitLoanApplication(username, accountId, request); 
-            return ResponseEntity.ok("Loan application submitted successfully."); 
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error submitting loan application: " + e.getMessage());
-        }
-    }
-    // --- END MODIFICATION ---
 }

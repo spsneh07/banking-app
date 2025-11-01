@@ -373,4 +373,27 @@ h1, h2, h3, h4, h5, h6 {
     .balance-amount {
         @apply text-2xl;
     }
+
+    /* --- Add this to your main stylesheet --- */
+
+/* Style the new toggle button */
+#dashboard-balance-toggle {
+    cursor: pointer;
+}
+
+/* Default state: show real balance, hide the stars */
+.real-balance {
+    display: inline;
+}
+.hidden-balance {
+    display: none;
+}
+
+/* Toggled state: when body has the class, hide real balance and show the stars */
+body.balances-hidden .real-balance {
+    display: none;
+}
+body.balances-hidden .hidden-balance {
+    display: inline;
+}
 }
