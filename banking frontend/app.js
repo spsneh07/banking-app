@@ -69,7 +69,6 @@ function updateBalanceDisplay() {
 
 
 // --- Main execution logic ---
-// --- === FIX #1: Make the event listener ASYNC === ---
 document.addEventListener('DOMContentLoaded', async () => {
     const page = getPageName();
 
@@ -88,8 +87,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else if (page === 'account.html') {
         checkAuth(); // Redirect if not logged in
         if (localStorage.getItem('authToken')) { // Proceed if logged in
-            // --- === FIX #2: AWAIT the setup function === ---
-            await setupAccountDashboard(); // This ensures localStorage is set before tabs are clicked
+            await setupAccountDashboard(); // Wait for user details to load
         }
     }
 
@@ -144,7 +142,6 @@ function setupPortalDashboard() {
 }
 
 // --- Account Dashboard Setup ---
-// --- === FIX #3: Make this function ASYNC === ---
 async function setupAccountDashboard() {
     document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
 
@@ -221,7 +218,6 @@ async function setupAccountDashboard() {
     document.getElementById('verifyRecipientBtn')?.addEventListener('click', handleVerifyRecipient);
     
     // Initial Data Fetch
-    // --- === FIX #4: AWAIT this call === ---
     await fetchUserDetails(); // This now WAITS for localStorage to be set
     fetchBalance(); // These can run after
     fetchTransactions(false); // These can run after
@@ -415,7 +411,7 @@ async function fetchSecure(url, options = {}) {
                 return response; 
             } else {
                 showToast("Session expired or unauthorized. Logging out.", true);
-                handleLogout();
+                handleLogout(); // This is the redirect
                 throw new Error(`Unauthorized: ${response.status}`);
             }
         }
@@ -451,7 +447,6 @@ async function fetchUserDetails() {
             console.warn("Account number not found.");
         }
         
-        // This function is only called from account.html, so we can just populate the form
         populateProfileForm();
 
     } catch (error) {
@@ -622,12 +617,10 @@ async function fetchUserAccounts() {
             listEl.innerHTML = `<div class="col-span-full text-center text-bank-text-muted dark:text-slate-400 glass-card rounded-3xl p-12">You haven't added any bank accounts yet.</div>`;
             totalAccountsEl.textContent = '0';
             
-            // --- === "Too many stars" FIX === ---
             totalBalanceEl.innerHTML = `
                 <span class="real-balance">${formatCurrency(0)}</span>
                 <span class="hidden-balance">₹ ******</span>
             `;
-            // --- === END OF FIX === ---
             
             userAccountsCache = []; 
             return;
@@ -665,12 +658,10 @@ async function fetchUserAccounts() {
         
         const totalBalanceFormatted = formatCurrency(calculatedTotalBalance);
         
-        // --- === "Too many stars" FIX === ---
         totalBalanceEl.innerHTML = `
             <span class="real-balance">${totalBalanceFormatted}</span>
             <span class="hidden-balance">₹ ******</span>
         `;
-        // --- === END OF FIX === ---
 
     } catch (error) {
         console.error("Error fetching user accounts:", error);
@@ -704,7 +695,7 @@ async function fetchAllBanks() {
                         <p class="font-normal text-bank-text-muted dark:text-slate-400 mb-4">Link this bank to your portal.</p>
                     </div>
                     <button onclick="openAddBankModal(${bank.id}, '${bank.name}')"
-                            class="add-bank-btn mt-4 w-full text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-7Example-700 font-medium rounded-xl text-sm px-5 py-3 text-center transform hover:scale-105 transition-transform duration-300 shadow-lg shadow-indigo-500/30 relative z-10">
+                            class="add-bank-btn mt-4 w-full text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 font-medium rounded-xl text-sm px-5 py-3 text-center transform hover:scale-105 transition-transform duration-300 shadow-lg shadow-indigo-500/30 relative z-10">
                         Add Bank
                     </button>
                 </div>`;
@@ -925,11 +916,13 @@ async function handleDeactivateSubmit(event) {
         }
 
         hideModal('deactivateModal');
-        showToast("Account deactivated. You will be logged out.", "success");
+        showToast("Account deactivated. Logging you out..."); // Updated message
         
+        // --- === FIX: Wait 2 seconds then call handleLogout === ---
         setTimeout(() => {
             handleLogout();
         }, 2000);
+        // --- === END OF FIX === ---
 
     } catch (error) {
         console.error("Deactivate error:", error);
@@ -1352,7 +1345,7 @@ async function handleProfileUpdateSubmit(event) {
             })
         });
 
-        if (!response.ok) throw new Error(await response.text() || 'Profile update failed.');
+        if (!response.ok) throw new Error(await response.text() || 'Profile update. failed.');
         
         const updatedUser = await response.json();
         localStorage.setItem('currentUser', JSON.stringify(updatedUser)); 
@@ -1389,10 +1382,23 @@ async function handleChangePasswordSubmit(event) {
             }
             showModalError(errorDiv, errorText); throw new Error(errorText);
         }
-        form.reset(); showToast("Password changed!");
-    } catch (error) { console.error("Change password error:", error.message); }
-    finally { toggleSpinner(submitButton, false); }
+        
+        // --- === FIX: Show toast and log out === ---
+        form.reset(); 
+        showToast("Password changed! Please log in again.");
+        setTimeout(() => {
+            handleLogout();
+        }, 2000);
+        // --- === END OF FIX === ---
+
+    } catch (error) { 
+        console.error("Change password error:", error.message); 
+    }
+    finally { 
+        toggleSpinner(submitButton, false); 
+    }
 }
+
 async function handleSetPinSubmit(event) { 
     event.preventDefault();
     const form = event.target;
@@ -1413,9 +1419,21 @@ async function handleSetPinSubmit(event) {
             }
             showModalError(errorDiv, errorText); throw new Error(errorText);
         }
-        form.reset(); showToast("Security PIN updated!");
-    } catch (error) { console.error("Error setting/updating PIN:", error.message); }
-    finally { toggleSpinner(submitButton, false); }
+
+        // --- === FIX: Show toast and log out === ---
+        form.reset(); 
+        showToast("Security PIN updated! Please log in again.");
+        setTimeout(() => {
+            handleLogout();
+        }, 2000);
+        // --- === END OF FIX === ---
+
+    } catch (error) { 
+        console.error("Error setting/updating PIN:", error.message); 
+    }
+    finally { 
+        toggleSpinner(submitButton, false); 
+    }
 }
 
 async function handleDownloadCsv() {
@@ -1620,7 +1638,7 @@ async function handleSelfTransferSubmit(event) {
     const submitButton = document.getElementById('submitSelfTransfer');
     const sourceAccountId = document.getElementById('sourceAccount').value;
     const destinationAccountId = document.getElementById('destinationAccount').value;
-    const amount = parseFloat(document.getElementById('selfTransferAmount').value);
+    const amount = parseFloat(document.getElementById('transferAmount').value);
     const pin = document.getElementById('selfTransferPin').value;
 
     hideModalError(errorDiv);
