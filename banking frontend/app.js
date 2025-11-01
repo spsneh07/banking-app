@@ -82,6 +82,14 @@ function setupPortalDashboard() {
     });
     document.getElementById('selfTransferForm')?.addEventListener('submit', handleSelfTransferSubmit);
     document.querySelector('#selfTransferModal .modal-close-btn')?.addEventListener('click', () => hideModal('selfTransferModal'));
+
+    // --- ADDED: Deactivate Account Modal Listeners ---
+    document.getElementById('showDeactivateModalBtn')?.addEventListener('click', () => {
+        showModal('deactivateModal');
+    });
+    document.getElementById('deactivateForm')?.addEventListener('submit', handleDeactivateSubmit);
+    document.querySelector('#deactivateModal .modal-close-btn')?.addEventListener('click', () => hideModal('deactivateModal'));
+    // --- END: Deactivate Account ---
 }
 
 // --- Account Dashboard Setup ---
@@ -250,6 +258,17 @@ function hideModal(modalId) {
         }
         // --- END ADDITION ---
 
+        // --- ADDED: Reset for Deactivate Modal ---
+        if (modalId === 'deactivateModal') {
+            hideModalError(document.getElementById('deactivateError'));
+            const btn = document.getElementById('confirmDeactivateBtn');
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Confirm Deactivation';
+            }
+        }
+        // --- END ADDITION ---
+
         modal.querySelectorAll('[id$="Error"]').forEach(hideModalError);
     }
 }
@@ -332,7 +351,10 @@ async function fetchSecure(url, options = {}) {
         
         if (response.status === 401 || response.status === 403) {
             const isPasswordCheck = url.includes('/set-pin') || url.includes('/change-password');
-            if (isPasswordCheck) {
+            // --- ADDED: Include deactivate check ---
+            const isDeactivateCheck = url.includes('/user/deactivate');
+            if (isPasswordCheck || isDeactivateCheck) {
+            // --- END ADDITION ---
                 return response; 
             } else {
                 showToast("Session expired or unauthorized. Logging out.", true);
@@ -752,6 +774,56 @@ async function handlePayBillSubmit(event) {
     finally { toggleSpinner(submitButton, false); }
 }
 
+// --- ADDED: Deactivate Account Form Handler ---
+async function handleDeactivateSubmit(event) {
+    event.preventDefault();
+    const errorDiv = document.getElementById('deactivateError');
+    const submitButton = document.getElementById('confirmDeactivateBtn');
+    const password = document.getElementById('deactivatePassword').value;
+
+    hideModalError(errorDiv);
+
+    if (!password) {
+        showModalError(errorDiv, "Please enter your password to confirm.");
+        return;
+    }
+
+    toggleSpinner(submitButton, true);
+    submitButton.textContent = 'Deactivating...';
+
+    try {
+        const response = await fetchSecure(`${ACCOUNT_API_URL}/user/deactivate`, {
+            method: 'POST',
+            body: JSON.stringify({ password: password })
+        });
+
+        if (!response.ok) {
+            let errorMsg = await response.text() || 'Deactivation failed.';
+            if (response.status === 401 || response.status === 400) {
+                 errorMsg = "Incorrect password. Deactivation cancelled.";
+            }
+            throw new Error(errorMsg);
+        }
+
+        // --- Success ---
+        hideModal('deactivateModal');
+        showToast("Account deactivated. You will be logged out.", "success"); // Use 'success' type
+        
+        // Log out after 2 seconds
+        setTimeout(() => {
+            handleLogout();
+        }, 2000);
+
+    } catch (error) {
+        console.error("Deactivate error:", error);
+        showModalError(errorDiv, error.message);
+        toggleSpinner(submitButton, false); // Re-enable button
+        submitButton.textContent = 'Confirm Deactivation';
+    }
+    // No 'finally' block needed, spinner is handled in success/error
+}
+// --- END: Deactivate Account Handler ---
+
 // --- CARD FLIP LOGIC ---
 async function handleCardFlip() {
     const flipper = document.getElementById('debitCardFlipper');
@@ -982,9 +1054,9 @@ async function handleLoanApplicationSubmit(event) {
         const response = await fetchSecure(`${ACCOUNT_API_URL}/${accountId}/loans/apply`, { 
             method: 'POST',
             body: JSON.stringify({ 
-                amount: amount,          
-                purpose: purpose,        
-                monthlyIncome: income    
+                amount: amount,         
+                purpose: purpose,       
+                monthlyIncome: income   
             }) 
         });
 
@@ -1073,16 +1145,16 @@ async function fetchActivityLogs() {
                 typeText = 'Security Update';
             } else if (log.activityType.includes('PROFILE')) {
                 iconClass = 'bi-person-fill-gear text-purple-400';
-                 typeText = 'Profile Update';
+                typeText = 'Profile Update';
             } else if (log.activityType.includes('CARD')) {
                 iconClass = 'bi-credit-card-fill text-red-400';
-                 typeText = 'Card Settings';
+                typeText = 'Card Settings';
             } else if (log.activityType.includes('LOAN')) {
-                 iconClass = 'bi-cash-coin text-green-400';
-                 typeText = 'Loan Application';
+                iconClass = 'bi-cash-coin text-green-400';
+                typeText = 'Loan Application';
             } else if (log.activityType.includes('SELF_TRANSFER')) {
-                 iconClass = 'bi-arrow-left-right text-cyan-400';
-                 typeText = 'Self Transfer';
+                iconClass = 'bi-arrow-left-right text-cyan-400';
+                typeText = 'Self Transfer';
             }
 
             const logEntryHtml = `
@@ -1090,9 +1162,9 @@ async function fetchActivityLogs() {
                     <div class="flex items-center gap-3">
                          <i class="bi ${iconClass} text-xl"></i> 
                          <div>
-                            <p class="font-semibold text-bank-text-main dark:text-bank-text-main-dark">${log.description}</p>
-                            <p class="text-xs text-bank-text-muted dark:text-slate-400">${typeText}</p>
-                        </div>
+                             <p class="font-semibold text-bank-text-main dark:text-bank-text-main-dark">${log.description}</p>
+                             <p class="text-xs text-bank-text-muted dark:text-slate-400">${typeText}</p>
+                         </div>
                     </div>
                     <p class="text-xs text-bank-text-muted dark:text-slate-500 text-right sm:text-left flex-shrink-0">${timestamp}</p>
                 </div>
@@ -1461,9 +1533,9 @@ async function handleSelfTransferSubmit(event) {
         const response = await fetchSecure(`${ACCOUNT_API_URL}/self-transfer`, {
             method: 'POST',
             body: JSON.stringify({ sourceAccountId: Number(sourceAccountId), 
-                                   destinationAccountId: Number(destinationAccountId), 
-                                   amount, 
-                                   pin })
+                                  destinationAccountId: Number(destinationAccountId), 
+                                  amount, 
+                                  pin })
         });
 
         if (!response.ok) {

@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
-import java.util.Random; // <-- ADD THIS LINE
+import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -13,7 +13,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;// <-- ADD THIS LINE
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -228,6 +231,32 @@ public ResponseEntity<?> performSelfTransfer(@Valid @RequestBody SelfTransferReq
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    
+    // --- ADD THIS NEW ENDPOINT ---
+
+@PostMapping("/user/deactivate")
+public ResponseEntity<?> deactivateAccount(
+        @AuthenticationPrincipal UserDetails userDetails,
+        @RequestBody Map<String, String> payload) {
+
+    String password = payload.get("password");
+    if (password == null || password.isBlank()) {
+        return ResponseEntity.status(400).body(Map.of("message", "Password is required."));
+    }
+
+    try {
+        // This calls the new, secure method in your service
+        accountService.verifyPasswordAndDeactivate(userDetails.getUsername(), password);
+        return ResponseEntity.ok(Map.of("message", "Account deactivated successfully."));
+
+    } catch (BadCredentialsException e) {
+        // This catches if verifyUserPassword fails
+        return ResponseEntity.status(401).body(Map.of("message", "Incorrect password. Deactivation cancelled."));
+    } catch (Exception e) {
+        // This catches any other unexpected errors
+        return ResponseEntity.status(500).body(Map.of("message", "An unexpected error occurred: " + e.getMessage()));
+    }
+} 
 
     @GetMapping("/{accountId}/balance")
     public ResponseEntity<?> getAccountBalance(@PathVariable Long accountId) {
@@ -269,6 +298,20 @@ public ResponseEntity<?> performSelfTransfer(@Valid @RequestBody SelfTransferReq
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+    @GetMapping("/dashboard")
+    public String viewDashboard(Model model) {
+        // THIS IS TEMPORARY: Replace "testuser" with a username you have
+        // registered in your database.
+        User user = accountService.findByUsername("testuser"); 
+
+        if (user == null) {
+            return "redirect:/login"; // or redirect to register
+        }
+        
+        // This adds the user object to the page
+        model.addAttribute("user", user);
+        return "dashboard";
     }
     // --- END OF MODIFICATION ---
     
@@ -369,6 +412,21 @@ public ResponseEntity<?> performSelfTransfer(@Valid @RequestBody SelfTransferReq
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    @PostMapping("/deactivate-account")
+    public String deactivateAccount(@RequestParam("id") Long id) {
+        // This calls the method you created in AccountService
+        accountService.deactivateUser(id);
+        
+        // Redirect to a new confirmation page
+        return "redirect:/account-deactivated";
+    }
+    
+    // --- 3. ADD THIS NEW MAPPING for the confirmation page ---
+    @GetMapping("/account-deactivated")
+    public String showDeactivatedPage() {
+        return "account_deactivated"; // This will show the new HTML page
     }
     // Inside AccountController.java
 

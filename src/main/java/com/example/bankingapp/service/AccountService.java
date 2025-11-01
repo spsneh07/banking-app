@@ -323,6 +323,33 @@ public void selfTransfer(String username, Long sourceAccountId, Long destination
         }
     }
 
+    public void deactivateUser(Long id) {
+        // Find the user by their ID
+        User user = userRepository.findById(id).orElse(null);
+
+        // Check if the user was found
+        if (user != null) {
+            // Change the status
+            user.setAccountStatus("INACTIVE");
+            
+            // Save the updated user object
+            userRepository.save(user);
+        }
+    }
+    public User findByUsername(String username) {
+    // This now correctly handles the 'Optional'
+    return userRepository.findByUsername(username)
+           .orElse(null); // If not found, return null
+}
+
+    /**
+     * Saves a new user during registration.
+     */
+    public void saveUser(User user) {
+        // We will add password encoding here later!
+        userRepository.save(user);
+    }
+
     private void verifyUserPin(String username, String providedPin) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
@@ -416,7 +443,24 @@ public void selfTransfer(String username, Long sourceAccountId, Long destination
         return new DebitCardDto(card);  
     }
     // --- END CORRECTION ---
-    
+    @Transactional
+    public void verifyPasswordAndDeactivate(String username, String password) {
+        // 1. Verify the password first
+        // This uses your existing private helper method
+        verifyUserPassword(username, password); 
+        
+        // 2. If password is valid, find the user
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found after password verification."));
+        
+        // 3. Deactivate the user (this is your existing logic)
+        user.setAccountStatus("INACTIVE");
+        userRepository.save(user);
+
+        // 4. Log this major event
+        ActivityLog logEntry = new ActivityLog(user, "ACCOUNT_DEACTIVATED", "User deactivated their account.");
+        activityLogRepository.save(logEntry);
+    }
     // --- Loan Application Method (Conceptual, but logging corrected) ---
      @Transactional
      public void submitLoanApplication(String username, Long accountId, LoanApplicationRequest request) { // Assume accountId is passed

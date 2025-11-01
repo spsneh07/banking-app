@@ -4,7 +4,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.CascadeType;
@@ -14,17 +13,14 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "users")
 @Data
-@NoArgsConstructor
+// We removed @NoArgsConstructor from here
 public class User {
 
     @Id
@@ -54,26 +50,38 @@ public class User {
 
     @Column(name = "nominee_name")
     private String nomineeName;
+
+    @Column(nullable = false)
+    private String accountStatus;
     
-    // --- THIS IS THE CORRECTION ---
-    // Merged both pin declarations into one.
-    // It maps to the 'user_pin' database column and is allowed to be null.
     @Column(name = "user_pin", nullable = true)
     private String pin;
-    // -------------------------------
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    @JsonBackReference // <-- 2. ADD THIS
-    private User user;
+    
+    // We removed the broken @ManyToOne relationship from here
     
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Account> accounts = new ArrayList<>();
+
+    // This is your no-arg constructor. It is now correct.
+    public User() {
+        this.accountStatus = "ACTIVE";
+    }
+
+    // These are fine (though redundant with @Data, they don't hurt)
+    public String getAccountStatus() {
+        return accountStatus;
+    }
+
+    public void setAccountStatus(String accountStatus) {
+        this.accountStatus = accountStatus;
+    }
 
     public User(String fullName, String username, String email, String password) {
         this.fullName = fullName;
         this.username = username;
         this.email = email;
         this.password = password;
+        this.accountStatus = "ACTIVE"; // Also good to set the default here
     }
 }
