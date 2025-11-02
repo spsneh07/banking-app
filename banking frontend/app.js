@@ -1638,7 +1638,7 @@ async function handleSelfTransferSubmit(event) {
     const submitButton = document.getElementById('submitSelfTransfer');
     const sourceAccountId = document.getElementById('sourceAccount').value;
     const destinationAccountId = document.getElementById('destinationAccount').value;
-    const amount = parseFloat(document.getElementById('transferAmount').value);
+    const amount = parseFloat(document.getElementById('selfTransferAmount').value);
     const pin = document.getElementById('selfTransferPin').value;
 
     hideModalError(errorDiv);
