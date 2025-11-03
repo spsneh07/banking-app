@@ -11,7 +11,7 @@ import com.example.bankingapp.model.Transaction;
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
     List<Transaction> findTop10ByAccountIdOrderByTimestampDesc(Long accountId);
-    
+    List<Transaction> findAllByAccountIdOrderByTimestampDesc(Long accountId);
     // --- ADD THIS NEW METHOD ---
     List<Transaction> findAllByAccountId(Long accountId);
     // -------------------------
